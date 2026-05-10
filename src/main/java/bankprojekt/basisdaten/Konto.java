@@ -6,7 +6,7 @@ import bankprojekt.exceptions.GesperrtException;
 import bankprojekt.exceptions.UngueltigeKontonummerException;
 
 /**
- * stellt ein allgemeines Bank-Konto dar
+ * Stellt ein allgemeines Bank-Konto dar
  */
 public abstract class Konto implements Comparable<Konto>
 {
@@ -29,16 +29,16 @@ public abstract class Konto implements Comparable<Konto>
     /**
      * der aktuelle Kontostand
      */
-    private Geldbetrag kontostand = Geldbetrag.NULL_EURO;;
+    private Geldbetrag kontostand = Geldbetrag.NULL_EURO;
 
     /**
-     * Setzt die beiden Eigenschaften kontoinhaber und kontonummer auf die angegebenen Werte,
+     * Setzt die beiden Eigenschaften Kontoinhaber und Kontonummer auf die angegebenen Werte,
      * der anfängliche Kontostand wird auf 0 gesetzt.
      *
      * @param inhaber der Inhaber
      * @param kontonummer die gewünschte Kontonummer
-     * @throws IllegalArgumentException wenn der inhaber null ist
-     * @throws UngueltigeKontonummerException wenn kontonummer ungültig ist
+     * @throws IllegalArgumentException Wenn der Inhaber null ist
+     * @throws UngueltigeKontonummerException Wenn Kontonummer ungültig ist
      */
     public Konto(Kunde inhaber, long kontonummer) {
         if(inhaber == null)
@@ -52,14 +52,14 @@ public abstract class Konto implements Comparable<Konto>
     }
 
     /**
-     * setzt alle Eigenschaften des Kontos auf Standardwerte
+     * Setzt alle Eigenschaften des Kontos auf Standardwerte
      */
     public Konto() {
         this(Kunde.MUSTERMANN, 1234567);
     }
 
     /**
-     * liefert die Kontonummer zurück
+     * Liefert die Kontonummer zurück
      * @return   Kontonummer
      */
     public long getKontonummer() {
@@ -67,7 +67,7 @@ public abstract class Konto implements Comparable<Konto>
     }
 
     /**
-     * liefert zurück, ob das Konto gesperrt ist oder nicht
+     * Liefert zurück, ob das Konto gesperrt ist oder nicht
      * @return true, wenn das Konto gesperrt ist
      */
     public boolean isGesperrt() {
@@ -75,7 +75,7 @@ public abstract class Konto implements Comparable<Konto>
     }
 
     /**
-     * liefert den Kontoinhaber zurück
+     * Liefert den Kontoinhaber zurück
      * @return der Inhaber
      */
     public Kunde getInhaber() {
@@ -83,9 +83,9 @@ public abstract class Konto implements Comparable<Konto>
     }
 
     /**
-     * setzt den Kontoinhaber
+     * Setzt den Kontoinhaber
      * @param kinh neuer Kontoinhaber
-     * @throws GesperrtException wenn das Konto gesperrt ist
+     * @throws GesperrtException Wenn das Konto gesperrt ist
      * @throws IllegalArgumentException wenn kinh null ist
      */
     public void setInhaber(Kunde kinh) throws GesperrtException{
@@ -98,7 +98,7 @@ public abstract class Konto implements Comparable<Konto>
     }
 
     /**
-     * liefert den aktuellen Kontostand
+     * Liefert den aktuellen Kontostand
      * @return   Kontostand
      */
     public Geldbetrag getKontostand() {
@@ -106,8 +106,8 @@ public abstract class Konto implements Comparable<Konto>
     }
 
     /**
-     * setzt den aktuellen Kontostand
-     * @param kontostand neuer Kontostand, darf nicht null sein
+     * Setzt den aktuellen Kontostand
+     * @param kontostand Ein neuer Kontostand darf nicht null sein
      */
     protected void setKontostand(Geldbetrag kontostand) {
         if(kontostand != null)
@@ -115,8 +115,8 @@ public abstract class Konto implements Comparable<Konto>
     }
 
     /**
-     * liefert eine String-Ausgabe, wenn das Konto gesperrt ist
-     * @return "GESPERRT", wenn das Konto gesperrt ist, ansonsten ""
+     * Liefert eine String-Ausgabe, wenn das Konto gesperrt ist
+     * @return "GESPERRT", wenn das Konto gesperrt ist, ansonsten "".
      */
     public String getGesperrtText()
     {
@@ -127,7 +127,7 @@ public abstract class Konto implements Comparable<Konto>
     }
 
     /**
-     * liefert die ordentlich formatierte Kontonummer
+     * Liefert die ordentlich formatierte Kontonummer
      * @return auf 10 Stellen formatierte Kontonummer
      */
     public String getKontonummerFormatiert()
@@ -138,7 +138,7 @@ public abstract class Konto implements Comparable<Konto>
     /**
      * Deutsche IBAN aus der eigenen Kontonummer und der BLZ
      * @param blz höchstens 8-stellige Bankleitzahl
-     * @return deutsche IBAN, "", wenn blz zu groß oder negativ ist
+     * @return Deutsche IBAN, "", wenn blz zu groß oder negativ ist
      */
     public String getIban(long blz)
     {
@@ -159,7 +159,7 @@ public abstract class Konto implements Comparable<Konto>
     /**
      * Der Betrag wird in bar auf das Konto eingezahlt.
      * @param betrag double
-     * @throws IllegalArgumentException wenn der betrag negativ oder null ist
+     * @throws IllegalArgumentException Wenn der Betrag negativ oder null ist
      */
     public void einzahlen(Geldbetrag betrag) {
         if (betrag == null || betrag.isNegativ()) {
@@ -172,23 +172,23 @@ public abstract class Konto implements Comparable<Konto>
      * Mit dieser Methode wird der geforderte Betrag vom Konto in bar ausgezahlt, wenn es nicht gesperrt ist
      * und die speziellen Abheberegeln des jeweiligen Kontotyps die Abhebung erlauben
      * @param betrag abzuhebender Betrag
-     * @throws GesperrtException wenn das Konto gesperrt ist
-     * @throws IllegalArgumentException wenn der betrag negativ oder null ist
-     * @return true, wenn die Abhebung geklappt hat,
+     * @throws GesperrtException Wenn das Konto gesperrt ist
+     * @throws IllegalArgumentException Wenn der Betrag negativ oder null ist
+     * @return True, wenn die Abhebung geklappt hat,
      * 		   false, wenn sie abgelehnt wurde
      */
     public abstract boolean abheben(Geldbetrag betrag)
             throws GesperrtException;
 
     /**
-     * sperrt das Konto, Aktionen zum Schaden des Benutzers sind nicht mehr möglich.
+     * Sperrt das Konto, sind Aktionen zum Schaden des Benutzers nicht mehr möglich.
      */
     public void sperren() {
         this.gesperrt = true;
     }
 
     /**
-     * entsperrt das Konto, alle Kontoaktionen sind wieder möglich.
+     * Entsperrt das Konto, alle Kontoaktionen sind wieder möglich.
      */
     public void entsperren() {
         this.gesperrt = false;
@@ -216,7 +216,7 @@ public abstract class Konto implements Comparable<Konto>
      * Gibt das this-Konto auf der Konsole aus
      */
     public void ausgebenAufDerKonsole() {
-        System.out.println(this.toString());
+        System.out.println(this);
     }
 
 
@@ -224,21 +224,12 @@ public abstract class Konto implements Comparable<Konto>
      * Vergleich von this mit other; Zwei Konten gelten als gleich,
      * wen sie die gleiche Kontonummer haben
      * @param other das Vergleichskonto
-     * @return true, wenn beide Konten die gleiche Nummer haben
+     * @return True, wenn beide Konten die gleiche Nummer haben
      */
     @Override
     public boolean equals(Object other)
     {
-        if(this == other)
-            return true;
-        if(other == null)
-            return false;
-        if(this.getClass() != other.getClass())
-            return false;
-        if(this.nummer == ((Konto)other).nummer)
-            return true;
-        else
-            return false;
+        return this == other || this.nummer == ((Konto) other).nummer;
     }
 
     /**
@@ -251,7 +242,7 @@ public abstract class Konto implements Comparable<Konto>
     @Override
     public int hashCode()
     {
-        return 31 + (int) (this.nummer ^ (this.nummer >>> 32));
+        return 31 + Long.hashCode(this.nummer);
     }
 
     //************************ Übung 1********************************************
