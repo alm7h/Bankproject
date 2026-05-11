@@ -4,13 +4,13 @@ import bankprojekt.exceptions.GesperrtException;
 import bankprojekt.exceptions.UngueltigeKontonummerException;
 
 /**
- * ein Bank-Konto, das Absender und Ziel von Überweisungen
+ * Ein Bank-Konto, das Absender und Ziel von Überweisungen
  * sein kann.
  */
 public abstract class UeberweisungsfaehigesKonto extends Konto {
 
     /**
-     * setzt alle Eigenschaften des Kontos auf Standardwerte
+     * Setzt alle Eigenschaften des Kontos auf Standardwerte
      */
     public UeberweisungsfaehigesKonto()
     {
@@ -18,20 +18,20 @@ public abstract class UeberweisungsfaehigesKonto extends Konto {
     }
 
     /**
-     * Setzt die beiden Eigenschaften kontoinhaber und kontonummer auf die angegebenen Werte,
+     * Setzt die beiden Eigenschaften Kontoinhaber und Kontonummer auf die angegebenen Werte,
      * der anfängliche Kontostand wird auf 0 gesetzt.
      *
      * @param inhaber der Inhaber
      * @param kontonummer die gewünschte Kontonummer
-     * @throws IllegalArgumentException wenn der inhaber null ist
-     * @throws UngueltigeKontonummerException wenn kontonummer ungültig ist
+     * @throws NullPointerException Wenn der Inhaber null ist
+     * @throws UngueltigeKontonummerException Wenn Kontonummer ungültig ist
      */
     public UeberweisungsfaehigesKonto(Kunde inhaber, long kontonummer) {
         super(inhaber, kontonummer);
     }
 
     /**
-     * bucht den angegebenen Betrag von this als Überweisung ab, 
+     * Bucht den angegebenen Betrag von this als Überweisung ab,
      * falls es nicht gesperrt ist und alle kontospezifischen 
      * Regeln für die Überweisung eingehalten werden.
      * Am Empfängerkonto wird keine Änderung vorgenommen, da davon ausgegangen wird, dass dieses sich
@@ -51,7 +51,7 @@ public abstract class UeberweisungsfaehigesKonto extends Konto {
     public abstract boolean ueberweisungAbsenden(Geldbetrag betrag,
                                                  String empfaenger, long nachKontonr,
                                                  long nachBlz, String verwendungszweck)
-            throws GesperrtException;
+            throws GesperrtException, NullPointerException;
 
     /**
      * this empfängt den angegebenen betrag per Überweisung
