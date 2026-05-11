@@ -131,4 +131,14 @@ public class Bank {
         }
         return kundenSet;
     }
+
+
+    /**
+     * Löscht das Konto mit der Nummer.
+     * @param nummer Kontonummer.
+     * @return true, wenn gelöscht wurde.
+     */
+    public boolean kontoLoeschen(long nummer) {
+        return konten.remove(nummer) != null;
+    }
 }

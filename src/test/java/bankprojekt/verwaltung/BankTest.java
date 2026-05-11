@@ -281,7 +281,7 @@ class BankTest {
             // Drei Kunden: zwei mit gleichem Geburtstag
             Kunde clara = new Kunde("Clara", "Clever", "City 3", 1992, 3, 14); // 1992-03-14
             Kunde david = new Kunde("David", "Dorn", "Dorf 4", 1979, 7, 9);   // 1979-07-09 (ältester)
-            Kunde benno = new Kunde("Benno", "Bauer", "Bergweg 2", 1992, 3, 14); // gleiches Datum wie Clara, Name kommt vor Clara lexikographisch
+            Kunde benno = new Kunde("Benno", "Bauer", "Bergweg 2", 1992, 3, 14); // gleiches Datum wie Clara, Name kommt vor Clara lexikografisch
 
             // Konten anlegen (Reihenfolge absichtlich durcheinander)
             bank.sparbuchErstellen(david);
@@ -309,3 +309,58 @@ class BankTest {
             assertFalse(it.hasNext());
         }
     }
+
+
+@Nested
+class KontoLoeschenTests {
+    @Test
+    void kontoLoeschen_gibtFalse_wennNummerNichtExistiert() {
+        Bank bank = new Bank(10101010L);
+        // Noch keine Konten vorhanden
+        assertFalse(bank.kontoLoeschen(1L), "Nicht vorhandenes Konto darf nicht gelöscht werden");
+        assertTrue(bank.getKonten().isEmpty(), "Konten-Map bleibt leer");
+    }
+
+    @Test
+    void kontoLoeschen_loeschtExistierendesKonto_undGibtTrue() {
+        Bank bank = new Bank(20202020L);
+        long nr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        assertEquals(1L, nr);
+        assertEquals(1, bank.getKonten().size());
+
+        boolean geloescht = bank.kontoLoeschen(nr);
+        assertTrue(geloescht, "Löschen eines existierenden Kontos sollte true liefern");
+        assertFalse(bank.getKonten().containsKey(nr), "Gelöschte Kontonummer darf nicht mehr vorhanden sein");
+        assertEquals(0, bank.getKonten().size(), "Map sollte nach dem Löschen leer sein");
+    }
+
+    @Test
+    void kontoLoeschen_istIdempotent_zweiteLoeschungGibtFalse() {
+        Bank bank = new Bank(30303030L);
+        long nr = bank.sparbuchErstellen(new Kunde("Ina", "Igel", "Immenweg 9", 1993, 4, 3));
+        assertTrue(bank.kontoLoeschen(nr));
+        // erneuter Löschversuch derselben Nummer
+        assertFalse(bank.kontoLoeschen(nr), "Zweiter Löschversuch derselben Nummer muss false liefern");
+    }
+
+    @Test
+    void kontoLoeschen_beeinflusstKontonummernZaehlerNicht() {
+        Bank bank = new Bank(40404040L);
+        long nr1 = bank.girokontoErstellen(new Kunde("Paul", "Probst", "Parkweg 1", 1990, 1, 1));
+        long nr2 = bank.sparbuchErstellen(new Kunde("Quinn", "Quelle", "Quellenweg 2", 1991, 2, 2));
+        assertEquals(1L, nr1);
+        assertEquals(2L, nr2);
+
+        // Lösche das erste Konto
+        assertTrue(bank.kontoLoeschen(nr1));
+        assertFalse(bank.getKonten().containsKey(nr1));
+        assertEquals(1, bank.getKonten().size());
+
+        // Neues Konto bekommt die nächste freie Nummer (3), keine Wiederverwendung
+        long nr3 = bank.girokontoErstellen(new Kunde("Rita", "Reim", "Ring 3", 1992, 3, 3));
+        assertEquals(3L, nr3, "Nach dem Löschen dürfen Kontonummern nicht wiederverwendet werden");
+        assertTrue(bank.getKonten().containsKey(nr2));
+        assertTrue(bank.getKonten().containsKey(nr3));
+        assertEquals(2, bank.getKonten().size());
+    }
+}
