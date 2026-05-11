@@ -29,9 +29,7 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
     public Girokonto(Kunde inhaber, long kontonummer, Geldbetrag dispo)
     {
         super(inhaber, kontonummer);
-        if(dispo == null || dispo.isNegativ())
-            throw new IllegalArgumentException("Der Dispo ist nicht gültig!");
-        this.dispo = dispo;
+        setDispo(dispo);
     }
 
     /**
@@ -158,7 +156,6 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
         return ausgabe;
     }
 
-    // ************************* Übung 2 *************************
     /**
      * Wechselt die Währung des Kontos und rechnet den Kontostand sowie den Dispo um.
      * @param neu die neue Währung
@@ -167,7 +164,6 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
     public void waehrungswechsel(Waehrung neu) {
         // 1. Kontostand über die Basisklasse umrechnen
         super.waehrungswechsel(neu);
-
         // 2. Den Dispo speziell für das Girokonto umrechnen
         if (this.dispo != null) {
             this.dispo = this.dispo.umrechnen(neu);
