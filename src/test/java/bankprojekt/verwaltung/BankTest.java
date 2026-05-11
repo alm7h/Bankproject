@@ -364,3 +364,181 @@ class KontoLoeschenTests {
         assertEquals(2, bank.getKonten().size());
     }
 }
+
+
+class GetKontostandTests {
+    @Test
+    void getKontostand_gibtNull_wennKontoNichtExistiert() {
+        Bank bank = new Bank(51515151L);
+        assertNull(bank.getKontostand(999L), "Für unbekannte Kontonummern sollte null zurückgegeben werden");
+    }
+
+    @Test
+    void getKontostand_gibtNullEuro_fuerNeuAngelegtesKonto() {
+        Bank bank = new Bank(61616161L);
+        long nr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        Geldbetrag stand = bank.getKontostand(nr);
+        assertNotNull(stand, "Kontostand eines existierenden Kontos darf nicht null sein");
+        assertEquals(Geldbetrag.NULL_EURO, stand, "Neues Konto sollte 0,00 EUR Kontostand haben");
+    }
+
+    @Test
+    void getKontostand_spiegeltEinUndAuszahlungen() {
+        Bank bank = new Bank(71717171L);
+        long nr = bank.girokontoErstellen(new Kunde("Tom", "Tester", "Testweg 1", 1990, 1, 1));
+        Konto konto = bank.getKonten().get(nr);
+
+        // Einzahlung 10
+        konto.einzahlen(new Geldbetrag(10));
+        assertEquals(new Geldbetrag(10), bank.getKontostand(nr), "Nach Einzahlung sollten 10,00 EUR vorhanden sein");
+
+        // Auszahlung 3 (innerhalb Dispo und Kontostand)
+        try {
+            boolean abgehoben = konto.abheben(new Geldbetrag(3));
+            assertTrue(abgehoben, "Abheben von 3,00 EUR sollte erfolgreich sein");
+        } catch (bankprojekt.exceptions.GesperrtException e) {
+            fail("Konto sollte nicht gesperrt sein");
+        }
+        assertEquals(new Geldbetrag(7), bank.getKontostand(nr), "Nach Einzahlung 10 und Abhebung 3 sollten 7,00 EUR verbleiben");
+    }
+
+    @Test
+    void getKontostand_gibtNullNachLoeschen() {
+        Bank bank = new Bank(81818181L);
+        long nr = bank.girokontoErstellen(new Kunde("Lena", "Licht", "Laternenweg 2", 1992, 2, 2));
+        assertNotNull(bank.getKontostand(nr));
+
+        // Konto löschen -> danach sollte getKontostand null liefern
+        assertTrue(bank.kontoLoeschen(nr));
+        assertNull(bank.getKontostand(nr), "Nach dem Löschen sollte der Kontostand für die Nummer null sein");
+    }
+}
+
+
+class GeldAbhebenTests {
+    @Test
+    void geldAbheben_gibtFalse_wennKontoNichtExistiert() {
+        Bank bank = new Bank(91919191L);
+        try {
+            boolean erfolg = bank.geldAbheben(42L, new Geldbetrag(10));
+            assertFalse(erfolg, "Abheben bei unbekannter Kontonummer muss false liefern");
+        } catch (bankprojekt.exceptions.GesperrtException e) {
+            fail("Bei unbekannter Kontonummer darf keine GesperrtException auftreten");
+        }
+    }
+
+    @Test
+    void geldAbheben_ziehtBetragAb_beiGirokontoInnerhalbDispo() throws bankprojekt.exceptions.GesperrtException {
+        Bank bank = new Bank(92929292L);
+        long nr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        // Keine Einzahlung, aber Dispo 500 erlaubt Überziehung
+        boolean erfolg = bank.geldAbheben(nr, new Geldbetrag(100));
+        assertTrue(erfolg, "Abheben innerhalb des Dispos sollte erfolgreich sein");
+        assertEquals(new Geldbetrag(-100), bank.getKontostand(nr), "Kontostand sollte um 100,00 EUR sinken (Überziehung)");
+    }
+
+    @Test
+    void geldAbheben_gibtFalse_wennUeberDispo() throws bankprojekt.exceptions.GesperrtException {
+        Bank bank = new Bank(92929293L);
+        long nr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        boolean erfolg = bank.geldAbheben(nr, new Geldbetrag(600));
+        assertFalse(erfolg, "Abheben über Dispo-Grenze muss false liefern");
+        assertEquals(Geldbetrag.NULL_EURO, bank.getKontostand(nr), "Kontostand darf sich bei fehlgeschlagener Abhebung nicht ändern");
+    }
+
+    @Test
+    void geldAbheben_beachtetSparbuchRegeln_minimumUndMonatslimit() throws Exception {
+        Bank bank = new Bank(93939393L);
+        long nr = bank.sparbuchErstellen(new Kunde("Sara", "Spar", "Sparkassenweg 1", 1990, 1, 1));
+        Konto spar = bank.getKonten().get(nr);
+        // Anfangs 0,00: Abheben > 0 führt unter Minimum -> false
+        boolean erfolg1 = bank.geldAbheben(nr, new Geldbetrag(0.6));
+        assertFalse(erfolg1, "Sparbuch darf Minimum nicht unterschreiten");
+
+        // Guthaben aufbauen und nahe Minimum abheben
+        spar.einzahlen(new Geldbetrag(100));
+        boolean erfolg2 = bank.geldAbheben(nr, new Geldbetrag(99.6));
+        assertFalse(erfolg2, "Abhebung, die den Stand unter 0,50 EUR drücken würde, muss false liefern");
+        assertEquals(new Geldbetrag(100), bank.getKontostand(nr));
+
+        boolean erfolg3 = bank.geldAbheben(nr, new Geldbetrag(99.5));
+        assertTrue(erfolg3, "Abhebung bis genau auf das Minimum 0,50 EUR ist erlaubt");
+        assertEquals(new Geldbetrag(0.5), bank.getKontostand(nr));
+
+        // Monatslimit testen
+        spar.einzahlen(new Geldbetrag(5000));
+        boolean erfolg4 = bank.geldAbheben(nr, new Geldbetrag(1500));
+        assertTrue(erfolg4, "Erste Abhebung innerhalb 2000 EUR/Monat sollte klappen");
+        boolean erfolg5 = bank.geldAbheben(nr, new Geldbetrag(600));
+        assertFalse(erfolg5, "Überschreitung des 2000-EUR-Monatslimits muss false liefern");
+    }
+
+    @Test
+    void geldAbheben_wirftIllegalArgumentException_beiUngueltigemBetrag() {
+        Bank bank = new Bank(94949494L);
+        long nr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        // null
+        assertThrows(IllegalArgumentException.class, () -> bank.geldAbheben(nr, null));
+        // negativ
+        assertThrows(IllegalArgumentException.class, () -> bank.geldAbheben(nr, new Geldbetrag(-1)));
+    }
+
+    @Test
+    void geldAbheben_wirftGesperrtException_wennKontoGesperrt() {
+        Bank bank = new Bank(95959595L);
+        long nr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        Konto k = bank.getKonten().get(nr);
+        // Konto sperren
+        k.sperren();
+        assertThrows(bankprojekt.exceptions.GesperrtException.class,
+                () -> bank.geldAbheben(nr, new Geldbetrag(10)),
+                "Bei gesperrtem Konto muss eine GesperrtException geworfen werden");
+    }
+}
+
+
+
+class GeldEinzahlenTests {
+    @Test
+    void geldEinzahlen_hatKeineWirkung_wennKontoNichtExistiert() {
+        Bank bank = new Bank(60606060L);
+        // Kein Konto vorhanden, Einzahlung auf unbekannte Nummer darf nichts bewirken und keine Exception werfen
+        bank.geldEinzahlen(42L, new Geldbetrag(10));
+        assertTrue(bank.getKonten().isEmpty(), "Konten-Map bleibt leer, keine Seiteneffekte");
+    }
+
+    @Test
+    void geldEinzahlen_erhoehtKontostand_beiGirokonto() {
+        Bank bank = new Bank(70707070L);
+        long nr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        assertEquals(Geldbetrag.NULL_EURO, bank.getKontostand(nr));
+
+        bank.geldEinzahlen(nr, new Geldbetrag(10));
+        assertEquals(new Geldbetrag(10), bank.getKontostand(nr),
+                "Einzahlung sollte den Kontostand entsprechend erhöhen");
+
+        bank.geldEinzahlen(nr, new Geldbetrag(5.75));
+        assertEquals(new Geldbetrag(15.75), bank.getKontostand(nr),
+                "Mehrfache Einzahlungen addieren sich auf");
+    }
+
+    @Test
+    void geldEinzahlen_erhoehtKontostand_beiSparbuch() {
+        Bank bank = new Bank(80808080L);
+        long nr = bank.sparbuchErstellen(new Kunde("Susi", "Sparsam", "Sparallee 1", 1990, 1, 1));
+        assertEquals(Geldbetrag.NULL_EURO, bank.getKontostand(nr));
+
+        bank.geldEinzahlen(nr, new Geldbetrag(100));
+        assertEquals(new Geldbetrag(100), bank.getKontostand(nr));
+    }
+
+    @Test
+    void geldEinzahlen_wirftIllegalArgumentException_beiNullOderNegativ() {
+        Bank bank = new Bank(99990000L);
+        long nr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        // null-Betrag
+        assertThrows(IllegalArgumentException.class, () -> bank.geldEinzahlen(nr, null));
+        // negativer Betrag
+        assertThrows(IllegalArgumentException.class, () -> bank.geldEinzahlen(nr, new Geldbetrag(-0.01)));
+    }
+}

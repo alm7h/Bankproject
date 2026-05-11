@@ -5,6 +5,8 @@ import bankprojekt.basisdaten.Konto;
 import bankprojekt.basisdaten.Girokonto;
 import bankprojekt.basisdaten.Sparbuch;
 import bankprojekt.basisdaten.Geldbetrag;
+import bankprojekt.exceptions.GesperrtException;
+
 /**
  * Verwaltet Konten und Kunden einer Bank unter Verwendung von Java Collections.
  */
@@ -140,5 +142,54 @@ public class Bank {
      */
     public boolean kontoLoeschen(long nummer) {
         return konten.remove(nummer) != null;
+    }
+
+    /**
+     * Liefert den aktuellen Kontostand.
+     * @param nummer Kontonummer.
+     * @return Der Kontostand oder null, falls das Konto nicht existiert.
+     */
+    public Geldbetrag getKontostand(long nummer) {
+        Konto k = konten.get(nummer);
+        if (k != null) {
+            return k.getKontostand();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Hebt einen bestimmten Geldbetrag von dem Konto mit der angegebenen Kontonummer ab,
+     * sofern das Konto existiert und die Abhebung möglich ist.
+     *
+     * @param von Die Kontonummer, von der der Betrag abgehoben werden soll.
+     * @param betrag Der Geldbetrag, der abgehoben werden soll.
+     * @return true, wenn die Abhebung erfolgreich war, false, wenn die Kontonummer
+     *         nicht existiert oder die Abhebung nicht ausgeführt werden konnte.
+     */
+    public boolean geldAbheben(long von, Geldbetrag betrag) throws GesperrtException {
+        Konto k = konten.get(von);
+        if (k != null) {
+            return k.abheben(betrag);
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Zahlt einen bestimmten Geldbetrag auf ein Konto ein, falls das Konto existiert.
+     *
+     * @param auf   Die Kontonummer des Kontos, auf das der Betrag eingezahlt werden soll.
+     * @param betrag Der einzuzahlende Geldbetrag.
+     */
+    public void geldEinzahlen(long auf, Geldbetrag betrag) {
+
+        Konto k = konten.get(auf);
+
+        if (k != null) {
+            k.einzahlen(betrag);
+        } else {
+            return;
+        }
     }
 }
