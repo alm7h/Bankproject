@@ -37,17 +37,16 @@ public abstract class Konto implements Comparable<Konto>
      *
      * @param inhaber der Inhaber
      * @param kontonummer die gewünschte Kontonummer
-     * @throws IllegalArgumentException Wenn der Inhaber null ist
+     * @throws NullPointerException Wenn der Inhaber null ist
      * @throws UngueltigeKontonummerException Wenn Kontonummer ungültig ist
      */
-    public Konto(Kunde inhaber, long kontonummer) {
+    public Konto(Kunde inhaber, long kontonummer) throws UngueltigeKontonummerException, NullPointerException {
         if(inhaber == null)
-            throw new IllegalArgumentException("Inhaber darf nicht null sein!");
+            throw new NullPointerException("Inhaber darf nicht null sein!");
         if(kontonummer < 0 || kontonummer > 9_999_999_999L)
             throw new UngueltigeKontonummerException();
         this.inhaber = inhaber;
         this.nummer = kontonummer;
-        //this.kontostand =
         this.gesperrt = false;
     }
 
@@ -86,11 +85,11 @@ public abstract class Konto implements Comparable<Konto>
      * Setzt den Kontoinhaber
      * @param kinh neuer Kontoinhaber
      * @throws GesperrtException Wenn das Konto gesperrt ist
-     * @throws IllegalArgumentException wenn kinh null ist
+     * @throws NullPointerException wenn kinh null ist
      */
-    public void setInhaber(Kunde kinh) throws GesperrtException{
+    public void setInhaber(Kunde kinh) throws GesperrtException, NullPointerException {
         if (kinh == null)
-            throw new IllegalArgumentException("Der Inhaber darf nicht null sein!");
+            throw new NullPointerException("Der Inhaber darf nicht null sein!");
         if(this.isGesperrt())
             throw new GesperrtException(this.nummer);
         this.inhaber = kinh;
@@ -150,9 +149,8 @@ public abstract class Konto implements Comparable<Konto>
         BigInteger alsZahl = new BigInteger(zusammen);
         BigInteger rest = alsZahl.remainder(new BigInteger("97"));
         int pruefziffern = 98 - rest.intValue();
-        String iban = String.format("DE%02d%08d%010d",
+        return String.format("DE%02d%08d%010d",
                 pruefziffern, blz, this.nummer);
-        return iban;
     }
 
 
@@ -194,22 +192,13 @@ public abstract class Konto implements Comparable<Konto>
         this.gesperrt = false;
     }
 
-    /**
-     * Returns a string representation of the account. The string includes the formatted account number,
-     * the account's locked status, the account holder's information, and the current account balance.
-     *
-     * @return a string containing details about the account, including account number, locked status, account holder, and current balance
-     */
-
     @Override
     public String toString() {
-        String ausgabe;
-        ausgabe = "Kontonummer: " + this.getKontonummerFormatiert()
+        return "Kontonummer: " + this.getKontonummerFormatiert()
                 + " " + this.getGesperrtText()
-                + System.lineSeparator();
-        ausgabe += "Inhaber: " + this.inhaber + System.lineSeparator();
-        ausgabe += "Aktueller Kontostand: " + getKontostand() + " ";
-        return ausgabe;
+                + System.lineSeparator()
+                + "Inhaber: " + this.inhaber + System.lineSeparator()
+                + "Aktueller Kontostand: " + getKontostand() + " ";
     }
 
     /**
@@ -223,13 +212,19 @@ public abstract class Konto implements Comparable<Konto>
     /**
      * Vergleich von this mit other; Zwei Konten gelten als gleich,
      * wen sie die gleiche Kontonummer haben
+     *
      * @param other das Vergleichskonto
      * @return True, wenn beide Konten die gleiche Nummer haben
      */
     @Override
-    public boolean equals(Object other)
-    {
-        return this == other || this.nummer == ((Konto) other).nummer;
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof Konto otherKonto)) {
+            return false;
+        }
+        return this.nummer == otherKonto.nummer;
     }
 
     /**
@@ -245,7 +240,6 @@ public abstract class Konto implements Comparable<Konto>
         return 31 + Long.hashCode(this.nummer);
     }
 
-    //************************ Übung 1********************************************
 
     /**
      * Compares this Konto object with another Konto object for order. The comparison
@@ -261,15 +255,14 @@ public abstract class Konto implements Comparable<Konto>
         return Long.compare(this.nummer, other.nummer);
     }
 
-    //************************ Übung 2********************************************
     /**
      * Wechselt die Währung des Kontos und rechnet den Kontostand um
      * @param neu die neue Währung
      */
-    public void waehrungswechsel(Waehrung neu) {
-        if (neu == null) throw new IllegalArgumentException();
-
-        // Kontostand umrechnen
+    public void waehrungswechsel(Waehrung neu) throws NullPointerException {
+        if (neu == null) {
+            throw new NullPointerException("Die neue Währung darf nicht null");
+        }
         this.kontostand = this.kontostand.umrechnen(neu);
     }
 }
