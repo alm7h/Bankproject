@@ -170,3 +170,43 @@ class BankTest {
         }
     }
 }
+
+    @Nested
+    class AlleKontenAusgabeTests {
+        @Test
+        void getAlleKonten_gibtLeerenStringWennKeineKonten() {
+            Bank bank = new Bank(12312312L);
+            String ausgabe = bank.getAlleKonten();
+            assertEquals("", ausgabe, "Ohne Konten soll ein leerer String zurückgegeben werden");
+        }
+
+        @Test
+        void getAlleKonten_listetSaemtlicheKonten_mitNummerUndKontostand_jeZeile() {
+            Bank bank = new Bank(11112222L);
+            long nr1 = bank.girokontoErstellen(Kunde.MUSTERMANN);
+            long nr2 = bank.sparbuchErstellen(new Kunde("Eva","Erd","Eichenweg 5",1991,1,2));
+
+            Map<Long, Konto> konten = bank.getKonten();
+            Konto k1 = konten.get(nr1);
+            Konto k2 = konten.get(nr2);
+
+            k1.einzahlen(new Geldbetrag(10));
+            k2.einzahlen(new Geldbetrag(20));
+
+            String expected1 = nr1 + ": " + k1.getKontostand().toString();
+            String expected2 = nr2 + ": " + k2.getKontostand().toString();
+
+            String ausgabe = bank.getAlleKonten();
+            String[] lines = ausgabe.split("\\n");
+            // Leere Zeilen (z. B. durch abschließenden Zeilenumbruch) entfernen
+            java.util.List<String> nichtLeereZeilen = new java.util.ArrayList<>();
+            for (String line : lines) {
+                if (!line.isEmpty()) nichtLeereZeilen.add(line);
+            }
+
+            assertEquals(2, nichtLeereZeilen.size(), "Es sollten genau zwei Zeilen ausgegeben werden");
+            java.util.Set<String> zeilenSet = new java.util.HashSet<>(nichtLeereZeilen);
+            assertTrue(zeilenSet.contains(expected1), "Zeile für Konto 1 fehlt oder ist falsch");
+            assertTrue(zeilenSet.contains(expected2), "Zeile für Konto 2 fehlt oder ist falsch");
+        }
+    }

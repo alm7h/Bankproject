@@ -77,4 +77,19 @@ public class Bank {
         konten.put(nummer, neu);
         return nummer;
     }
+
+    /**
+     * Listet alle Kontonummern und Kontostände auf.
+     * @return Ein String mit einer Zeile pro Konto.
+     */
+    public String getAlleKonten() {
+        StringBuilder sb = new StringBuilder();
+        for (Konto k : konten.values()) {
+            sb.append(k.getKontonummer())
+                    .append(": ")
+                    .append(k.getKontostand())
+                    .append("\n");
+        }
+        return sb.toString();
+    }
 }
