@@ -619,3 +619,53 @@ class GeldUeberweisenTests {
         assertEquals(Geldbetrag.NULL_EURO, bank.getKontostand(empfaengerNr));
     }
 }
+
+
+class GesamtkontostaendeTests {
+    @Test
+    void getGesamtkontostaende_gibtLeereMapWennKeineKonten() {
+        Bank bank = new Bank(12120000L);
+        Map<Kunde, Geldbetrag> map = bank.getGesamtkontostaende();
+        assertNotNull(map, "Zurueckgegebene Map darf nicht null sein");
+        assertTrue(map.isEmpty(), "Ohne Konten soll eine leere Map geliefert werden");
+    }
+
+    @Test
+    void getGesamtkontostaende_fasstKontostaendeProKundeZusammen_inklusiveNegativerStaende() throws Exception {
+        Bank bank = new Bank(12120001L);
+        Kunde alice = new Kunde("Alice", "Anders", "Allee 1", 1990, 1, 1);
+        Kunde bob = new Kunde("Bob", "Bauer", "Berg 2", 1991, 2, 2);
+
+        long aGiro = bank.girokontoErstellen(alice);
+        long aSpar = bank.sparbuchErstellen(alice);
+        long bSpar = bank.sparbuchErstellen(bob);
+
+        // Alice: Giro -20,00 EUR (50 einzahlen, 70 abheben); Spar +50,00 EUR => Summe 30,00 EUR
+        bank.geldEinzahlen(aGiro, new Geldbetrag(50));
+        assertTrue(bank.geldAbheben(aGiro, new Geldbetrag(70)), "Abheben innerhalb Dispo sollte klappen");
+        bank.geldEinzahlen(aSpar, new Geldbetrag(50));
+
+        // Bob: Spar +5,00 EUR
+        bank.geldEinzahlen(bSpar, new Geldbetrag(5));
+
+        Map<Kunde, Geldbetrag> map = bank.getGesamtkontostaende();
+        assertEquals(2, map.size(), "Map sollte zwei Kunden enthalten");
+        assertEquals(new Geldbetrag(30), map.get(alice), "Alice sollte insgesamt 30,00 EUR haben");
+        assertEquals(new Geldbetrag(5), map.get(bob), "Bob sollte insgesamt 5,00 EUR haben");
+    }
+
+    @Test
+    void getGesamtkontostaende_enthaeltJedenKundenGenauEinmal() {
+        Bank bank = new Bank(12120002L);
+        Kunde clara = new Kunde("Clara", "Clever", "City 3", 1992, 3, 14);
+        long c1 = bank.girokontoErstellen(clara);
+        long c2 = bank.sparbuchErstellen(clara);
+        bank.geldEinzahlen(c1, new Geldbetrag(10));
+        bank.geldEinzahlen(c2, new Geldbetrag(15));
+
+        Map<Kunde, Geldbetrag> map = bank.getGesamtkontostaende();
+        assertEquals(1, map.size(), "Clara sollte nur einmal als Schluessel erscheinen");
+        assertTrue(map.containsKey(clara));
+        assertEquals(new Geldbetrag(25), map.get(clara));
+    }
+}

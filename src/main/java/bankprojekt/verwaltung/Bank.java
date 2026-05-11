@@ -262,4 +262,32 @@ public class Bank {
         }
     }
 
+
+    /**
+     * Berechnet die Gesamtkontostände aller Kunden der Bank. Dabei werden die Kontostände
+     * aller Konten eines Kunden summiert. Falls ein Konto einen negativen Kontostand aufweist,
+     * wird dessen absoluter Betrag von der Gesamtsumme subtrahiert.
+     *
+     * @return Eine Map, die jeweils einen Kunden (Kunde) als Schlüssel und
+     *         dessen Gesamtkontostand (Geldbetrag) als Wert enthält.
+     */
+    public Map<Kunde, Geldbetrag> getGesamtkontostaende() {
+        Map<Kunde, Geldbetrag> result = new HashMap<>();
+        for (Konto konto : konten.values()) {
+            Kunde kunde = konto.getInhaber();
+            Geldbetrag stand = konto.getKontostand();
+
+            Geldbetrag summe = result.getOrDefault(kunde, Geldbetrag.NULL_EURO);
+            Geldbetrag neu;
+            if (stand.isNegativ()) {
+                // Negative Staende als Subtraktion des absoluten Betrags behandeln
+                Geldbetrag betragAbsolut = new Geldbetrag(Math.abs(stand.getBetrag()), stand.getWaehrung());
+                neu = summe.minus(betragAbsolut);
+            } else {
+                neu = summe.plus(stand);
+            }
+            result.put(kunde, neu);
+        }
+        return result;
+    }
 }
