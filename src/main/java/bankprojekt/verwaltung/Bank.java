@@ -5,6 +5,7 @@ import bankprojekt.basisdaten.Konto;
 import bankprojekt.basisdaten.Girokonto;
 import bankprojekt.basisdaten.Sparbuch;
 import bankprojekt.basisdaten.Geldbetrag;
+import bankprojekt.basisdaten.UeberweisungsfaehigesKonto;
 import bankprojekt.exceptions.GesperrtException;
 
 /**
@@ -188,8 +189,77 @@ public class Bank {
 
         if (k != null) {
             k.einzahlen(betrag);
-        } else {
-            return;
         }
     }
+
+
+    /**
+     * Führt eine Überweisung eines Geldbetrags von einem Konto zu einem anderen durch,
+     * sofern beide Konten existieren und die Transaktion möglich ist.
+     *
+     * @param vonKontonr Die Kontonummer des sendenden Kontos.
+     * @param nachKontonr Die Kontonummer des empfangenden Kontos.
+     * @param betrag Der zu überweisende Geldbetrag. Muss positiv und nicht null sein.
+     * @param verwendungszweck Der Verwendungszweck der Überweisung. Darf nicht null sein.
+     * @return true, wenn die Überweisung erfolgreich war, false, wenn sie aufgrund
+     *         von Bedingungen (z.B. fehlende Konten, nicht transferfähige Konten)
+     *         nicht durchgeführt werden konnte.
+     * @throws GesperrtException Wenn das sendende Konto gesperrt ist.
+     * @throws IllegalArgumentException Wenn einer der Parameter ungültig ist,
+     *         z.B. bei identischen Kontonummern, einem negativen Betrag oder
+     *         einem null-Wert für verpflichtende Parameter.
+     */
+    public boolean geldUeberweisen(long vonKontonr, long nachKontonr, Geldbetrag betrag, String verwendungszweck)
+            throws GesperrtException, IllegalArgumentException {
+        // Grundvalidierungen (werfen bewusst IllegalArgumentException bei ungueltigen Eingaben)
+        if (vonKontonr == nachKontonr) {
+            throw new IllegalArgumentException("Quell- und Zielkontonummer duerfen nicht identisch sein");
+        }
+        if (betrag == null || betrag.isNegativ() || betrag.equals(Geldbetrag.NULL_EURO)) {
+            throw new IllegalArgumentException("Betrag muss positiv sein und darf nicht null sein");
+        }
+        if (verwendungszweck == null) {
+            throw new IllegalArgumentException("Verwendungszweck darf nicht null sein");
+        }
+
+        Konto von = konten.get(vonKontonr);
+        Konto nach = konten.get(nachKontonr);
+        if (von == null || nach == null) {
+            // Eine der Kontonummern ist unbekannt -> keine Ueberweisung
+            return false;
+        }
+        if (!(von instanceof UeberweisungsfaehigesKonto) || !(nach instanceof UeberweisungsfaehigesKonto)) {
+            // Mindestens eines der Konten ist nicht ueberweisungsfaehig
+            return false;
+        }
+
+        UeberweisungsfaehigesKonto sender = (UeberweisungsfaehigesKonto) von;
+        UeberweisungsfaehigesKonto empfaenger = (UeberweisungsfaehigesKonto) nach;
+
+        String empfaengerName = empfaenger.getInhaber().getName();
+        String senderName = sender.getInhaber().getName();
+
+        // 1) Beim Sender abbuchen (kann GesperrtException werfen oder false liefern)
+        boolean abgebucht = sender.ueberweisungAbsenden(betrag, empfaengerName, nachKontonr, this.bankleitzahl, verwendungszweck);
+        if (!abgebucht) {
+            return false;
+        }
+
+        // 2) Beim Empfaenger gutschreiben. Sollte hier (unerwartet) etwas schiefgehen,
+        //    wird eine Rollback-Einzahlung auf dem Sender versucht, damit kein Geld verschwindet.
+        try {
+            empfaenger.ueberweisungEmpfangen(betrag, senderName, vonKontonr, this.bankleitzahl, verwendungszweck);
+            return true;
+        } catch (RuntimeException e) {
+            // Rollback: Gutschrift fehlgeschlagen -> Betrag dem Sender wieder gutschreiben
+            try {
+                sender.einzahlen(betrag);
+            } catch (RuntimeException rollbackFehler) {
+                // Sollte praktisch nicht auftreten (Einzahlung validiert nur Betrag != null/negativ),
+                // aber falls doch, bleibt als Schutz zumindest ein definierter Rueckgabewert.
+            }
+            return false;
+        }
+    }
+
 }

@@ -542,3 +542,80 @@ class GeldEinzahlenTests {
         assertThrows(IllegalArgumentException.class, () -> bank.geldEinzahlen(nr, new Geldbetrag(-0.01)));
     }
 }
+
+
+class GeldUeberweisenTests {
+    @Test
+    void geldUeberweisen_transferiertZwischenZweiGirokonten() throws bankprojekt.exceptions.GesperrtException {
+        Bank bank = new Bank(11110000L);
+        long senderNr = bank.girokontoErstellen(new Kunde("Alice", "Anders", "Allee 1", 1990, 1, 1));
+        long empfaengerNr = bank.girokontoErstellen(new Kunde("Bob", "Bauer", "Berg 2", 1991, 2, 2));
+        // Startguthaben beim Sender aufbauen
+        bank.geldEinzahlen(senderNr, new Geldbetrag(50));
+
+        boolean ok = bank.geldUeberweisen(senderNr, empfaengerNr, new Geldbetrag(20), "Miete");
+        assertTrue(ok, "Ueberweisung sollte erfolgreich sein");
+        assertEquals(new Geldbetrag(30), bank.getKontostand(senderNr));
+        assertEquals(new Geldbetrag(20), bank.getKontostand(empfaengerNr));
+    }
+
+    @Test
+    void geldUeberweisen_gibtFalse_wennSenderOderEmpfaengerNichtExistiert() throws Exception {
+        Bank bank = new Bank(11110001L);
+        long senderNr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        bank.geldEinzahlen(senderNr, new Geldbetrag(10));
+        assertFalse(bank.geldUeberweisen(senderNr, 999L, new Geldbetrag(5), "Test"));
+        assertFalse(bank.geldUeberweisen(999L, senderNr, new Geldbetrag(5), "Test"));
+        assertEquals(new Geldbetrag(10), bank.getKontostand(senderNr), "Kontostand darf sich nicht aendern");
+    }
+
+    @Test
+    void geldUeberweisen_gibtFalse_wennNichtUeberweisungsfaehig() throws Exception {
+        Bank bank = new Bank(11110002L);
+        long sparNr = bank.sparbuchErstellen(new Kunde("Susi", "Sparsam", "Str 1", 1992, 3, 3));
+        long giroNr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        bank.geldEinzahlen(giroNr, new Geldbetrag(10));
+        assertFalse(bank.geldUeberweisen(sparNr, giroNr, new Geldbetrag(5), "Test"));
+        assertFalse(bank.geldUeberweisen(giroNr, sparNr, new Geldbetrag(5), "Test"));
+        assertEquals(new Geldbetrag(10), bank.getKontostand(giroNr));
+        assertEquals(Geldbetrag.NULL_EURO, bank.getKontostand(sparNr));
+    }
+
+    @Test
+    void geldUeberweisen_wirftGesperrtException_wennSenderGesperrt() {
+        Bank bank = new Bank(11110003L);
+        long senderNr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        long empfaengerNr = bank.girokontoErstellen(new Kunde("Eva", "Empf", "Ecke 5", 1993, 4, 4));
+        // Sperren des Senderkontos
+        bank.getKonten().get(senderNr).sperren();
+        assertThrows(bankprojekt.exceptions.GesperrtException.class,
+                () -> bank.geldUeberweisen(senderNr, empfaengerNr, new Geldbetrag(1), "Test"));
+    }
+
+    @Test
+    void geldUeberweisen_wirftIllegalArgumentException_beiUngueltigenParametern() {
+        Bank bank = new Bank(11110004L);
+        long a = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        long b = bank.girokontoErstellen(new Kunde("Ina", "Igel", "Im Weg", 1994, 5, 5));
+        // null Betrag
+        assertThrows(IllegalArgumentException.class, () -> bank.geldUeberweisen(a, b, null, "x"));
+        // negativer Betrag
+        assertThrows(IllegalArgumentException.class, () -> bank.geldUeberweisen(a, b, new Geldbetrag(-1), "x"));
+        // null Verwendungszweck
+        assertThrows(IllegalArgumentException.class, () -> bank.geldUeberweisen(a, b, new Geldbetrag(1), null));
+        // gleiche Kontonummern
+        assertThrows(IllegalArgumentException.class, () -> bank.geldUeberweisen(a, a, new Geldbetrag(1), "x"));
+    }
+
+    @Test
+    void geldUeberweisen_gibtFalse_wennDeckungNichtAusreicht() throws Exception {
+        Bank bank = new Bank(11110005L);
+        long senderNr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        long empfaengerNr = bank.girokontoErstellen(new Kunde("Tom", "Top", "Tor 7", 1995, 6, 6));
+        // Ohne Guthaben: max Dispo 500
+        boolean ok1 = bank.geldUeberweisen(senderNr, empfaengerNr, new Geldbetrag(600), "Test");
+        assertFalse(ok1);
+        assertEquals(Geldbetrag.NULL_EURO, bank.getKontostand(senderNr));
+        assertEquals(Geldbetrag.NULL_EURO, bank.getKontostand(empfaengerNr));
+    }
+}
