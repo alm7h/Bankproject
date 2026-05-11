@@ -54,12 +54,27 @@ public class Bank {
     /**
      * Erstellt ein Girokonto für den Kunden mit einer neuen Nummer.
      * @param inhaber Der Kontoinhaber.
+     * @throws NullPointerException Falls der inhaber null ist.
      * @return Die neu vergebene Kontonummer.
      */
-    public long girokontoErstellen(Kunde inhaber) {
+    public long girokontoErstellen(Kunde inhaber) throws NullPointerException {
+        if(inhaber == null) throw new NullPointerException("Kunde ist null");
         long kontonummer = naechsteFreieKontonummer++;
         Girokonto konto = new Girokonto(inhaber, kontonummer, dispo_default);
         konten.put(kontonummer, konto);
         return kontonummer;
+    }
+    /**
+     * Erstellt ein Sparbuch für den Kunden mit einer neuen Nummer.
+     * @param inhaber Der Kontoinhaber.
+     * @throws NullPointerException Falls der inhaber null ist.
+     * @return Die neu vergebene Kontonummer.
+     */
+    public long sparbuchErstellen(Kunde inhaber) throws NullPointerException {
+        if(inhaber == null) throw new NullPointerException("Kunde ist null");
+        long nummer = naechsteFreieKontonummer++;
+        Sparbuch neu = new Sparbuch(inhaber, nummer);
+        konten.put(nummer, neu);
+        return nummer;
     }
 }

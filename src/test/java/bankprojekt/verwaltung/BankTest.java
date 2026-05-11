@@ -4,6 +4,7 @@ import bankprojekt.basisdaten.Geldbetrag;
 import bankprojekt.basisdaten.Girokonto;
 import bankprojekt.basisdaten.Konto;
 import bankprojekt.basisdaten.Kunde;
+import bankprojekt.basisdaten.Sparbuch;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -62,7 +63,10 @@ class BankTest {
             assertTrue(konten.containsKey(nr1), "Map sollte die vergebene Kontonummer als Schlüssel enthalten");
             assertInstanceOf(Girokonto.class, konten.get(nr1), "Gespeichertes Konto sollte ein Girokonto sein");
         }
+    }
 
+    @Nested
+    class GirokontoErstellenTests {
         @Test
         void girokontoErstellen_vergibtFortlaufendeNummern_undSpeichertKontoKorrekt() {
             Bank bank = new Bank(98765432L);
@@ -95,6 +99,74 @@ class BankTest {
             assertEquals(k2, konto2.getInhaber());
             assertInstanceOf(Girokonto.class, konto2);
             assertEquals(bank.dispo_default, ((Girokonto) konto2).getDispo());
+        }
+
+        @Test
+        void girokontoErstellen_wirftNullPointerException_wennInhaberNull_undZaehlerBleibtUnveraendert() {
+            Bank bank = new Bank(55555555L);
+
+            // Act & Assert: Null-Inhaber -> NullPointerException
+            assertThrows(NullPointerException.class, () -> bank.girokontoErstellen(null),
+                    "Null-Inhaber sollte NullPointerException werfen");
+
+            // Es darf kein Konto angelegt worden sein
+            assertTrue(bank.getKonten().isEmpty(),
+                    "Nach fehlgeschlagener Kontoanlage sollte die Konten-Map leer bleiben");
+
+            // Nach dem Fehlversuch muss die erste gültige Kontonummer weiterhin 1 sein
+            long nr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+            assertEquals(1L, nr,
+                    "Die erste vergebene Kontonummer sollte nach Fehlversuch weiterhin 1 sein");
+            assertEquals(1, bank.getKonten().size(), "Es sollte genau ein Konto existieren");
+        }
+    }
+
+    @Nested
+    class SparbuchErstellenTests {
+        @Test
+        void sparbuchErstellen_vergibtFortlaufendeNummern_undSpeichertKontoKorrekt() {
+            Bank bank = new Bank(24681357L);
+            Kunde k1 = new Kunde("Clara", "Clever", "City 3", 1992, 3, 14);
+            Kunde k2 = new Kunde("David", "Dorn", "Dorf 4", 1979, 7, 9);
+
+            long nr1 = bank.sparbuchErstellen(k1);
+            long nr2 = bank.sparbuchErstellen(k2);
+
+            assertEquals(1L, nr1, "Erste Kontonummer sollte 1 sein");
+            assertEquals(2L, nr2, "Zweite Kontonummer sollte 2 sein");
+            assertNotEquals(nr1, nr2, "Kontonummern müssen eindeutig sein");
+
+            Map<Long, Konto> konten = bank.getKonten();
+            assertEquals(2, konten.size(), "Es sollten zwei Konten gespeichert sein");
+
+            Konto konto1 = konten.get(nr1);
+            assertNotNull(konto1);
+            assertEquals(nr1, konto1.getKontonummer());
+            assertEquals(k1, konto1.getInhaber());
+            assertInstanceOf(Sparbuch.class, konto1, "Gespeichertes Konto sollte ein Sparbuch sein");
+
+            Konto konto2 = konten.get(nr2);
+            assertNotNull(konto2);
+            assertEquals(nr2, konto2.getKontonummer());
+            assertEquals(k2, konto2.getInhaber());
+            assertInstanceOf(Sparbuch.class, konto2);
+        }
+
+        @Test
+        void sparbuchErstellen_wirftNullPointerException_wennInhaberNull_undZaehlerBleibtUnveraendert() {
+            Bank bank = new Bank(44444444L);
+
+            assertThrows(NullPointerException.class, () -> bank.sparbuchErstellen(null),
+                    "Null-Inhaber sollte NullPointerException werfen");
+
+            assertTrue(bank.getKonten().isEmpty(),
+                    "Nach fehlgeschlagener Kontoanlage sollte die Konten-Map leer bleiben");
+
+            long nr = bank.sparbuchErstellen(Kunde.MUSTERMANN);
+            assertEquals(1L, nr,
+                    "Die erste vergebene Kontonummer sollte nach Fehlversuch weiterhin 1 sein");
+            assertEquals(1, bank.getKonten().size(), "Es sollte genau ein Konto existieren");
+            assertInstanceOf(Sparbuch.class, bank.getKonten().get(nr));
         }
     }
 }
