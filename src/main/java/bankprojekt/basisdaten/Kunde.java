@@ -64,7 +64,7 @@ public class Kunde implements Comparable<Kunde>{
      * @throws NullPointerException wenn einer der Parameter null ist
      */
     public Kunde(String vorname, String nachname,
-                 String adresse, LocalDate geburtstag) throws IllegalArgumentException {
+                 String adresse, LocalDate geburtstag) throws NullPointerException {
         setVorname(vorname);
         setNachname(nachname);
         setAdresse(adresse);
