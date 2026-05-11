@@ -210,3 +210,44 @@ class BankTest {
             assertTrue(zeilenSet.contains(expected2), "Zeile für Konto 2 fehlt oder ist falsch");
         }
     }
+
+    @Nested
+    class AlleKontonummernTests {
+        @Test
+        void getAlleKontonummern_gibtLeeresSetWennKeineKonten() {
+            Bank bank = new Bank(33334444L);
+            java.util.Set<Long> nummern = bank.getAlleKontonummern();
+            assertNotNull(nummern, "Das zurückgegebene Set darf nicht null sein");
+            assertTrue(nummern.isEmpty(), "Ohne Konten soll ein leeres Set zurückgegeben werden");
+        }
+
+        @Test
+        void getAlleKontonummern_enthaeltSaemtlicheVergebenenNummern_ohneDuplikate() {
+            Bank bank = new Bank(22221111L);
+            long nr1 = bank.girokontoErstellen(Kunde.MUSTERMANN);
+            long nr2 = bank.sparbuchErstellen(new Kunde("Fritz","Flink","Forstweg 7",1990,2,3));
+
+            java.util.Set<Long> nummern = bank.getAlleKontonummern();
+
+            assertEquals(2, nummern.size(), "Es sollten genau zwei verschiedene Kontonummern enthalten sein");
+            assertTrue(nummern.contains(nr1), "Set sollte Kontonummer des Girokontos enthalten");
+            assertTrue(nummern.contains(nr2), "Set sollte Kontonummer des Sparbuchs enthalten");
+        }
+
+        @Test
+        void getAlleKontonummern_liefertDefensiveKopie_DieBankBleibtUnveraendert() {
+            Bank bank = new Bank(90909090L);
+            long nr1 = bank.girokontoErstellen(Kunde.MUSTERMANN);
+
+            java.util.Set<Long> nummern = bank.getAlleKontonummern();
+            // Manipuliere das zurückgegebene Set
+            nummern.clear();
+            nummern.add(999L);
+
+            // Hole frische Sicht aus der Bank und prüfe, dass sie unverändert ist
+            java.util.Set<Long> nummernNeu = bank.getAlleKontonummern();
+            assertEquals(1, nummernNeu.size(), "Die Bank-internen Kontonummern dürfen von externen Änderungen unberührt bleiben");
+            assertTrue(nummernNeu.contains(nr1), "Die echte Kontonummer sollte weiterhin enthalten sein");
+            assertFalse(nummernNeu.contains(999L), "Fremde Nummern dürfen nicht auftauchen");
+        }
+    }

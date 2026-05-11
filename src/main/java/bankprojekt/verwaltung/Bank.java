@@ -92,4 +92,14 @@ public class Bank {
         }
         return sb.toString();
     }
+
+    /**
+     * Liefert ein Set aller gültigen Kontonummern[cite: 20, 21].
+     *
+     * @return Menge der Kontonummern.
+     */
+    public Set<Long> getAlleKontonummern() {
+        Set<Long> kontonummern = konten.keySet();
+        return new HashSet<>(kontonummern);
+    }
 }
