@@ -17,7 +17,7 @@ public class Kunde implements Comparable<Kunde>{
     /**
      * Ein Musterkunde
      */
-    public static final Kunde MUSTERMANN = new Kunde("Max", "Mustermann", "zuhause", LocalDate.now());
+    public static final Kunde MUSTERMANN = new Kunde();
 
     /**
      * englische oder deutsche Anrede, je nach den Systemeinstellungen
@@ -61,17 +61,15 @@ public class Kunde implements Comparable<Kunde>{
      * @param vorname Vorname
      * @param nachname Nachname
      * @param adresse Adresse
-     * @param gebdat Geburtstag
+     * @param geburtstag Geburtstag
      * @throws IllegalArgumentException wenn einer der Parameter null ist
      */
     public Kunde(String vorname, String nachname,
-                 String adresse, LocalDate gebdat) {
-        if(vorname == null || nachname == null || adresse == null || gebdat == null)
-            throw new IllegalArgumentException("null als Parameter nich erlaubt");
-        this.vorname = vorname;
-        this.nachname = nachname;
-        this.adresse = adresse;
-        this.geburtstag = gebdat;
+                 String adresse, LocalDate geburtstag) throws IllegalArgumentException {
+        setVorname(vorname);
+        setNachname(nachname);
+        setAdresse(adresse);
+        setGeburtstag(geburtstag);
     }
 
     /**
@@ -79,14 +77,14 @@ public class Kunde implements Comparable<Kunde>{
      * @param vorname Vorname
      * @param nachname Nachname
      * @param adresse Adresse
-     * @param gebdat Geburtstag im Format tt.mm.yy
-     * @throws java.time.format.DateTimeParseException wenn das Format des übergebenen Datums nicht korrekt ist
-     * @throws IllegalArgumentException wenn einer der Parameter null ist
+     * @param geburtstag Geburtstag im Format tt.mm.yy
+     * @throws java.time.format.DateTimeParseException Falls das Format des übergebenen Datums nicht korrekt ist
+     * @throws IllegalArgumentException Falls einer der Parameter null ist
      */
     public Kunde(String vorname, String nachname,
-                 String adresse, String gebdat)  {
+                 String adresse, String geburtstag)  {
         this(vorname, nachname, adresse,
-                LocalDate.parse(gebdat, DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)));
+                LocalDate.parse(geburtstag, DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)));
     }
 
     /**
@@ -97,7 +95,7 @@ public class Kunde implements Comparable<Kunde>{
      * @param gebJahr Geburtsjahr
      * @param gebMonat Geburtsmonat
      * @param gebTag Tag des Geburtstages
-     * @throws java.time.format.DateTimeParseException wenn die drei Werte für den Geburtstag kein gültiges
+     * @throws java.time.format.DateTimeParseException Falls die drei Werte für den Geburtstag kein gültiges
      *                           Datum ergeben
      */
     public Kunde(String vorname, String nachname, String adresse,
@@ -115,13 +113,13 @@ public class Kunde implements Comparable<Kunde>{
     }
 
     /**
-     * setzt die Adresse auf den angegebenen Wert
+     * Setzt die Adresse auf den angegebenen Wert
      * @param adresse neue Adresse
-     * @throws IllegalArgumentException wenn adresse null ist
+     * @throws IllegalArgumentException Falls adresse null ist
      */
-    public void setAdresse(String adresse) {
+    public void setAdresse(String adresse) throws NullPointerException {
         if(adresse == null)
-            throw new IllegalArgumentException("Adresse darf nicht null sein");
+            throw new NullPointerException("Adresse darf nicht null sein");
         this.adresse = adresse;
     }
 
@@ -136,11 +134,11 @@ public class Kunde implements Comparable<Kunde>{
     /**
      * setzt den Nachnamen auf den angegebenen Wert
      * @param nachname neuer Nachname
-     * @throws IllegalArgumentException wenn nachname null ist
+     * @throws IllegalArgumentException wenn Nachname null ist
      */
-    public void setNachname(String nachname) {
+    public void setNachname(String nachname) throws NullPointerException {
         if(nachname == null)
-            throw new IllegalArgumentException("Nachname darf nicht null sein");
+            throw new NullPointerException("Nachname darf nicht null sein");
         this.nachname = nachname;
     }
 
@@ -155,11 +153,11 @@ public class Kunde implements Comparable<Kunde>{
     /**
      * setzt den Vornamen auf den angegebenen Wert
      * @param vorname neuer Vorname
-     * @throws IllegalArgumentException wenn vorname null ist
+     * @throws IllegalArgumentException wenn Vorname null ist
      */
-    public void setVorname(String vorname) {
+    public void setVorname(String vorname) throws NullPointerException {
         if(vorname == null)
-            throw new IllegalArgumentException("Vorname darf nicht null sein");
+            throw new NullPointerException("Vorname darf nicht null sein");
         this.vorname = vorname;
     }
 
@@ -169,6 +167,14 @@ public class Kunde implements Comparable<Kunde>{
      */
     public LocalDate getGeburtstag() {
         return geburtstag;
+    }
+    
+    public void setGeburtstag(LocalDate geburtstag) throws NullPointerException, IllegalArgumentException {
+        if(geburtstag == null) throw new NullPointerException("Geburtstag darf nicht null");
+        if (geburtstag.isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("Geburtstag darf nicht nach dem heutigen Datum überschreiten");
+        }
+        this.geburtstag = geburtstag;
     }
 
     /**
@@ -196,22 +202,20 @@ public class Kunde implements Comparable<Kunde>{
     /**
      * Vergleich von this mit other; Zwei Kunden gelten als gleich,
      * wen sie den gleichen vollständigen Namen haben
+     *
      * @param other der Vergleichskunde
-     * @return true, wenn beide Kunden den gleichen Namen haben
+     * @return True, wenn beide Kunden den gleichen Namen haben
      */
     @Override
-    public boolean equals(Object other)
-    {
-        if(this == other)
+    public boolean equals(Object other) {
+        if (this == other) {
             return true;
-        if(other == null)
+        }
+        if (other == null || this.getClass() != other.getClass()) {
             return false;
-        if(this.getClass() != other.getClass())
-            return false;
-        if(this.getName().equals(((Kunde)other).getName()))
-            return true;
-        else
-            return false;
+        }
+        Kunde that = (Kunde) other;
+        return this.getName().equals(that.getName());
     }
 
     /**
@@ -225,6 +229,7 @@ public class Kunde implements Comparable<Kunde>{
     {
         return Objects.hash(this.getName());
     }
+
     static
     {
         if(Locale.getDefault().getCountry().equals("DE"))
@@ -232,8 +237,6 @@ public class Kunde implements Comparable<Kunde>{
         else
             ANREDE = "Dear Customer!";
     }
-
-    //******************** Übung 1 **********************************************************+
 
     /**
      * Compares this customer object to another customer based on their full names.
