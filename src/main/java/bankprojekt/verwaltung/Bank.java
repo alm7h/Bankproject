@@ -94,12 +94,41 @@ public class Bank {
     }
 
     /**
-     * Liefert ein Set aller gültigen Kontonummern[cite: 20, 21].
+     * Liefert ein Set aller gültigen Kontonummern.
      *
      * @return Menge der Kontonummern.
      */
     public Set<Long> getAlleKontonummern() {
         Set<Long> kontonummern = konten.keySet();
         return new HashSet<>(kontonummern);
+    }
+
+    /**
+     * Liefert alle Kunden absteigend sortiert nach Geburtstag.
+     * Nutzt ein TreeSet mit einem eigenen Comparator.
+     * @return Sortierte Menge der Kunden.
+     */
+    public SortedSet<Kunde> getAlleKunden() {
+        // Sortierung: Geburtstag absteigend (juengere zuerst). Bei gleichem Geburtstag nach dem
+        // vollstaendigen Namen aufsteigend ("Nachname, Vorname"). Dadurch bleiben Kunden mit
+        // gleichem Geburtstag aber unterschiedlichem Namen verschieden im Set, waehrend der
+        // gleiche Kunde (gleicher Name und Geburtstag) nur einmal enthalten ist.
+        SortedSet<Kunde> kundenSet = new TreeSet<>(new Comparator<Kunde>() {
+            @Override
+            public int compare(Kunde a, Kunde b) {
+                // Absteigend nach Geburtstag: spaeteres Datum (juenger) kommt zuerst
+                int cmpGeburtstag = b.getGeburtstag().compareTo(a.getGeburtstag());
+                if (cmpGeburtstag != 0) {
+                    return cmpGeburtstag;
+                }
+                // Bei Gleichheit des Geburtstags: Name aufsteigend
+                return a.getName().compareTo(b.getName());
+            }
+        });
+
+        for (Konto k : konten.values()) {
+            kundenSet.add(k.getInhaber());
+        }
+        return kundenSet;
     }
 }

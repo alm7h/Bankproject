@@ -251,3 +251,61 @@ class BankTest {
             assertFalse(nummernNeu.contains(999L), "Fremde Nummern dürfen nicht auftauchen");
         }
     }
+
+    @Nested
+    class AlleKundenTests {
+        @Test
+        void getAlleKunden_gibtLeeresSetWennKeineKonten() {
+            Bank bank = new Bank(12121212L);
+            java.util.SortedSet<Kunde> kunden = bank.getAlleKunden();
+            assertNotNull(kunden, "Zurückgegebenes SortedSet darf nicht null sein");
+            assertTrue(kunden.isEmpty(), "Ohne Konten soll ein leeres Set von Kunden zurückgegeben werden");
+        }
+
+        @Test
+        void getAlleKunden_enthaeltJedenKundenNurEinmal_auchBeiMehrerenKonten() {
+            Bank bank = new Bank(56565656L);
+            Kunde alice = new Kunde("Alice", "Anders", "Allee 1", 1995, 5, 5);
+            long nr1 = bank.girokontoErstellen(alice);
+            long nr2 = bank.sparbuchErstellen(alice);
+            assertNotEquals(nr1, nr2);
+
+            java.util.SortedSet<Kunde> kunden = bank.getAlleKunden();
+            assertEquals(1, kunden.size(), "Der gleiche Kunde mit mehreren Konten darf nur einmal erscheinen");
+            assertTrue(kunden.contains(alice), "Das Set sollte Alice enthalten");
+        }
+
+        @Test
+        void getAlleKunden_sortiertNachGeburtstagAbsteigend_undBeiGleichheitNachNameAufsteigend() {
+            Bank bank = new Bank(78787878L);
+            // Drei Kunden: zwei mit gleichem Geburtstag
+            Kunde clara = new Kunde("Clara", "Clever", "City 3", 1992, 3, 14); // 1992-03-14
+            Kunde david = new Kunde("David", "Dorn", "Dorf 4", 1979, 7, 9);   // 1979-07-09 (ältester)
+            Kunde benno = new Kunde("Benno", "Bauer", "Bergweg 2", 1992, 3, 14); // gleiches Datum wie Clara, Name kommt vor Clara lexikographisch
+
+            // Konten anlegen (Reihenfolge absichtlich durcheinander)
+            bank.sparbuchErstellen(david);
+            bank.girokontoErstellen(clara);
+            bank.girokontoErstellen(benno);
+
+            java.util.SortedSet<Kunde> kunden = bank.getAlleKunden();
+            assertEquals(3, kunden.size(), "Alle drei unterschiedlichen Kunden sollten enthalten sein");
+
+            java.util.Iterator<Kunde> it = kunden.iterator();
+            assertTrue(it.hasNext());
+            Kunde first = it.next(); // juengster (1992-03-14), bei Gleichstand Name aufsteigend => Benno vor Clara
+            assertEquals(1992, first.getGeburtstag().getYear());
+            assertEquals("Bauer, Benno", first.getName());
+
+            assertTrue(it.hasNext());
+            Kunde second = it.next();
+            assertEquals(1992, second.getGeburtstag().getYear());
+            assertEquals("Clever, Clara", second.getName());
+
+            assertTrue(it.hasNext());
+            Kunde third = it.next();
+            assertEquals(1979, third.getGeburtstag().getYear());
+            assertEquals("Dorn, David", third.getName());
+            assertFalse(it.hasNext());
+        }
+    }
