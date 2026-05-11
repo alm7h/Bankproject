@@ -2,7 +2,6 @@ package bankprojekt.basisdaten;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.time.format.FormatStyle;
 import java.util.Locale;
 import java.util.Objects;
@@ -62,7 +61,7 @@ public class Kunde implements Comparable<Kunde>{
      * @param nachname Nachname
      * @param adresse Adresse
      * @param geburtstag Geburtstag
-     * @throws IllegalArgumentException wenn einer der Parameter null ist
+     * @throws NullPointerException wenn einer der Parameter null ist
      */
     public Kunde(String vorname, String nachname,
                  String adresse, LocalDate geburtstag) throws IllegalArgumentException {
@@ -79,7 +78,7 @@ public class Kunde implements Comparable<Kunde>{
      * @param adresse Adresse
      * @param geburtstag Geburtstag im Format tt.mm.yy
      * @throws java.time.format.DateTimeParseException Falls das Format des übergebenen Datums nicht korrekt ist
-     * @throws IllegalArgumentException Falls einer der Parameter null ist
+     * @throws NullPointerException Falls einer der Parameter null ist
      */
     public Kunde(String vorname, String nachname,
                  String adresse, String geburtstag)  {
@@ -115,7 +114,7 @@ public class Kunde implements Comparable<Kunde>{
     /**
      * Setzt die Adresse auf den angegebenen Wert
      * @param adresse neue Adresse
-     * @throws IllegalArgumentException Falls adresse null ist
+     * @throws NullPointerException Falls adresse null ist
      */
     public void setAdresse(String adresse) throws NullPointerException {
         if(adresse == null)
@@ -134,7 +133,7 @@ public class Kunde implements Comparable<Kunde>{
     /**
      * setzt den Nachnamen auf den angegebenen Wert
      * @param nachname neuer Nachname
-     * @throws IllegalArgumentException wenn Nachname null ist
+     * @throws NullPointerException wenn Nachname null ist
      */
     public void setNachname(String nachname) throws NullPointerException {
         if(nachname == null)
@@ -153,7 +152,7 @@ public class Kunde implements Comparable<Kunde>{
     /**
      * setzt den Vornamen auf den angegebenen Wert
      * @param vorname neuer Vorname
-     * @throws IllegalArgumentException wenn Vorname null ist
+     * @throws NullPointerException wenn Vorname null ist
      */
     public void setVorname(String vorname) throws NullPointerException {
         if(vorname == null)
