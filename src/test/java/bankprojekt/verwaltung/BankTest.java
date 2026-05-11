@@ -169,7 +169,6 @@ class BankTest {
             assertInstanceOf(Sparbuch.class, bank.getKonten().get(nr));
         }
     }
-}
 
     @Nested
     class AlleKontenAusgabeTests {
@@ -366,6 +365,7 @@ class KontoLoeschenTests {
 }
 
 
+@Nested
 class GetKontostandTests {
     @Test
     void getKontostand_gibtNull_wennKontoNichtExistiert() {
@@ -415,6 +415,7 @@ class GetKontostandTests {
 }
 
 
+@Nested
 class GeldAbhebenTests {
     @Test
     void geldAbheben_gibtFalse_wennKontoNichtExistiert() {
@@ -498,6 +499,7 @@ class GeldAbhebenTests {
 
 
 
+@Nested
 class GeldEinzahlenTests {
     @Test
     void geldEinzahlen_hatKeineWirkung_wennKontoNichtExistiert() {
@@ -544,6 +546,7 @@ class GeldEinzahlenTests {
 }
 
 
+@Nested
 class GeldUeberweisenTests {
     @Test
     void geldUeberweisen_transferiertZwischenZweiGirokonten() throws bankprojekt.exceptions.GesperrtException {
@@ -621,6 +624,7 @@ class GeldUeberweisenTests {
 }
 
 
+@Nested
 class GesamtkontostaendeTests {
     @Test
     void getGesamtkontostaende_gibtLeereMapWennKeineKonten() {
@@ -668,4 +672,75 @@ class GesamtkontostaendeTests {
         assertTrue(map.containsKey(clara));
         assertEquals(new Geldbetrag(25), map.get(clara));
     }
+}
+
+
+
+@Nested
+class KontenEinesKundenLoeschenTests {
+    @Test
+    void kontenEinesKundenLoeschen_gibtNullWennKundeKeineKontenHat() {
+        Bank bank = new Bank(12345000L);
+        Kunde alice = new Kunde("Alice", "Anders", "Allee 1", 1990, 1, 1);
+        // Alice hat (noch) keine Konten bei dieser Bank
+        int geloescht = bank.kontenEinesKundenLoeschen(alice);
+        assertEquals(0, geloescht, "Ohne Konten sollten 0 geloescht werden");
+        assertTrue(bank.getKonten().isEmpty(), "Konten-Map bleibt leer");
+    }
+
+    @Test
+    void kontenEinesKundenLoeschen_loeschtAlleKontenDesKunden_undNurDiese() {
+        Bank bank = new Bank(12345001L);
+        Kunde alice = new Kunde("Alice", "Anders", "Allee 1", 1990, 1, 1);
+        Kunde bob   = new Kunde("Bob", "Bauer", "Berg 2", 1991, 2, 2);
+
+        long a1 = bank.girokontoErstellen(alice);
+        long a2 = bank.sparbuchErstellen(alice);
+        long b1 = bank.girokontoErstellen(bob);
+
+        assertEquals(3, bank.getKonten().size(), "Vorher sollten 3 Konten existieren");
+
+        int geloescht = bank.kontenEinesKundenLoeschen(alice);
+        assertEquals(2, geloescht, "Alle Konten von Alice (2 Stueck) sollten geloescht werden");
+
+        // Nur Bobs Konto darf uebrig bleiben
+        assertEquals(1, bank.getKonten().size(), "Es sollte genau 1 Konto uebrig bleiben");
+        assertFalse(bank.getKonten().containsKey(a1));
+        assertFalse(bank.getKonten().containsKey(a2));
+        assertTrue(bank.getKonten().containsKey(b1));
+        assertEquals(bob, bank.getKonten().get(b1).getInhaber());
+    }
+
+    @Test
+    void kontenEinesKundenLoeschen_wirftNullPointerException_beiNullInhaber() {
+        Bank bank = new Bank(12345002L);
+        assertThrows(NullPointerException.class, () -> bank.kontenEinesKundenLoeschen(null),
+                "Null-Inhaber sollte NullPointerException werfen");
+    }
+
+    @Test
+    void kontenEinesKundenLoeschen_beeinflusstKontonummernzaehlerNicht() {
+        Bank bank = new Bank(12345003L);
+        Kunde alice = new Kunde("Alice", "Anders", "Allee 1", 1990, 1, 1);
+        Kunde bob   = new Kunde("Bob", "Bauer", "Berg 2", 1991, 2, 2);
+
+        long a1 = bank.girokontoErstellen(alice); // 1
+        long b1 = bank.girokontoErstellen(bob);   // 2
+        long a2 = bank.sparbuchErstellen(alice);  // 3
+        assertEquals(1L, a1);
+        assertEquals(2L, b1);
+        assertEquals(3L, a2);
+
+        // Loesche alle Alice-Konten (1 und 3)
+        int geloescht = bank.kontenEinesKundenLoeschen(alice);
+        assertEquals(2, geloescht);
+        assertFalse(bank.getKonten().containsKey(a1));
+        assertFalse(bank.getKonten().containsKey(a2));
+        assertTrue(bank.getKonten().containsKey(b1));
+
+        // Neues Konto fuer Bob bekommt die naechste freie Nummer (4), keine Wiederverwendung von 1/3
+        long b2 = bank.sparbuchErstellen(bob);
+        assertEquals(4L, b2, "Kontonummernzaehler darf durch Massenloeschung nicht zurueckgesetzt werden");
+    }
+}
 }

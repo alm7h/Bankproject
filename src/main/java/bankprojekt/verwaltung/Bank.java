@@ -290,4 +290,28 @@ public class Bank {
         }
         return result;
     }
+
+
+    /**
+     * Löscht alle Konten eines bestimmten Kunden aus der Bank.
+     *
+     * @param inhaber Der Kontoinhaber, dessen Konten gelöscht werden sollen. Darf nicht null sein.
+     * @return Die Anzahl der gelöschten Konten.
+     * @throws NullPointerException Falls der übergebene Kontoinhaber null ist.
+     */
+    public int kontenEinesKundenLoeschen(Kunde inhaber) throws NullPointerException {
+        if (inhaber == null) {
+            throw new NullPointerException("Inhaber darf nicht null sein");
+        }
+        int geloescht = 0;
+        Iterator<Map.Entry<Long, Konto>> it = konten.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Long, Konto> entry = it.next();
+            if (inhaber.equals(entry.getValue().getInhaber())) {
+                it.remove();
+                geloescht++;
+            }
+        }
+        return geloescht;
+    }
 }
