@@ -17,7 +17,6 @@ public class Geldbetrag implements Comparable<Geldbetrag>{
      */
     private final double betrag;
 
-    // ************************* Übung 2 *************************
     /**
      * Repräsentiert die Währung eines Geldbetrags.
      */
@@ -31,23 +30,21 @@ public class Geldbetrag implements Comparable<Geldbetrag>{
     public Geldbetrag(double betrag)
     {
         if(!Double.isFinite(betrag))
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Der Betrag ist nicht finit");
         this.betrag = betrag;
         this.waehrung = Waehrung.EURO;
     }
-
-    // ************************* Übung 2 *************************
 
     /**
      * Konstruktor zur Erstellung eines Geldbetrags mit einem spezifischen Betrag und einer angegebenen Währung.
      *
      * @param betrag Der Betrag in der angegebenen Währung.
      * @param waehrung Die Währung des Betrags.
-     * @throws IllegalArgumentException wenn der betrag unendlich oder NaN ist oder wenn waehrung null ist.
+     * @throws IllegalArgumentException Wenn der Betrag unendlich, NaN ist oder waehrung null ist.
      */
-    public Geldbetrag(double betrag, Waehrung waehrung){
+    public Geldbetrag(double betrag, Waehrung waehrung) throws IllegalArgumentException {
         if(!Double.isFinite(betrag) || waehrung == null)
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Der Betrag ist nicht finit oder die angegebene Waehrung ist null");
         this.betrag = betrag;
         this.waehrung = waehrung;
     }
@@ -61,8 +58,6 @@ public class Geldbetrag implements Comparable<Geldbetrag>{
         return waehrung;
     }
 
-    // ************************* Übung 3 *************************
-
     /**
      * Konvertiert den aktuellen Geldbetrag in eine andere Zielwährung.
      * Wenn die Zielwährung identisch mit der aktuellen Währung ist, wird der ursprüngliche Geldbetrag zurückgegeben.
@@ -70,14 +65,13 @@ public class Geldbetrag implements Comparable<Geldbetrag>{
      * @param zielwaehrung Die Währung, in die der Betrag umgerechnet werden soll.
      *                     Die Zielwährung darf nicht null sein.
      * @return Ein neuer Geldbetrag in der Zielwährung, wobei der Betrag auf zwei Dezimalstellen gerundet ist.
-     * @throws IllegalArgumentException Wenn die Zielwährung null ist.
+     * @throws IllegalArgumentException Falls die Zielwährung null ist.
      */
     public Geldbetrag umrechnen(Waehrung zielwaehrung) {
         if (this.waehrung == zielwaehrung) return this;
         double inEuro = this.betrag / this.waehrung.getUmrechnungskursZuEuro();
-        double zielBetrag = inEuro * zielwaehrung.getUmrechnungskursZuEuro();
-        // Rundung auf 2 Stellen
-        double zielBetragGerundet = DoubleRounder.round(zielBetrag, 2);
+        // Umrechnung und Rundung auf 2 Stellen
+        double zielBetragGerundet = DoubleRounder.round(inEuro * zielwaehrung.getUmrechnungskursZuEuro(), 2);
         return new Geldbetrag(zielBetragGerundet, zielwaehrung);
     }
 
@@ -105,7 +99,7 @@ public class Geldbetrag implements Comparable<Geldbetrag>{
      * @throws IllegalArgumentException wenn summand null ist
      */
     public Geldbetrag plus(Geldbetrag summand) {
-        if(summand == null) throw new IllegalArgumentException();
+        if(summand == null || summand.isNegativ()) throw new IllegalArgumentException("Summand ist null oder negativ");
         // Den Summanden in die Währung von 'this' umrechnen
         Geldbetrag konvertiert = summand.umrechnen(this.waehrung);
         return new Geldbetrag(this.betrag + konvertiert.getBetrag(), this.waehrung);
@@ -117,7 +111,7 @@ public class Geldbetrag implements Comparable<Geldbetrag>{
      * @throws IllegalArgumentException wenn subtrahend null ist
      */
     public Geldbetrag minus(Geldbetrag subtrahend) {
-        if(subtrahend == null) throw new IllegalArgumentException();
+        if(subtrahend == null || subtrahend.isNegativ()) throw new IllegalArgumentException("Subtrahend ist null oder negativ");
         // Den Subtrahenden in die Währung von 'this' umrechnen
         Geldbetrag konvertiert = subtrahend.umrechnen(this.waehrung);
         return new Geldbetrag(this.betrag - konvertiert.getBetrag(), this.waehrung);
@@ -127,16 +121,14 @@ public class Geldbetrag implements Comparable<Geldbetrag>{
      * multipliziert this mit faktor
      * @param faktor Faktor der Multiplikation
      * @return das faktor-Fache von this
-     * @throws IllegalArgumentException wenn faktor nicht finit ist
+     * @throws IllegalArgumentException wenn Faktor nicht finit ist
      */
     public Geldbetrag mal(double faktor)
     {
         if(!Double.isFinite(faktor))
-            throw new IllegalArgumentException();
-        return new Geldbetrag(this.betrag * faktor);
+            throw new IllegalArgumentException("Faktor ist nicht finit");
+        return new Geldbetrag(this.betrag * faktor, this.waehrung);
     }
-
-    // ************************* Übung 2 *************************
 
     /**
      * Compares this Geldbetrag instance with another Geldbetrag instance for order.
@@ -149,7 +141,9 @@ public class Geldbetrag implements Comparable<Geldbetrag>{
      * @throws NullPointerException if the specified Geldbetrag is null
      */
     @Override
-    public int compareTo(Geldbetrag o) {
+    public int compareTo(Geldbetrag o) throws NullPointerException {
+        if(o == null) throw new NullPointerException();
+        if(this ==  o) return 0;
         double dieseInEuro = this.betrag / this.waehrung.getUmrechnungskursZuEuro();
         double andereInEuro = o.betrag / o.waehrung.getUmrechnungskursZuEuro();
         return Double.compare(dieseInEuro, andereInEuro);
@@ -168,7 +162,6 @@ public class Geldbetrag implements Comparable<Geldbetrag>{
     public boolean equals(Object o)
     {
         if(!(o instanceof Geldbetrag)) return false;
-        if(o == this) return true;
         return this.compareTo((Geldbetrag) o) == 0;
     }
 
@@ -193,7 +186,6 @@ public class Geldbetrag implements Comparable<Geldbetrag>{
      */
     @Override
     public String toString() {
-
         return String.format("%,.2f %s", this.betrag, this.waehrung);
     }
 }
