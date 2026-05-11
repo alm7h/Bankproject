@@ -14,7 +14,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Testklasse für die Bank-Verwaltung.
- * Fokus: Tests für den Konstruktor von {@link Bank} und die Methoden getKonten, getBankleitzahl, girokontoErstellen.
  */
 class BankTest {
 

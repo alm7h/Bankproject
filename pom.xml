@@ -49,7 +49,7 @@
                         </goals>
                         <configuration>
                             <includes>
-                                <include>bankprojekt/basisdaten/Sparbuch.class</include>
+                                <include>bankprojekt/verwaltung/Bank.class</include>
                             </includes>
                         </configuration>
                     </execution>
