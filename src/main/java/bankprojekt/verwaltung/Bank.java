@@ -37,6 +37,18 @@ public class Bank {
     }
 
     /**
+     * Fügt ein (Mock-)Konto in die Kontenliste der Bank ein und liefert die
+     * dabei vergebene Kontonummer zurück. Nur für Testzwecke!
+     * * @param k Das einzufügende Konto (normalerweise ein Mock-Objekt)
+     * @return Die vergebene Kontonummer
+     */
+    public long mockEinfuegen(Konto k) {
+        long nummer = naechsteFreieKontonummer++;
+        konten.put(nummer, k);
+        return nummer;
+    }
+
+    /**
      * Liefert eine Map aller gespeicherten Konten, wobei die Kontonummern als Schlüssel fungieren.
      *
      * @return eine Map mit Kontonummern als Schlüsseln und den zugehörigen Konto-Objekten als Werten.

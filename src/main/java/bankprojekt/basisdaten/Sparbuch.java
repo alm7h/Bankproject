@@ -104,25 +104,32 @@ public class Sparbuch extends Konto {
         }
         if(this.isGesperrt())
         {
-            GesperrtException e = new GesperrtException(this.getKontonummer());
-            throw e;
+            throw new GesperrtException(this.getKontonummer());
         }
+        LocalDate heute = kalender.getHeutigesDatum();
+        if (heute.getMonth() != zeitpunkt.getMonth() || heute.getYear() != zeitpunkt.getYear()) {
+            bereitsAbgehoben = Geldbetrag.NULL_EURO;
+
+            // BUGFIX (Übung 06): zeitpunkt MUSS hier sofort auf 'heute' gesetzt werden.
+            // Ohne dieses Update blieb zeitpunkt immer auf dem alten Datum (z.B. dem
+            // Initialmonat). Dadurch wurde bereitsAbgehoben bei JEDER Abhebung in einem
+            // anderen Monat erneut auf null zurückgesetzt – das monatliche Limit von 2000€
+            // ließ sich so beliebig umgehen.
+            // Der Test SparbuchMockitoTest#testAbhebelimitResetNurEinmalProMonat
+            // scheiterte vor dieser Korrektur.
+            zeitpunkt = heute;
+        }
+
         Geldbetrag neu = getKontostand().minus(betrag);
         if (neu.compareTo(Sparbuch.MINIMUM) >= 0 &&
-                bereitsAbgehoben.plus(betrag).compareTo(Sparbuch.ABHEBESUMME)<= 0)
-        {
+                bereitsAbgehoben.plus(betrag).compareTo(Sparbuch.ABHEBESUMME) <= 0) {
             setKontostand(neu);
             bereitsAbgehoben = bereitsAbgehoben.plus(betrag);
-            LocalDate heute = kalender.getHeutigesDatum();
-            if(heute.getMonth() != zeitpunkt.getMonth() || heute.getYear() != zeitpunkt.getYear())
-            {
-                this.bereitsAbgehoben = Geldbetrag.NULL_EURO;
-            }
-            this.zeitpunkt = heute;
+            zeitpunkt = heute; // Zeitpunkt der letzten erfolgreichen Abhebung aktualisieren
             return true;
-        }
-        else
+        } else {
             return false;
+        }
     }
 
     /**
