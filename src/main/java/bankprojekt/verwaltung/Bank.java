@@ -1,5 +1,10 @@
 package bankprojekt.verwaltung;
+import java.time.LocalDate;
+import java.time.MonthDay;
+import java.time.Period;
 import java.util.*;
+import java.util.stream.Collectors;
+
 import bankprojekt.basisdaten.Kunde;
 import bankprojekt.basisdaten.Konto;
 import bankprojekt.basisdaten.Girokonto;
@@ -128,17 +133,14 @@ public class Bank {
         // vollstaendigen Namen aufsteigend ("Nachname, Vorname"). Dadurch bleiben Kunden mit
         // gleichem Geburtstag aber unterschiedlichem Namen verschieden im Set, waehrend der
         // gleiche Kunde (gleicher Name und Geburtstag) nur einmal enthalten ist.
-        SortedSet<Kunde> kundenSet = new TreeSet<>(new Comparator<Kunde>() {
-            @Override
-            public int compare(Kunde a, Kunde b) {
-                // Absteigend nach Geburtstag: spaeteres Datum (juenger) kommt zuerst
-                int cmpGeburtstag = b.getGeburtstag().compareTo(a.getGeburtstag());
-                if (cmpGeburtstag != 0) {
-                    return cmpGeburtstag;
-                }
-                // Bei Gleichheit des Geburtstags: Name aufsteigend
-                return a.getName().compareTo(b.getName());
+        SortedSet<Kunde> kundenSet = new TreeSet<>((a, b) -> {
+            // Absteigend nach Geburtstag: spaeteres Datum (juenger) kommt zuerst
+            int cmpGeburtstag = b.getGeburtstag().compareTo(a.getGeburtstag());
+            if (cmpGeburtstag != 0) {
+                return cmpGeburtstag;
             }
+            // Bei Gleichheit des Geburtstags: Name aufsteigend
+            return a.getName().compareTo(b.getName());
         });
 
         for (Konto k : konten.values()) {
@@ -240,13 +242,10 @@ public class Bank {
             // Eine der Kontonummern ist unbekannt -> keine Ueberweisung
             return false;
         }
-        if (!(von instanceof UeberweisungsfaehigesKonto) || !(nach instanceof UeberweisungsfaehigesKonto)) {
+        if (!(von instanceof UeberweisungsfaehigesKonto sender) || !(nach instanceof UeberweisungsfaehigesKonto empfaenger)) {
             // Mindestens eines der Konten ist nicht ueberweisungsfaehig
             return false;
         }
-
-        UeberweisungsfaehigesKonto sender = (UeberweisungsfaehigesKonto) von;
-        UeberweisungsfaehigesKonto empfaenger = (UeberweisungsfaehigesKonto) nach;
 
         String empfaengerName = empfaenger.getInhaber().getName();
         String senderName = sender.getInhaber().getName();
@@ -325,5 +324,78 @@ public class Bank {
             }
         }
         return geloescht;
+    }
+
+    // =====================================================================
+//                                 Übung 7a
+// =====================================================================
+
+    /**
+     * Liefert eine Liste aller Kunden, die mindestens ein Konto mit negativem
+     * Kontostand haben. Kunden mit mehreren überzogenen Konten erscheinen nur einmal.
+     *
+     * Keine for-Schleifen, keine if-Anweisungen – nur Streams & Lambdas.
+     *
+     * @return Liste der betroffenen Kunden (ohne Duplikate)
+     */
+    public List<Kunde> getKundenMitLeeremKonto() {
+        return konten.values().stream()
+                .filter(k -> k.getKontostand().isNegativ())   // nur Konten mit negativem Stand
+                .map(Konto::getInhaber)                        // Inhaber extrahieren
+                .distinct()                                    // Duplikate entfernen
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Liefert die Namen und Geburtstage aller Kunden der Bank, je Kunde eine Zeile.
+     * Doppelte Kunden werden aussortiert.
+     * Sortierung: aufsteigend nach Monat und Tag des Geburtstages (Geburtsjahr ignoriert).
+     * @return Formatierter String, eine Zeile pro Kunde
+     */
+    public String getKundengeburtstage() {
+        return konten.values().stream()
+                .map(Konto::getInhaber)                                          // Inhaber holen
+                .distinct()                                                      // Duplikate raus
+                .sorted(Comparator.comparing(                                    // nach MonthDay sortieren
+                        k -> MonthDay.from(k.getGeburtstag())))
+                .map(k -> k.getName() + ": " + k.getGeburtstag())               // Zeile formatieren
+                .collect(Collectors.joining(System.lineSeparator()));            // Zeilen verbinden
+    }
+
+    /**
+     * Liefert die Anzahl der Kunden, die jetzt mindestens 67 Jahre alt sind.
+     * Jeder Kunde wird nur einmal gezählt (auch wenn er mehrere Konten hat).
+     * Tipp: Period.between(...).getYears() liefert das genaue Alter.
+     * @return Anzahl der Senioren (≥ 67 Jahre)
+     */
+    public long getAnzahlSenioren() {
+        return konten.values().stream()
+                .map(Konto::getInhaber)                                          // Inhaber holen
+                .distinct()                                                      // Duplikate raus
+                .filter(k -> Period.between(k.getGeburtstag(), LocalDate.now())
+                        .getYears() >= 67)                           // Alter ≥ 67
+                .count();
+    }
+
+    /**
+     * Zahlt auf EIN Konto jedes Kunden, der in diesem Kalenderjahr 18 wird, den
+     * übergebenen Betrag ein. Hat ein solcher Kunde mehrere Konten, wird genau
+     * eines davon (das erste gefundene) ausgewählt.
+     * @param betrag der einzuzahlende Geldbetrag
+     */
+    public void schenkungAnNeuerwachsene(Geldbetrag betrag) {
+        int aktuellesJahr = LocalDate.now().getYear();
+
+        konten.values().stream()
+                // Nur Konten von Kunden, die dieses Jahr 18 werden
+                .filter(k -> k.getInhaber().getGeburtstag().getYear() == aktuellesJahr - 18)
+                // Pro Kunde nur ein Konto: nach Inhaber gruppieren, jeweils erstes Konto nehmen
+                .collect(Collectors.toMap(
+                        Konto::getInhaber,          // Schlüssel: Kunde
+                        k -> k,                     // Wert: Konto
+                        (k1, k2) -> k1))            // bei Kollision: erstes behalten
+                .values()
+                // Einzahlung vornehmen
+                .forEach(k -> k.einzahlen(betrag));
     }
 }
