@@ -1,17 +1,15 @@
-package spielereien;
+package Nullstellen;
 
+import Nullstellen.Nullstellensuche;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-import spielereien.Nullstellensuche;
 
 import java.util.OptionalDouble;
-import java.util.function.DoubleUnaryOperator;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * JUnit5 Tests

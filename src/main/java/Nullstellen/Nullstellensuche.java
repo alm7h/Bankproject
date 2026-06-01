@@ -1,4 +1,4 @@
-package spielereien;
+package Nullstellen;
 
 import java.util.OptionalDouble;
 import java.util.function.DoubleUnaryOperator;
