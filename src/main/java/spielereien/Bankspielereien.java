@@ -1,6 +1,7 @@
 package spielereien;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import bankprojekt.basisdaten.Geldbetrag;
 import bankprojekt.exceptions.GesperrtException;
@@ -43,6 +44,100 @@ public class Bankspielereien {
 		long nrMama4 = bank.girokontoErstellen(mama);
 		long nrPapa = bank.girokontoErstellen(papa);
 		long nrSenior = bank.girokontoErstellen(senior);
+
+        // Konten mit Geld befüllen
+        bank.geldEinzahlen(nrOpa1,new Geldbetrag(1000));
+        bank.geldEinzahlen(nrOpa2,new Geldbetrag(500));
+        // nrOpa3 bleibt leer (0 €), dann abheben → ins Minus
+        bank.geldEinzahlen(nrOma,new Geldbetrag(200));
+        bank.geldEinzahlen(nrKind1,new Geldbetrag(50));
+        // nrKind2 bleibt auf 0 (nicht negativ, soll NICHT erscheinen)
+        bank.geldEinzahlen(nrTeenager,new Geldbetrag(80));
+        bank.geldEinzahlen(nrGeradeErwachsen1, new Geldbetrag(0));   // 0 → nicht negativ
+        bank.geldEinzahlen(nrGeradeErwachsen2, new Geldbetrag(30));
+        bank.geldEinzahlen(nrMama1,new Geldbetrag(2000));
+        bank.geldEinzahlen(nrMama2,new Geldbetrag(750));
+        bank.geldEinzahlen(nrPapa,new Geldbetrag(300));
+        bank.geldEinzahlen(nrSenior,new Geldbetrag(5000));
+
+        // Konten absichtlich ins Minus bringen (Girokonto hat Dispo 500 €)
+        // Opa Konto 3: abheben mehr als der Dispo erlaubt geht nicht, aber wir
+        // nutzen den Dispo: Kontostand = 0, Dispo = 500 → abheben 300 → Stand = -300
+        bank.geldAbheben(nrOpa3,new Geldbetrag(300));   // Opa ins Minus  (-300 €)
+        bank.geldAbheben(nrMama3,new Geldbetrag(200));   // Mama ins Minus (-200 €)
+        bank.geldAbheben(nrNochNichtGanzErwachsen, new Geldbetrag(100)); // Fast ins Minus (-100 €)
+
+        // ================================================================
+        // 1. getKundenMitLeeremKonto()
+        // ================================================================
+        System.out.println("1. getKundenMitLeeremKonto()");
+        System.out.println("Kunden mit mindestens einem Konto im Minus:\n");
+        List<Kunde> imMinus = bank.getKundenMitLeeremKonto();
+        if (imMinus.isEmpty()) {
+            System.out.println("  (niemand im Minus)");
+        } else {
+            imMinus.forEach(k -> System.out.println("  → " + k.getName()
+                    + "  (geb. " + k.getGeburtstag() + ")"));
+        }
+
+        System.out.println();
+        System.out.println("Erwartung: Neu, Erwachsen Opa Otto, Erna Mama, Fast Erwachsen");
+
+        // ================================================================
+        // 2. getKundengeburtstage()
+        // ================================================================
+        System.out.println("Alle Kunden nach Monat/Tag sortiert (Geburtsjahr ignoriert):\n");
+        System.out.println(bank.getKundengeburtstage());
+        System.out.println();
+        System.out.println("Erwartung: Uropa (Feb.), Kind (Feb.), Opa (März), Mama (März),");
+        System.out.println("           Erwachsen Fast (Dez./31) kommt nach Oma (Dez./5) – beide Dez.");
+
+        // ================================================================
+        // 3. getAnzahlSenioren()
+        // ================================================================
+        long anzahl = bank.getAnzahlSenioren();
+        System.out.println("Kunden mit Alter ≥ 67 Jahre:\n");
+        System.out.println("  Anzahl Senioren: " + anzahl);
+        System.out.println();
+        System.out.println("Erwartung: 3  (Opa 70, Oma 67, Uropa 95)");
+
+        // ================================================================
+        // 4. schenkungAnNeuerwachsene(Geldbetrag)
+        // ================================================================
+
+        // Kontostand VOR der Schenkung festhalten
+        Geldbetrag vorher1 = bank.getKontostand(nrGeradeErwachsen1);
+        Geldbetrag vorher2 = bank.getKontostand(nrGeradeErwachsen2);
+        Geldbetrag vorherFast = bank.getKontostand(nrNochNichtGanzErwachsen);
+        Geldbetrag vorherTeenager = bank.getKontostand(nrTeenager);
+        Geldbetrag vorherOpa1 = bank.getKontostand(nrOpa1);
+
+        System.out.println("Kontostand VOR der Schenkung:");
+        System.out.println("  GeradeErwachsen Konto 1 : " + vorher1);
+        System.out.println("  GeradeErwachsen Konto 2 : " + vorher2);
+        System.out.println("  Fast Erwachsen (Dez.31) : " + vorherFast);
+        System.out.println("  Teenager                : " + vorherTeenager);
+        System.out.println("  Opa Konto 1             : " + vorherOpa1);
+
+        // Schenkung ausführen
+        Geldbetrag geschenk = new Geldbetrag(200);
+        bank.schenkungAnNeuerwachsene(geschenk);
+
+        Geldbetrag nachher1 = bank.getKontostand(nrGeradeErwachsen1);
+        Geldbetrag nachher2 = bank.getKontostand(nrGeradeErwachsen2);
+        Geldbetrag nachherFast = bank.getKontostand(nrNochNichtGanzErwachsen);
+        Geldbetrag nachherTeenager = bank.getKontostand(nrTeenager);
+        Geldbetrag nachherOpa1 = bank.getKontostand(nrOpa1);
+
+        System.out.println("\nKontostand NACH der Schenkung (+200 €):");
+        System.out.println("  GeradeErwachsen Konto 1 : " + nachher1);
+        System.out.println("  GeradeErwachsen Konto 2 : " + nachher2);
+        System.out.println("  Fast Erwachsen (Dez.31) : " + nachherFast);
+        System.out.println("  Teenager                : " + nachherTeenager);
+        System.out.println("  Opa Konto 1             : " + nachherOpa1);
+
+        System.out.println();
+
+    }
 		
 	}
-}
