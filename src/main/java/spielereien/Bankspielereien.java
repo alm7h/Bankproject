@@ -81,7 +81,7 @@ public class Bankspielereien {
         }
 
         System.out.println();
-        System.out.println("Erwartung: Neu, Erwachsen Opa Otto, Erna Mama, Fast Erwachsen");
+        System.out.println("Erwartung: Opa Otto, Erna Mama, Fast Erwachsen");
 
         // ================================================================
         // 2. getKundengeburtstage()
@@ -89,8 +89,8 @@ public class Bankspielereien {
         System.out.println("Alle Kunden nach Monat/Tag sortiert (Geburtsjahr ignoriert):\n");
         System.out.println(bank.getKundengeburtstage());
         System.out.println();
-        System.out.println("Erwartung: Uropa (Feb.), Kind (Feb.), Opa (März), Mama (März),");
-        System.out.println("           Erwachsen Fast (Dez./31) kommt nach Oma (Dez./5) – beide Dez.");
+        System.out.println("Erwartung: Erwachsen(Jan.)  Uropa (Feb.), Kind (Feb.), Opa (März), Mama (März),");
+        System.out.println("          Teenager (Juni) Papa(Juli) Erwachsen Fast (Dez./31) kommt nach Oma (Dez./5) – beide Dez.");
 
         // ================================================================
         // 3. getAnzahlSenioren()
@@ -99,7 +99,7 @@ public class Bankspielereien {
         System.out.println("Kunden mit Alter ≥ 67 Jahre:\n");
         System.out.println("  Anzahl Senioren: " + anzahl);
         System.out.println();
-        System.out.println("Erwartung: 3  (Opa 70, Oma 67, Uropa 95)");
+        System.out.println("Erwartung: 2  (Opa 70,Uropa 95)");
 
         // ================================================================
         // 4. schenkungAnNeuerwachsene(Geldbetrag)

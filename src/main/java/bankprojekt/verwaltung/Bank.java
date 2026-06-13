@@ -278,7 +278,6 @@ public class Bank {
      * Berechnet die Gesamtkontostände aller Kunden der Bank. Dabei werden die Kontostände
      * aller Konten eines Kunden summiert. Falls ein Konto einen negativen Kontostand aufweist,
      * wird dessen absoluter Betrag von der Gesamtsumme subtrahiert.
-     *
      * @return Eine Map, die jeweils einen Kunden (Kunde) als Schlüssel und
      *         dessen Gesamtkontostand (Geldbetrag) als Wert enthält.
      */
@@ -305,7 +304,6 @@ public class Bank {
 
     /**
      * Löscht alle Konten eines bestimmten Kunden aus der Bank.
-     *
      * @param inhaber Der Kontoinhaber, dessen Konten gelöscht werden sollen. Darf nicht null sein.
      * @return Die Anzahl der gelöschten Konten.
      * @throws NullPointerException Falls der übergebene Kontoinhaber null ist.
@@ -333,9 +331,6 @@ public class Bank {
     /**
      * Liefert eine Liste aller Kunden, die mindestens ein Konto mit negativem
      * Kontostand haben. Kunden mit mehreren überzogenen Konten erscheinen nur einmal.
-     *
-     * Keine for-Schleifen, keine if-Anweisungen – nur Streams & Lambdas.
-     *
      * @return Liste der betroffenen Kunden (ohne Duplikate)
      */
     public List<Kunde> getKundenMitLeeremKonto() {
