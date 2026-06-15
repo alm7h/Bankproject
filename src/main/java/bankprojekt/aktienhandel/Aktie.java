@@ -2,14 +2,14 @@ package bankprojekt.aktienhandel;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
-// Claude changed it
+// Übung 9
 // Bemerkung: Imports fuer die Thread-Steuerung ueber ExecutorServices
 // (bewusst KEIN sleep(), KEIN new Thread(), KEIN wait/notify).
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-// Claude changed it
+// Übung 9
 // Bemerkung: PropertyChangeSupport fuer die Beobachtung der Kursaenderungen
 // (Observer-Pattern). Dadurch kann ein Aktienkonto ereignisgesteuert auf den
 // passenden Kurs warten - ohne Polling, ohne sleep()/wait()/notify().
@@ -26,7 +26,7 @@ public class Aktie {
 	
 	private static Map<String, Aktie> alleAktien = new ConcurrentHashMap<>();
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * Gemeinsam genutzter ScheduledExecutorService, der die regelmaessigen
 	 * Kursaenderungen ALLER Aktien steuert. Es werden Daemon-Threads verwendet,
@@ -51,7 +51,7 @@ public class Aktie {
 					});
 
 	private String wkn;
-	// Claude changed it
+	// Übung 9
 	/**
 	 * aktueller Kurs der Aktie.
 	 * Bemerkung: volatile, da der Kurs vom Scheduler-Thread geschrieben und
@@ -61,7 +61,7 @@ public class Aktie {
 	 */
 	private volatile Geldbetrag kurs;
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * Verwaltet die angemeldeten Beobachter und benachrichtigt sie bei jeder
 	 * Kursaenderung. PropertyChangeSupport ist thread-sicher; das Feuern erfolgt
@@ -94,7 +94,7 @@ public class Aktie {
 		this.kurs = k;
 		alleAktien.put(wkn, this);
 
-		// Claude changed it
+		// Übung 9
 		// Bemerkung: Zufaellige Zeitspanne zeit zwischen 1 und 5 Sekunden (beide
 		// inklusive). nextInt(1, 6) liefert Werte aus {1, 2, 3, 4, 5}.
 		int zeit = ThreadLocalRandom.current().nextInt(1, 6);
@@ -117,16 +117,16 @@ public class Aktie {
 	private void kursAendern() {
 		// Zufallszahl zwischen -3 und 3 (gerne mit Nachkommastellen)
 		double prozent = ThreadLocalRandom.current().nextDouble(-3.0, 3.0);
-		// Claude changed it: alten Kurs merken, um die Beobachter zu informieren
+		// Übung 9: alten Kurs merken, um die Beobachter zu informieren
 		Geldbetrag alterKurs = this.kurs;
 		// Kurs um diese Prozentzahl veraendern: neuer Kurs = alter Kurs * (1 + p/100)
 		this.kurs = this.kurs.mal(1.0 + prozent / 100.0);
-		// Claude changed it: alle angemeldeten Beobachter ueber die Kursaenderung
+		// Übung 9: alle angemeldeten Beobachter ueber die Kursaenderung
 		// informieren (Grundlage fuer die Kauf-/Verkaufauftraege im Aktienkonto).
 		kursAenderungen.firePropertyChange("kurs", alterKurs, this.kurs);
 	}
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * Meldet einen Beobachter an, der bei jeder Kursaenderung benachrichtigt wird.
 	 * @param beobachter der zu benachrichtigende Listener
@@ -135,7 +135,7 @@ public class Aktie {
 		kursAenderungen.addPropertyChangeListener(beobachter);
 	}
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * Meldet einen zuvor angemeldeten Beobachter wieder ab.
 	 * @param beobachter der abzumeldende Listener
@@ -161,7 +161,7 @@ public class Aktie {
 	}
 
 	// =========================================================================
-	// Claude changed it:
+	// Übung 9:
 	// - Importe fuer ExecutorService/ScheduledExecutorService ergaenzt
 	// - statischen, gemeinsamen ScheduledExecutorService mit Daemon-Threads
 	//   hinzugefuegt (KURS_SCHEDULER)

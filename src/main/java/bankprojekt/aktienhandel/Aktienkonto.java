@@ -1,6 +1,6 @@
 package bankprojekt.aktienhandel;
 
-// Claude changed it: komplette Klasse neu erstellt (Aufgabe 2) und auf
+// Übung 9: komplette Klasse neu erstellt (Aufgabe 2) und auf
 // ExecutorService.submit(...) zur Threadsteuerung umgestellt.
 import java.beans.PropertyChangeListener;
 import java.util.HashMap;
@@ -30,11 +30,11 @@ import bankprojekt.exceptions.GesperrtException;
  * Es werden also ausschliesslich die neueren ExecutorServices verwendet,
  * KEIN sleep(), KEIN new Thread(), KEIN wait/notify.
  *
- * Claude changed it: komplette Klasse neu erstellt.
+ * Übung 9: komplette Klasse neu erstellt.
  */
 public class Aktienkonto extends Konto {
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * Gemeinsam genutzter ExecutorService, der die Kauf-/Verkaufauftraege aller
 	 * Aktienkonten ausfuehrt. Es werden Daemon-Threads verwendet, damit die JVM
@@ -49,7 +49,7 @@ public class Aktienkonto extends Konto {
 				return t;
 			});
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * Das Aktiendepot: ordnet jeder im Depot enthaltenen Wertpapierkennnummer (WKN)
 	 * die aktuell gehaltene Stueckzahl zu. Alle Zugriffe erfolgen unter
@@ -58,7 +58,7 @@ public class Aktienkonto extends Konto {
 	 */
 	private final Map<String, Integer> depot = new HashMap<>();
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * erstellt ein Aktienkonto fuer den angegebenen Inhaber mit der angegebenen
 	 * Kontonummer und einem anfaenglichen Kontostand von 0.
@@ -69,7 +69,7 @@ public class Aktienkonto extends Konto {
 		super(inhaber, kontonummer);
 	}
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * erstellt ein Standard-Aktienkonto (Max Mustermann).
 	 */
@@ -77,7 +77,7 @@ public class Aktienkonto extends Konto {
 		super();
 	}
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * Hebt den angegebenen Betrag ab. Beim Aktienkonto ist Abheben nur moeglich,
 	 * bis der Kontostand auf 0 sinkt; das Konto kann also nicht ins Minus geraten.
@@ -100,7 +100,7 @@ public class Aktienkonto extends Konto {
 		return true;
 	}
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * Zahlt den angegebenen Betrag ein. Ueberschrieben nur, um die Einzahlung mit
 	 * den Kauf-/Verkaufauftraegen ueber denselben Lock zu synchronisieren.
@@ -111,7 +111,7 @@ public class Aktienkonto extends Konto {
 		super.einzahlen(betrag);
 	}
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * Wartet asynchron, bis der Kurs der Aktie mit der angegebenen WKN unter den
 	 * Hoechstpreis gefallen ist, und kauft dann anzahl Stueck davon (vermindert den
@@ -145,7 +145,7 @@ public class Aktienkonto extends Konto {
 		});
 	}
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * Gibt es keine Aktie mit der gewuenschten WKN im Depot, findet kein Verkauf
 	 * statt (Ergebnis 0 €). Andernfalls wird asynchron gewartet, bis der Kurs den
@@ -182,7 +182,7 @@ public class Aktienkonto extends Konto {
 		});
 	}
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * Blockiert den aufrufenden (Worker-)Thread, bis der Kurs der Aktie die
 	 * angegebene Bedingung erfuellt, und liefert diesen Kurs zurueck.
@@ -215,7 +215,7 @@ public class Aktienkonto extends Konto {
 		}
 	}
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * Liefert die aktuell im Depot gehaltene Stueckzahl der angegebenen WKN.
 	 * (Hilfsmethode, z. B. fuer Tests.)

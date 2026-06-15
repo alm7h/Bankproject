@@ -33,12 +33,11 @@ import bankprojekt.basisdaten.Geldbetrag;
  * Hinweis: Nur dieses Programm der Praesentationsschicht gibt etwas auf der
  * Konsole aus; die Verarbeitungsschicht (Aktie, Aktienkonto, Konto) bleibt
  * vollstaendig ausgabefrei.
- *
  * Claude changed it: komplette Klasse neu erstellt.
  */
 public class Aktienspielereien {
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * Verknuepft die Beschreibung eines Auftrags mit seinem Future, damit das
 	 * Ergebnis spaeter passend beschriftet ausgegeben werden kann.
@@ -47,7 +46,7 @@ public class Aktienspielereien {
 	 */
 	private record Auftrag(String beschreibung, Future<Geldbetrag> future) {}
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * Hauptprogramm.
 	 * @param args wird nicht benutzt
@@ -127,7 +126,7 @@ public class Aktienspielereien {
 		kursanzeige.shutdownNow();
 	}
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * Hilfsmethode: holt das Ergebnis eines Auftrags-Futures (sofortige Auftraege).
 	 * @param future das Future
@@ -141,7 +140,7 @@ public class Aktienspielereien {
 		}
 	}
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * Hilfsmethode fuer die einheitliche Ergebnisausgabe.
 	 */
@@ -149,7 +148,7 @@ public class Aktienspielereien {
 		System.out.println(beschreibung + "  ->  " + betrag);
 	}
 
-	// Claude changed it
+	// Übung 9
 	/**
 	 * Hilfsmethode: aktuelle Kurse der drei Aktien als Text.
 	 */
