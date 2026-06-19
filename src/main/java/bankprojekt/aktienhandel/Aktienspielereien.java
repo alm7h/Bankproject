@@ -1,18 +1,12 @@
-package spielereien;
+package bankprojekt.aktienhandel;
 
 // Übung 9: komplette Klasse neu erstellt (Aufgabe 3 - Hauptprogramm).
+
+import bankprojekt.basisdaten.Geldbetrag;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import bankprojekt.aktienhandel.Aktie;
-import bankprojekt.aktienhandel.Aktienkonto;
-import bankprojekt.basisdaten.Geldbetrag;
+import java.util.concurrent.*;
 
 /**
  * Kleines Hauptprogramm (Praesentationsschicht) fuer den Aktienhandel.
@@ -25,7 +19,7 @@ import bankprojekt.basisdaten.Geldbetrag;
  * Threadsteuerung ausschliesslich ueber ExecutorServices:
  * <ul>
  *   <li>die nebenlaeufige Kursanzeige laeuft ueber einen ScheduledExecutorService,</li>
- *   <li>die Auftraege laufen ueber den ExecutorService des Aktienkontos,</li>
+ *   <li>die Auftraege laufen ueber den ExecutorServiqce des Aktienkontos,</li>
  *   <li>das Einsammeln der Ergebnisse erfolgt ueber {@link Future#get}.</li>
  * </ul>
  * KEIN sleep(), KEIN new Thread(), KEIN wait/notify.
