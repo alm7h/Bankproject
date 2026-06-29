@@ -1,5 +1,6 @@
 package bankprojekt.basisdaten;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 
 import bankprojekt.exceptions.GesperrtException;
@@ -8,8 +9,17 @@ import bankprojekt.exceptions.UngueltigeKontonummerException;
 /**
  * Stellt ein allgemeines Bank-Konto dar
  */
-public abstract class Konto implements Comparable<Konto>
+// Übung 10: Serializable an der Oberklasse ergänzt. Dadurch sind alle
+// Kontotypen (Girokonto, Sparbuch und künftige wie Aktienkonto) automatisch
+// serialisierbar, und die Bank kann beliebige Kontotypen speichern, ohne dass
+// die Speicher-/Lese-Methoden die konkreten Typen kennen müssen.
+public abstract class Konto implements Comparable<Konto>, Serializable
 {
+    /**
+     * Versionsnummer für die Serialisierung.
+     */
+    private static final long serialVersionUID = 1L;
+
     /**
      * die Kontonummer
      */

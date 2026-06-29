@@ -1,5 +1,6 @@
 package bankprojekt.basisdaten;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -11,7 +12,14 @@ import java.util.Objects;
  * @author Dorothea Hubrich
  */
 @SuppressWarnings("unused")
-public class Kunde implements Comparable<Kunde>{
+// Übung 10: Serializable ergänzt, damit der Kontoinhaber mit dem
+// Bank-Objekt serialisiert werden kann (LocalDate und String sind bereits serialisierbar).
+public class Kunde implements Comparable<Kunde>, Serializable {
+
+    /**
+     * Versionsnummer für die Serialisierung.
+     */
+    private static final long serialVersionUID = 1L;
 
     /**
      * Ein Musterkunde

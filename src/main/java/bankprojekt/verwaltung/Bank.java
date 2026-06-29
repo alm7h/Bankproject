@@ -1,4 +1,11 @@
 package bankprojekt.verwaltung;
+// Übung 10: Imports für die Serialisierung der Bank (speichern/einlesen).
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.MonthDay;
 import java.time.Period;
@@ -16,7 +23,14 @@ import bankprojekt.exceptions.GesperrtException;
 /**
  * Verwaltet Konten und Kunden einer Bank unter Verwendung von Java Collections.
  */
-public class Bank {
+// Übung 10: Serializable ergänzt, damit das gesamte Bank-Objekt über
+// die Methoden speichern(...)/einlesen(...) gespeichert und geladen werden kann.
+public class Bank implements Serializable {
+
+    /**
+     * Versionsnummer für die Serialisierung.
+     */
+    private static final long serialVersionUID = 1L;
 
     private final long bankleitzahl;
     Geldbetrag dispo_default;
@@ -39,6 +53,57 @@ public class Bank {
         this.bankleitzahl = bankleitzahl;
         this.konten = new HashMap<>();
         dispo_default = new Geldbetrag(500);
+    }
+
+    // Übung 10: neue Methode zum Speichern der kompletten Bank.
+    /**
+     * Speichert das komplette Bank-Objekt mit allen seinen Informationen
+     * (Bankleitzahl, sämtliche Konten samt Inhabern und Kontoständen) in den
+     * angegebenen Strom.
+     * <p>
+     * Die Speicherung erfolgt über die Java-Serialisierung. Dadurch wird beim
+     * Einlesen automatisch der tatsächliche Laufzeittyp jedes Kontos
+     * wiederhergestellt. Die Bank kann deshalb ohne Anpassung dieser Methode um
+     * weitere Kontotypen (z.B. Aktienkonten) erweitert werden.
+     *
+     * @param ziel der Strom, in den das Bank-Objekt geschrieben wird
+     * @throws IOException wenn beim Schreiben etwas schiefgeht
+     */
+    public void speichern(OutputStream ziel) throws IOException {
+        // Übung 10: Der ObjectOutputStream wird bewusst NICHT geschlossen,
+        // damit der übergebene Strom offen bleibt und weiterverwendet werden kann
+        // (z.B. um mehrere Banken in verschiedene Einträge eines ZipOutputStreams
+        // zu schreiben). flush() stellt sicher, dass alle Bytes tatsächlich in den
+        // Zielstrom geschrieben werden, bevor z.B. closeEntry() aufgerufen wird.
+        ObjectOutputStream oos = new ObjectOutputStream(ziel);
+        oos.writeObject(this);
+        oos.flush();
+    }
+
+    // Übung 10: neue Methode zum Einlesen einer gespeicherten Bank.
+    /**
+     * Liest aus der angegebenen Quelle ein zuvor mit {@link #speichern(OutputStream)}
+     * gespeichertes Bank-Objekt ein.
+     * <p>
+     * Geht beim Einlesen etwas schief (z.B. fehlerhafte oder leere Quelle,
+     * unbekannte Klasse), wird statt einer Exception eine leere Bank mit der
+     * Bankleitzahl 0 zurückgegeben.
+     *
+     * @param quelle der Strom, aus dem das Bank-Objekt gelesen wird
+     * @return die eingelesene Bank oder, im Fehlerfall, eine leere Bank mit Bankleitzahl 0
+     */
+    public static Bank einlesen(InputStream quelle) {
+        try {
+            // Übung 10: Der ObjectInputStream wird bewusst NICHT geschlossen,
+            // damit der übergebene Strom offen bleibt (z.B. ein ZipInputStream, aus dem
+            // anschließend per getNextEntry() der nächste Eintrag gelesen werden soll).
+            ObjectInputStream ois = new ObjectInputStream(quelle);
+            return (Bank) ois.readObject();
+        } catch (Exception e) {
+            // Im Fehlerfall (IOException, ClassNotFoundException, ClassCastException, ...)
+            // wird laut Vorgabe eine leere Bank mit Bankleitzahl 0 geliefert.
+            return new Bank(0);
+        }
     }
 
     /**

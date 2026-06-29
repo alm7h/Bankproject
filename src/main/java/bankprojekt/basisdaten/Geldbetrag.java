@@ -1,12 +1,20 @@
 package bankprojekt.basisdaten;
 
+import java.io.Serializable;
 import java.util.Objects;
 import org.decimal4j.util.DoubleRounder;
 
 /**
  * Ein Geldbetrag mit Währung
  */
-public class Geldbetrag implements Comparable<Geldbetrag>{
+// Übung 10: Serializable ergänzt, damit ein Geldbetrag als Teil der
+// Bank (Kontostände, Dispo usw.) über die Java-Serialisierung gespeichert werden kann.
+public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
+    /**
+     * Versionsnummer für die Serialisierung.
+     */
+    private static final long serialVersionUID = 1L;
+
     /**
      * 0 €
      */
