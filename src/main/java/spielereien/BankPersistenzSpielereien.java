@@ -11,6 +11,8 @@ import java.util.zip.ZipOutputStream;
 
 import bankprojekt.basisdaten.Geldbetrag;
 import bankprojekt.basisdaten.Kunde;
+import bankprojekt.fabriken.GirokontoFabrik;
+import bankprojekt.fabriken.SparbuchFabrik;
 import bankprojekt.verwaltung.Bank;
 
 /**
@@ -80,10 +82,10 @@ public class BankPersistenzSpielereien {
         Kunde anna = new Kunde("Anna", "Schmidt", "Berlin", 1990, 5, 1);
         Kunde bert = new Kunde("Bert", "Müller", "Bonn", 1985, 3, 3);
 
-        long giro = bank.girokontoErstellen(anna);
+        long giro = bank.kontoErstellen(new GirokontoFabrik(new Geldbetrag(500)), anna);
         bank.geldEinzahlen(giro, new Geldbetrag(250));
 
-        long spar = bank.sparbuchErstellen(bert);
+        long spar = bank.kontoErstellen(new SparbuchFabrik(), bert);
         bank.geldEinzahlen(spar, new Geldbetrag(1000));
 
         return bank;
@@ -97,10 +99,10 @@ public class BankPersistenzSpielereien {
         Bank bank = new Bank(20020020);
         Kunde clara = new Kunde("Clara", "Weber", "Köln", 2000, 7, 7);
 
-        long giro = bank.girokontoErstellen(clara);
+        long giro = bank.kontoErstellen(new GirokontoFabrik(new Geldbetrag(500)), clara);
         bank.geldEinzahlen(giro, new Geldbetrag(42));
 
-        long spar = bank.sparbuchErstellen(clara);
+        long spar = bank.kontoErstellen(new SparbuchFabrik(), clara);
         bank.geldEinzahlen(spar, new Geldbetrag(5000));
 
         return bank;

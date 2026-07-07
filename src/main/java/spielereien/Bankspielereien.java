@@ -6,6 +6,7 @@ import java.util.List;
 import bankprojekt.basisdaten.Geldbetrag;
 import bankprojekt.exceptions.GesperrtException;
 import bankprojekt.basisdaten.Kunde;
+import bankprojekt.fabriken.GirokontoFabrik;
 import bankprojekt.verwaltung.Bank;
 
 /**
@@ -18,6 +19,8 @@ public class Bankspielereien {
 	 */
 	public static void main(String[] args) throws GesperrtException {
 		Bank bank = new Bank(12345);
+		// Übung 11 b): Konten werden jetzt über eine Kontofabrik erzeugt.
+		GirokontoFabrik giroFabrik = new GirokontoFabrik(new Geldbetrag(500));
 		int aktuellesJahr = LocalDate.now().getYear();
 		Kunde opa = new Kunde("Opa", "Otto", "Altersheim", LocalDate.of(aktuellesJahr - 70, 3, 1));
 		Kunde oma = new Kunde("Oma", "Emma", "Altersheim", LocalDate.of(aktuellesJahr - 67, 12, 5));
@@ -28,22 +31,22 @@ public class Bankspielereien {
 		Kunde mama = new Kunde("Mama", "Erna", "zuhause", LocalDate.of(aktuellesJahr - 42, 3, 5));
 		Kunde papa = new Kunde("Papa", "Hugo", "zuhause", LocalDate.of(aktuellesJahr - 43, 7, 15));
 		Kunde senior = new Kunde("Uropa", "Heinz", "Neben dem Friedhof", LocalDate.of(aktuellesJahr - 95, 2, 28));
-		long nrOpa1 = bank.girokontoErstellen(opa);
-		long nrOpa2 = bank.girokontoErstellen(opa);
-		long nrOpa3 = bank.girokontoErstellen(opa);
-		long nrOma = bank.girokontoErstellen(oma);
-		long nrKind1 = bank.girokontoErstellen(kind);
-		long nrKind2 = bank.girokontoErstellen(kind);
-		long nrTeenager = bank.girokontoErstellen(teenager);
-		long nrGeradeErwachsen1 = bank.girokontoErstellen(geradeErwachsen);
-		long nrGeradeErwachsen2 = bank.girokontoErstellen(geradeErwachsen);
-		long nrNochNichtGanzErwachsen = bank.girokontoErstellen(nochNichtGanzErwachsen);
-		long nrMama1 = bank.girokontoErstellen(mama);
-		long nrMama2 = bank.girokontoErstellen(mama);
-		long nrMama3 = bank.girokontoErstellen(mama);
-		long nrMama4 = bank.girokontoErstellen(mama);
-		long nrPapa = bank.girokontoErstellen(papa);
-		long nrSenior = bank.girokontoErstellen(senior);
+		long nrOpa1 = bank.kontoErstellen(giroFabrik,opa);
+		long nrOpa2 = bank.kontoErstellen(giroFabrik,opa);
+		long nrOpa3 = bank.kontoErstellen(giroFabrik,opa);
+		long nrOma = bank.kontoErstellen(giroFabrik,oma);
+		long nrKind1 = bank.kontoErstellen(giroFabrik,kind);
+		long nrKind2 = bank.kontoErstellen(giroFabrik,kind);
+		long nrTeenager = bank.kontoErstellen(giroFabrik,teenager);
+		long nrGeradeErwachsen1 = bank.kontoErstellen(giroFabrik,geradeErwachsen);
+		long nrGeradeErwachsen2 = bank.kontoErstellen(giroFabrik,geradeErwachsen);
+		long nrNochNichtGanzErwachsen = bank.kontoErstellen(giroFabrik,nochNichtGanzErwachsen);
+		long nrMama1 = bank.kontoErstellen(giroFabrik,mama);
+		long nrMama2 = bank.kontoErstellen(giroFabrik,mama);
+		long nrMama3 = bank.kontoErstellen(giroFabrik,mama);
+		long nrMama4 = bank.kontoErstellen(giroFabrik,mama);
+		long nrPapa = bank.kontoErstellen(giroFabrik,papa);
+		long nrSenior = bank.kontoErstellen(giroFabrik,senior);
 
         // Konten mit Geld befüllen
         bank.geldEinzahlen(nrOpa1,new Geldbetrag(1000));

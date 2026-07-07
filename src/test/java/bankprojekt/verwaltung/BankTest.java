@@ -5,6 +5,8 @@ import bankprojekt.basisdaten.Girokonto;
 import bankprojekt.basisdaten.Konto;
 import bankprojekt.basisdaten.Kunde;
 import bankprojekt.basisdaten.Sparbuch;
+import bankprojekt.fabriken.GirokontoFabrik;
+import bankprojekt.fabriken.SparbuchFabrik;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -55,7 +57,7 @@ class BankTest {
 
             // Ein Konto anlegen
             Kunde k1 = Kunde.MUSTERMANN;
-            long nr1 = bank.girokontoErstellen(k1);
+            long nr1 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),k1);
             assertEquals(1L, nr1, "Erste Kontonummer sollte 1 sein");
 
             assertEquals(1, konten.size(), "Nach Anlage eines Kontos sollte genau ein Eintrag existieren");
@@ -72,8 +74,8 @@ class BankTest {
             Kunde k1 = new Kunde("Alice", "Anders", "Allee 1", 1985, 5, 20);
             Kunde k2 = new Kunde("Bob", "Bauer", "Bergweg 2", 1980, 12, 31);
 
-            long nr1 = bank.girokontoErstellen(k1);
-            long nr2 = bank.girokontoErstellen(k2);
+            long nr1 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),k1);
+            long nr2 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),k2);
 
             assertEquals(1L, nr1, "Erste Kontonummer sollte 1 sein");
             assertEquals(2L, nr2, "Zweite Kontonummer sollte 2 sein");
@@ -105,7 +107,7 @@ class BankTest {
             Bank bank = new Bank(55555555L);
 
             // Act & Assert: Null-Inhaber -> NullPointerException
-            assertThrows(NullPointerException.class, () -> bank.girokontoErstellen(null),
+            assertThrows(NullPointerException.class, () -> bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),null),
                     "Null-Inhaber sollte NullPointerException werfen");
 
             // Es darf kein Konto angelegt worden sein
@@ -113,7 +115,7 @@ class BankTest {
                     "Nach fehlgeschlagener Kontoanlage sollte die Konten-Map leer bleiben");
 
             // Nach dem Fehlversuch muss die erste gültige Kontonummer weiterhin 1 sein
-            long nr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+            long nr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
             assertEquals(1L, nr,
                     "Die erste vergebene Kontonummer sollte nach Fehlversuch weiterhin 1 sein");
             assertEquals(1, bank.getKonten().size(), "Es sollte genau ein Konto existieren");
@@ -128,8 +130,8 @@ class BankTest {
             Kunde k1 = new Kunde("Clara", "Clever", "City 3", 1992, 3, 14);
             Kunde k2 = new Kunde("David", "Dorn", "Dorf 4", 1979, 7, 9);
 
-            long nr1 = bank.sparbuchErstellen(k1);
-            long nr2 = bank.sparbuchErstellen(k2);
+            long nr1 = bank.kontoErstellen(new SparbuchFabrik(),k1);
+            long nr2 = bank.kontoErstellen(new SparbuchFabrik(),k2);
 
             assertEquals(1L, nr1, "Erste Kontonummer sollte 1 sein");
             assertEquals(2L, nr2, "Zweite Kontonummer sollte 2 sein");
@@ -155,13 +157,13 @@ class BankTest {
         void sparbuchErstellen_wirftNullPointerException_wennInhaberNull_undZaehlerBleibtUnveraendert() {
             Bank bank = new Bank(44444444L);
 
-            assertThrows(NullPointerException.class, () -> bank.sparbuchErstellen(null),
+            assertThrows(NullPointerException.class, () -> bank.kontoErstellen(new SparbuchFabrik(),null),
                     "Null-Inhaber sollte NullPointerException werfen");
 
             assertTrue(bank.getKonten().isEmpty(),
                     "Nach fehlgeschlagener Kontoanlage sollte die Konten-Map leer bleiben");
 
-            long nr = bank.sparbuchErstellen(Kunde.MUSTERMANN);
+            long nr = bank.kontoErstellen(new SparbuchFabrik(),Kunde.MUSTERMANN);
             assertEquals(1L, nr,
                     "Die erste vergebene Kontonummer sollte nach Fehlversuch weiterhin 1 sein");
             assertEquals(1, bank.getKonten().size(), "Es sollte genau ein Konto existieren");
@@ -181,8 +183,8 @@ class BankTest {
         @Test
         void getAlleKonten_listetSaemtlicheKonten_mitNummerUndKontostand_jeZeile() {
             Bank bank = new Bank(11112222L);
-            long nr1 = bank.girokontoErstellen(Kunde.MUSTERMANN);
-            long nr2 = bank.sparbuchErstellen(new Kunde("Eva","Erd","Eichenweg 5",1991,1,2));
+            long nr1 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
+            long nr2 = bank.kontoErstellen(new SparbuchFabrik(),new Kunde("Eva","Erd","Eichenweg 5",1991,1,2));
 
             Map<Long, Konto> konten = bank.getKonten();
             Konto k1 = konten.get(nr1);
@@ -222,8 +224,8 @@ class BankTest {
         @Test
         void getAlleKontonummern_enthaeltSaemtlicheVergebenenNummern_ohneDuplikate() {
             Bank bank = new Bank(22221111L);
-            long nr1 = bank.girokontoErstellen(Kunde.MUSTERMANN);
-            long nr2 = bank.sparbuchErstellen(new Kunde("Fritz","Flink","Forstweg 7",1990,2,3));
+            long nr1 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
+            long nr2 = bank.kontoErstellen(new SparbuchFabrik(),new Kunde("Fritz","Flink","Forstweg 7",1990,2,3));
 
             java.util.Set<Long> nummern = bank.getAlleKontonummern();
 
@@ -235,7 +237,7 @@ class BankTest {
         @Test
         void getAlleKontonummern_liefertDefensiveKopie_DieBankBleibtUnveraendert() {
             Bank bank = new Bank(90909090L);
-            long nr1 = bank.girokontoErstellen(Kunde.MUSTERMANN);
+            long nr1 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
 
             java.util.Set<Long> nummern = bank.getAlleKontonummern();
             // Manipuliere das zurückgegebene Set
@@ -264,8 +266,8 @@ class BankTest {
         void getAlleKunden_enthaeltJedenKundenNurEinmal_auchBeiMehrerenKonten() {
             Bank bank = new Bank(56565656L);
             Kunde alice = new Kunde("Alice", "Anders", "Allee 1", 1995, 5, 5);
-            long nr1 = bank.girokontoErstellen(alice);
-            long nr2 = bank.sparbuchErstellen(alice);
+            long nr1 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),alice);
+            long nr2 = bank.kontoErstellen(new SparbuchFabrik(),alice);
             assertNotEquals(nr1, nr2);
 
             java.util.SortedSet<Kunde> kunden = bank.getAlleKunden();
@@ -282,9 +284,9 @@ class BankTest {
             Kunde benno = new Kunde("Benno", "Bauer", "Bergweg 2", 1992, 3, 14); // gleiches Datum wie Clara, Name kommt vor Clara lexikografisch
 
             // Konten anlegen (Reihenfolge absichtlich durcheinander)
-            bank.sparbuchErstellen(david);
-            bank.girokontoErstellen(clara);
-            bank.girokontoErstellen(benno);
+            bank.kontoErstellen(new SparbuchFabrik(),david);
+            bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),clara);
+            bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),benno);
 
             java.util.SortedSet<Kunde> kunden = bank.getAlleKunden();
             assertEquals(3, kunden.size(), "Alle drei unterschiedlichen Kunden sollten enthalten sein");
@@ -322,7 +324,7 @@ class KontoLoeschenTests {
     @Test
     void kontoLoeschen_loeschtExistierendesKonto_undGibtTrue() {
         Bank bank = new Bank(20202020L);
-        long nr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        long nr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
         assertEquals(1L, nr);
         assertEquals(1, bank.getKonten().size());
 
@@ -335,7 +337,7 @@ class KontoLoeschenTests {
     @Test
     void kontoLoeschen_istIdempotent_zweiteLoeschungGibtFalse() {
         Bank bank = new Bank(30303030L);
-        long nr = bank.sparbuchErstellen(new Kunde("Ina", "Igel", "Immenweg 9", 1993, 4, 3));
+        long nr = bank.kontoErstellen(new SparbuchFabrik(),new Kunde("Ina", "Igel", "Immenweg 9", 1993, 4, 3));
         assertTrue(bank.kontoLoeschen(nr));
         // erneuter Löschversuch derselben Nummer
         assertFalse(bank.kontoLoeschen(nr), "Zweiter Löschversuch derselben Nummer muss false liefern");
@@ -344,8 +346,8 @@ class KontoLoeschenTests {
     @Test
     void kontoLoeschen_beeinflusstKontonummernZaehlerNicht() {
         Bank bank = new Bank(40404040L);
-        long nr1 = bank.girokontoErstellen(new Kunde("Paul", "Probst", "Parkweg 1", 1990, 1, 1));
-        long nr2 = bank.sparbuchErstellen(new Kunde("Quinn", "Quelle", "Quellenweg 2", 1991, 2, 2));
+        long nr1 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),new Kunde("Paul", "Probst", "Parkweg 1", 1990, 1, 1));
+        long nr2 = bank.kontoErstellen(new SparbuchFabrik(),new Kunde("Quinn", "Quelle", "Quellenweg 2", 1991, 2, 2));
         assertEquals(1L, nr1);
         assertEquals(2L, nr2);
 
@@ -355,7 +357,7 @@ class KontoLoeschenTests {
         assertEquals(1, bank.getKonten().size());
 
         // Neues Konto bekommt die nächste freie Nummer (3), keine Wiederverwendung
-        long nr3 = bank.girokontoErstellen(new Kunde("Rita", "Reim", "Ring 3", 1992, 3, 3));
+        long nr3 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),new Kunde("Rita", "Reim", "Ring 3", 1992, 3, 3));
         assertEquals(3L, nr3, "Nach dem Löschen dürfen Kontonummern nicht wiederverwendet werden");
         assertTrue(bank.getKonten().containsKey(nr2));
         assertTrue(bank.getKonten().containsKey(nr3));
@@ -375,7 +377,7 @@ class GetKontostandTests {
     @Test
     void getKontostand_gibtNullEuro_fuerNeuAngelegtesKonto() {
         Bank bank = new Bank(61616161L);
-        long nr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        long nr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
         Geldbetrag stand = bank.getKontostand(nr);
         assertNotNull(stand, "Kontostand eines existierenden Kontos darf nicht null sein");
         assertEquals(Geldbetrag.NULL_EURO, stand, "Neues Konto sollte 0,00 EUR Kontostand haben");
@@ -384,7 +386,7 @@ class GetKontostandTests {
     @Test
     void getKontostand_spiegeltEinUndAuszahlungen() {
         Bank bank = new Bank(71717171L);
-        long nr = bank.girokontoErstellen(new Kunde("Tom", "Tester", "Testweg 1", 1990, 1, 1));
+        long nr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),new Kunde("Tom", "Tester", "Testweg 1", 1990, 1, 1));
         Konto konto = bank.getKonten().get(nr);
 
         // Einzahlung 10
@@ -404,7 +406,7 @@ class GetKontostandTests {
     @Test
     void getKontostand_gibtNullNachLoeschen() {
         Bank bank = new Bank(81818181L);
-        long nr = bank.girokontoErstellen(new Kunde("Lena", "Licht", "Laternenweg 2", 1992, 2, 2));
+        long nr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),new Kunde("Lena", "Licht", "Laternenweg 2", 1992, 2, 2));
         assertNotNull(bank.getKontostand(nr));
 
         // Konto löschen -> danach sollte getKontostand null liefern
@@ -430,7 +432,7 @@ class GeldAbhebenTests {
     @Test
     void geldAbheben_ziehtBetragAb_beiGirokontoInnerhalbDispo() throws bankprojekt.exceptions.GesperrtException {
         Bank bank = new Bank(92929292L);
-        long nr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        long nr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
         // Keine Einzahlung, aber Dispo 500 erlaubt Überziehung
         boolean erfolg = bank.geldAbheben(nr, new Geldbetrag(100));
         assertTrue(erfolg, "Abheben innerhalb des Dispos sollte erfolgreich sein");
@@ -440,7 +442,7 @@ class GeldAbhebenTests {
     @Test
     void geldAbheben_gibtFalse_wennUeberDispo() throws bankprojekt.exceptions.GesperrtException {
         Bank bank = new Bank(92929293L);
-        long nr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        long nr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
         boolean erfolg = bank.geldAbheben(nr, new Geldbetrag(600));
         assertFalse(erfolg, "Abheben über Dispo-Grenze muss false liefern");
         assertEquals(Geldbetrag.NULL_EURO, bank.getKontostand(nr), "Kontostand darf sich bei fehlgeschlagener Abhebung nicht ändern");
@@ -449,7 +451,7 @@ class GeldAbhebenTests {
     @Test
     void geldAbheben_beachtetSparbuchRegeln_minimumUndMonatslimit() throws Exception {
         Bank bank = new Bank(93939393L);
-        long nr = bank.sparbuchErstellen(new Kunde("Sara", "Spar", "Sparkassenweg 1", 1990, 1, 1));
+        long nr = bank.kontoErstellen(new SparbuchFabrik(),new Kunde("Sara", "Spar", "Sparkassenweg 1", 1990, 1, 1));
         Konto spar = bank.getKonten().get(nr);
         // Anfangs 0,00: Abheben > 0 führt unter Minimum -> false
         boolean erfolg1 = bank.geldAbheben(nr, new Geldbetrag(0.6));
@@ -476,7 +478,7 @@ class GeldAbhebenTests {
     @Test
     void geldAbheben_wirftIllegalArgumentException_beiUngueltigemBetrag() {
         Bank bank = new Bank(94949494L);
-        long nr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        long nr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
         // null
         assertThrows(IllegalArgumentException.class, () -> bank.geldAbheben(nr, null));
         // negativ
@@ -486,7 +488,7 @@ class GeldAbhebenTests {
     @Test
     void geldAbheben_wirftGesperrtException_wennKontoGesperrt() {
         Bank bank = new Bank(95959595L);
-        long nr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        long nr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
         Konto k = bank.getKonten().get(nr);
         // Konto sperren
         k.sperren();
@@ -511,7 +513,7 @@ class GeldEinzahlenTests {
     @Test
     void geldEinzahlen_erhoehtKontostand_beiGirokonto() {
         Bank bank = new Bank(70707070L);
-        long nr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        long nr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
         assertEquals(Geldbetrag.NULL_EURO, bank.getKontostand(nr));
 
         bank.geldEinzahlen(nr, new Geldbetrag(10));
@@ -526,7 +528,7 @@ class GeldEinzahlenTests {
     @Test
     void geldEinzahlen_erhoehtKontostand_beiSparbuch() {
         Bank bank = new Bank(80808080L);
-        long nr = bank.sparbuchErstellen(new Kunde("Susi", "Sparsam", "Sparallee 1", 1990, 1, 1));
+        long nr = bank.kontoErstellen(new SparbuchFabrik(),new Kunde("Susi", "Sparsam", "Sparallee 1", 1990, 1, 1));
         assertEquals(Geldbetrag.NULL_EURO, bank.getKontostand(nr));
 
         bank.geldEinzahlen(nr, new Geldbetrag(100));
@@ -536,7 +538,7 @@ class GeldEinzahlenTests {
     @Test
     void geldEinzahlen_wirftIllegalArgumentException_beiNullOderNegativ() {
         Bank bank = new Bank(99990000L);
-        long nr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        long nr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
         // null-Betrag
         assertThrows(IllegalArgumentException.class, () -> bank.geldEinzahlen(nr, null));
         // negativer Betrag
@@ -550,8 +552,8 @@ class GeldUeberweisenTests {
     @Test
     void geldUeberweisen_transferiertZwischenZweiGirokonten() throws bankprojekt.exceptions.GesperrtException {
         Bank bank = new Bank(11110000L);
-        long senderNr = bank.girokontoErstellen(new Kunde("Alice", "Anders", "Allee 1", 1990, 1, 1));
-        long empfaengerNr = bank.girokontoErstellen(new Kunde("Bob", "Bauer", "Berg 2", 1991, 2, 2));
+        long senderNr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),new Kunde("Alice", "Anders", "Allee 1", 1990, 1, 1));
+        long empfaengerNr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),new Kunde("Bob", "Bauer", "Berg 2", 1991, 2, 2));
         // Startguthaben beim Sender aufbauen
         bank.geldEinzahlen(senderNr, new Geldbetrag(50));
 
@@ -564,7 +566,7 @@ class GeldUeberweisenTests {
     @Test
     void geldUeberweisen_gibtFalse_wennSenderOderEmpfaengerNichtExistiert() throws Exception {
         Bank bank = new Bank(11110001L);
-        long senderNr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        long senderNr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
         bank.geldEinzahlen(senderNr, new Geldbetrag(10));
         assertFalse(bank.geldUeberweisen(senderNr, 999L, new Geldbetrag(5), "Test"));
         assertFalse(bank.geldUeberweisen(999L, senderNr, new Geldbetrag(5), "Test"));
@@ -574,8 +576,8 @@ class GeldUeberweisenTests {
     @Test
     void geldUeberweisen_gibtFalse_wennNichtUeberweisungsfaehig() throws Exception {
         Bank bank = new Bank(11110002L);
-        long sparNr = bank.sparbuchErstellen(new Kunde("Susi", "Sparsam", "Str 1", 1992, 3, 3));
-        long giroNr = bank.girokontoErstellen(Kunde.MUSTERMANN);
+        long sparNr = bank.kontoErstellen(new SparbuchFabrik(),new Kunde("Susi", "Sparsam", "Str 1", 1992, 3, 3));
+        long giroNr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
         bank.geldEinzahlen(giroNr, new Geldbetrag(10));
         assertFalse(bank.geldUeberweisen(sparNr, giroNr, new Geldbetrag(5), "Test"));
         assertFalse(bank.geldUeberweisen(giroNr, sparNr, new Geldbetrag(5), "Test"));
@@ -586,8 +588,8 @@ class GeldUeberweisenTests {
     @Test
     void geldUeberweisen_wirftGesperrtException_wennSenderGesperrt() {
         Bank bank = new Bank(11110003L);
-        long senderNr = bank.girokontoErstellen(Kunde.MUSTERMANN);
-        long empfaengerNr = bank.girokontoErstellen(new Kunde("Eva", "Empf", "Ecke 5", 1993, 4, 4));
+        long senderNr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
+        long empfaengerNr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),new Kunde("Eva", "Empf", "Ecke 5", 1993, 4, 4));
         // Sperren des Senderkontos
         bank.getKonten().get(senderNr).sperren();
         assertThrows(bankprojekt.exceptions.GesperrtException.class,
@@ -597,8 +599,8 @@ class GeldUeberweisenTests {
     @Test
     void geldUeberweisen_wirftIllegalArgumentException_beiUngueltigenParametern() {
         Bank bank = new Bank(11110004L);
-        long a = bank.girokontoErstellen(Kunde.MUSTERMANN);
-        long b = bank.girokontoErstellen(new Kunde("Ina", "Igel", "Im Weg", 1994, 5, 5));
+        long a = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
+        long b = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),new Kunde("Ina", "Igel", "Im Weg", 1994, 5, 5));
         // null Betrag
         assertThrows(IllegalArgumentException.class, () -> bank.geldUeberweisen(a, b, null, "x"));
         // negativer Betrag
@@ -612,8 +614,8 @@ class GeldUeberweisenTests {
     @Test
     void geldUeberweisen_gibtFalse_wennDeckungNichtAusreicht() throws Exception {
         Bank bank = new Bank(11110005L);
-        long senderNr = bank.girokontoErstellen(Kunde.MUSTERMANN);
-        long empfaengerNr = bank.girokontoErstellen(new Kunde("Tom", "Top", "Tor 7", 1995, 6, 6));
+        long senderNr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
+        long empfaengerNr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),new Kunde("Tom", "Top", "Tor 7", 1995, 6, 6));
         // Ohne Guthaben: max Dispo 500
         boolean ok1 = bank.geldUeberweisen(senderNr, empfaengerNr, new Geldbetrag(600), "Test");
         assertFalse(ok1);
@@ -639,9 +641,9 @@ class GesamtkontostaendeTests {
         Kunde alice = new Kunde("Alice", "Anders", "Allee 1", 1990, 1, 1);
         Kunde bob = new Kunde("Bob", "Bauer", "Berg 2", 1991, 2, 2);
 
-        long aGiro = bank.girokontoErstellen(alice);
-        long aSpar = bank.sparbuchErstellen(alice);
-        long bSpar = bank.sparbuchErstellen(bob);
+        long aGiro = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),alice);
+        long aSpar = bank.kontoErstellen(new SparbuchFabrik(),alice);
+        long bSpar = bank.kontoErstellen(new SparbuchFabrik(),bob);
 
         // Alice: Giro -20,00 EUR (50 einzahlen, 70 abheben); Spar +50,00 EUR => Summe 30,00 EUR
         bank.geldEinzahlen(aGiro, new Geldbetrag(50));
@@ -661,8 +663,8 @@ class GesamtkontostaendeTests {
     void getGesamtkontostaende_enthaeltJedenKundenGenauEinmal() {
         Bank bank = new Bank(12120002L);
         Kunde clara = new Kunde("Clara", "Clever", "City 3", 1992, 3, 14);
-        long c1 = bank.girokontoErstellen(clara);
-        long c2 = bank.sparbuchErstellen(clara);
+        long c1 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),clara);
+        long c2 = bank.kontoErstellen(new SparbuchFabrik(),clara);
         bank.geldEinzahlen(c1, new Geldbetrag(10));
         bank.geldEinzahlen(c2, new Geldbetrag(15));
 
@@ -693,9 +695,9 @@ class KontenEinesKundenLoeschenTests {
         Kunde alice = new Kunde("Alice", "Anders", "Allee 1", 1990, 1, 1);
         Kunde bob   = new Kunde("Bob", "Bauer", "Berg 2", 1991, 2, 2);
 
-        long a1 = bank.girokontoErstellen(alice);
-        long a2 = bank.sparbuchErstellen(alice);
-        long b1 = bank.girokontoErstellen(bob);
+        long a1 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),alice);
+        long a2 = bank.kontoErstellen(new SparbuchFabrik(),alice);
+        long b1 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),bob);
 
         assertEquals(3, bank.getKonten().size(), "Vorher sollten 3 Konten existieren");
 
@@ -723,9 +725,9 @@ class KontenEinesKundenLoeschenTests {
         Kunde alice = new Kunde("Alice", "Anders", "Allee 1", 1990, 1, 1);
         Kunde bob   = new Kunde("Bob", "Bauer", "Berg 2", 1991, 2, 2);
 
-        long a1 = bank.girokontoErstellen(alice); // 1
-        long b1 = bank.girokontoErstellen(bob);   // 2
-        long a2 = bank.sparbuchErstellen(alice);  // 3
+        long a1 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),alice); // 1
+        long b1 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),bob);   // 2
+        long a2 = bank.kontoErstellen(new SparbuchFabrik(),alice);  // 3
         assertEquals(1L, a1);
         assertEquals(2L, b1);
         assertEquals(3L, a2);
@@ -738,7 +740,7 @@ class KontenEinesKundenLoeschenTests {
         assertTrue(bank.getKonten().containsKey(b1));
 
         // Neues Konto fuer Bob bekommt die naechste freie Nummer (4), keine Wiederverwendung von 1/3
-        long b2 = bank.sparbuchErstellen(bob);
+        long b2 = bank.kontoErstellen(new SparbuchFabrik(),bob);
         assertEquals(4L, b2, "Kontonummernzaehler darf durch Massenloeschung nicht zurueckgesetzt werden");
     }
 }

@@ -95,29 +95,16 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
     }
 
     /**
-     * Attempts to withdraw the specified amount from the account.
-     * The withdrawal is only successful if the account is not locked
-     * and sufficient funds, including the overdraft limit (dispo), are available.
+     * Übung 11: Einschubmethode der Template-Methode {@link Konto#abheben(Geldbetrag)}.
+     * Beim Girokonto darf bis zur Höhe des Dispos überzogen werden, d. h. die Abhebung
+     * ist erlaubt, solange der Kontostand danach nicht unter {@code -dispo} fällt.
      *
-     * @param betrag the amount to withdraw. Must not be null or negative.
-     * @return true if the withdrawal was successful, false if there are insufficient funds.
-     * @throws GesperrtException if the account is locked and the withdrawal cannot be processed.
-     * @throws IllegalArgumentException if the specified amount is null or negative.
+     * @param betrag der abzuhebende Betrag (gültig, Konto nicht gesperrt)
+     * @return true, wenn der Kontostand abzüglich des Betrags den Dispo nicht überschreitet
      */
     @Override
-    public boolean abheben(Geldbetrag betrag) throws GesperrtException{
-        if (betrag == null || betrag.isNegativ()) {
-            throw new IllegalArgumentException("Betrag ungültig");
-        }
-        if(this.isGesperrt())
-            throw new GesperrtException(this.getKontonummer());
-        if (!getKontostand().plus(dispo).minus(betrag).isNegativ())
-        {
-            setKontostand(getKontostand().minus(betrag));
-            return true;
-        }
-        else
-            return false;
+    protected boolean pruefeAbhebung(Geldbetrag betrag) {
+        return !getKontostand().plus(dispo).minus(betrag).isNegativ();
     }
 
     /**

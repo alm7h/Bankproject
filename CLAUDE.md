@@ -39,15 +39,28 @@ There is no separate lint step — SpotBugs runs automatically during `mvn compi
 The bank domain is layered. Keep that separation when extending it:
 
 - **`bankprojekt.basisdaten`** — domain model. `Konto` is the abstract base (kontonummer, inhaber,
-  kontostand, sperren); concrete subclasses are `Girokonto`, `Sparbuch`, and `Aktienkonto`.
+  kontostand, sperren); concrete subclasses are `Girokonto`, `Sparbuch`, `Aktienkonto`, `Kinderkonto`,
+  and `Festgeldkonto`. **`abheben(Geldbetrag)` is a Template Method (Übung 11): it is `final` in
+  `Konto` and fixes the algorithm (validate → check lock → `pruefeAbhebung` → deduct → `nachAbhebung`).
+  Subclasses must NOT reimplement `abheben`; they override the `protected` primitive operations
+  `pruefeAbhebung` (their withdrawal rule) and optionally `nachAbhebung` (post-booking, e.g. `Sparbuch`
+  monthly total, `Festgeldkonto` remaining cancelled amount). The base `abheben` is `synchronized` so
+  `Aktienkonto`'s trade methods stay thread-safe without overriding it.**
   `UeberweisungsfaehigesKonto` is an abstract class (extends `Konto`) marking accounts that can
   send/receive transfers (`Bank.geldUeberweisen` checks `instanceof UeberweisungsfaehigesKonto`).
   `Geldbetrag` is an **immutable** money value type (amount + `Waehrung`); use its
   `plus`/`minus`/`mal`/`umrechnen` methods and `Geldbetrag.NULL_EURO` rather than raw doubles.
   `Kunde` is the customer.
+- **`bankprojekt.fabriken`** — Abstract-Factory layer (Übung 11). `Kontofabrik` is the abstract factory
+  with `erstellen(Kunde, long)`; concrete factories (`GirokontoFabrik` carries the dispo,
+  `SparbuchFabrik`, `KinderkontoFabrik`, `FestgeldkontoFabrik`, `AktienkontoFabrik`) each build one
+  account type. `Bank` creates accounts only through `kontoErstellen(Kontofabrik, Kunde)` — adding a new
+  account type needs a new factory, not a new `Bank` method.
 - **`bankprojekt.verwaltung.Bank`** — the aggregate/service holding a `Map<Long, Konto>`, handing out
   account numbers, and implementing cross-account operations (transfers with rollback, stream-based
-  reports over customers). `mockEinfuegen` exists purely so tests can insert Mockito mocks.
+  reports over customers). Accounts are created via `kontoErstellen(Kontofabrik, Kunde)` (replaced the
+  old `girokontoErstellen`/`sparbuchErstellen`/`mockEinfuegen` — Übung 11 b). Tests inject Mockito mocks
+  by passing a throwaway `Kontofabrik` whose `erstellen` returns the mock.
   **Persistence:** `speichern(OutputStream)` / `einlesen(InputStream)` use Java serialization, so the
   whole object graph is `Serializable` (`Bank`, `Konto` + all subclasses, `Geldbetrag`, `Kunde`,
   `Kalender`). Serialization records each object's runtime type, so new `Konto` subtypes persist with

@@ -5,6 +5,7 @@ import bankprojekt.basisdaten.Girokonto;
 import bankprojekt.basisdaten.Konto;
 import bankprojekt.basisdaten.Kunde;
 import bankprojekt.exceptions.GesperrtException;
+import bankprojekt.fabriken.Kontofabrik;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +28,26 @@ class BankMockitoTest {
         dummyKunde2 = new Kunde("Lisa", "Schmidt", "Weg 2", 1995, 5, 5);
     }
 
+    /**
+     * Übung 11 b): Ersatz für die gelöschte Methode {@code Bank.mockEinfuegen}.
+     * Statt das Mock-Konto direkt einzufügen, wird es über die neue Methode
+     * {@link Bank#kontoErstellen(Kontofabrik, Kunde)} eingebracht – mit einer
+     * Wegwerf-{@link Kontofabrik}, die genau dieses Mock-Konto liefert. Genau dafür
+     * ist das Abstract-Factory-Muster nützlich: Der Test bestimmt über die Fabrik,
+     * welches (hier: gemockte) Konto die Bank erhält.
+     *
+     * @param mock das einzufügende Mock-Konto
+     * @return die von der Bank vergebene Kontonummer
+     */
+    private long mockEinfuegen(Konto mock) {
+        return bank.kontoErstellen(new Kontofabrik() {
+            @Override
+            public Konto erstellen(Kunde inhaber, long kontonummer) {
+                return mock;
+            }
+        }, dummyKunde1);
+    }
+
     // -------------------------------------------------------------------------
     // Tests für getKontostand()
     // -------------------------------------------------------------------------
@@ -40,7 +61,7 @@ class BankMockitoTest {
         Konto mockKonto = mock(Konto.class);
         Geldbetrag erwarteterStand = new Geldbetrag(150);
         when(mockKonto.getKontostand()).thenReturn(erwarteterStand);
-        long kontoNr = bank.mockEinfuegen(mockKonto);
+        long kontoNr = mockEinfuegen(mockKonto);
 
         // Act
         Geldbetrag tatsaechlicherStand = bank.getKontostand(kontoNr);
@@ -81,8 +102,8 @@ class BankMockitoTest {
         when(senderMock.ueberweisungAbsenden(any(), anyString(), anyLong(), anyLong(), anyString()))
                 .thenReturn(true);
 
-        long senderNr = bank.mockEinfuegen(senderMock);
-        long empfaengerNr = bank.mockEinfuegen(empfaengerMock);
+        long senderNr = mockEinfuegen(senderMock);
+        long empfaengerNr = mockEinfuegen(empfaengerMock);
         Geldbetrag ueberweisungsBetrag = new Geldbetrag(50);
 
         // Act
@@ -111,8 +132,8 @@ class BankMockitoTest {
         when(senderMock.ueberweisungAbsenden(any(), anyString(), anyLong(), anyLong(), anyString()))
                 .thenReturn(false);
 
-        long senderNr = bank.mockEinfuegen(senderMock);
-        long empfaengerNr = bank.mockEinfuegen(empfaengerMock);
+        long senderNr = mockEinfuegen(senderMock);
+        long empfaengerNr = mockEinfuegen(empfaengerMock);
 
         // Act
         boolean result = bank.geldUeberweisen(senderNr, empfaengerNr, new Geldbetrag(50), "Miete");
@@ -131,7 +152,7 @@ class BankMockitoTest {
     void testGeldUeberweisen_EmpfaengerExistiertNicht() throws GesperrtException {
         // Arrange
         Girokonto senderMock = mock(Girokonto.class);
-        long senderNr = bank.mockEinfuegen(senderMock);
+        long senderNr = mockEinfuegen(senderMock);
 
         // Act — Empfänger-Kontonummer ist unbekannt
         boolean result = bank.geldUeberweisen(senderNr, 99999L, new Geldbetrag(50), "Test");
@@ -150,8 +171,8 @@ class BankMockitoTest {
         Konto nichtUeberweisbarMock = mock(Konto.class);
         Girokonto empfaengerMock = mock(Girokonto.class);
 
-        long senderNr = bank.mockEinfuegen(nichtUeberweisbarMock);
-        long empfaengerNr = bank.mockEinfuegen(empfaengerMock);
+        long senderNr = mockEinfuegen(nichtUeberweisbarMock);
+        long empfaengerNr = mockEinfuegen(empfaengerMock);
 
         // Act
         boolean result = bank.geldUeberweisen(senderNr, empfaengerNr, new Geldbetrag(100), "Test");
@@ -191,8 +212,8 @@ class BankMockitoTest {
         when(senderMock.ueberweisungAbsenden(any(), anyString(), anyLong(), anyLong(), anyString()))
                 .thenThrow(new GesperrtException(1L));
 
-        long senderNr = bank.mockEinfuegen(senderMock);
-        long empfaengerNr = bank.mockEinfuegen(empfaengerMock);
+        long senderNr = mockEinfuegen(senderMock);
+        long empfaengerNr = mockEinfuegen(empfaengerMock);
 
         // Act & Assert
         assertThrows(GesperrtException.class,

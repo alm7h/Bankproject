@@ -14,7 +14,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import bankprojekt.basisdaten.Geldbetrag;
 import bankprojekt.basisdaten.Konto;
 import bankprojekt.basisdaten.Kunde;
-import bankprojekt.exceptions.GesperrtException;
 
 /**
  * Ein Konto, das zusaetzlich ein Aktiendepot verwaltet. Ueber {@link #kaufauftrag}
@@ -77,27 +76,24 @@ public class Aktienkonto extends Konto {
 		super();
 	}
 
-	// Übung 9
+	// Claude changed it
+	// Übung 11 (Bemerkung): Die fruehere ueberschriebene abheben()-Methode wurde durch
+	// die Einschubmethode pruefeAbhebung() ersetzt, da abheben() jetzt die finale
+	// Template-Methode in Konto ist. Die Pruefregel bleibt identisch (Abheben nur, bis
+	// der Kontostand 0 erreicht). Die Synchronisation uebernimmt nun die synchronized
+	// Template-Methode Konto.abheben(); deshalb braucht pruefeAbhebung() selbst kein
+	// synchronized (sie laeuft stets unter dem Lock von abheben()).
 	/**
-	 * Hebt den angegebenen Betrag ab. Beim Aktienkonto ist Abheben nur moeglich,
-	 * bis der Kontostand auf 0 sinkt; das Konto kann also nicht ins Minus geraten.
+	 * Einschubmethode der Template-Methode {@link Konto#abheben(Geldbetrag)}.
+	 * Beim Aktienkonto ist Abheben nur moeglich, bis der Kontostand auf 0 sinkt;
+	 * das Konto kann also nicht ins Minus geraten.
 	 *
-	 * @param betrag abzuhebender Betrag
-	 * @return true, wenn die Abhebung geklappt hat; false, wenn der Kontostand nicht ausreicht
-	 * @throws GesperrtException wenn das Konto gesperrt ist
-	 * @throws IllegalArgumentException wenn der Betrag null oder negativ ist
+	 * @param betrag abzuhebender Betrag (gueltig, Konto nicht gesperrt)
+	 * @return true, wenn der Kontostand abzueglich des Betrags nicht negativ wird
 	 */
 	@Override
-	public synchronized boolean abheben(Geldbetrag betrag) throws GesperrtException {
-		if (betrag == null || betrag.isNegativ())
-			throw new IllegalArgumentException("Betrag ungültig");
-		if (isGesperrt())
-			throw new GesperrtException(getKontonummer());
-		// Abheben nur, solange der Kontostand dabei nicht negativ wird (max. bis 0).
-		if (getKontostand().minus(betrag).isNegativ())
-			return false;
-		setKontostand(getKontostand().minus(betrag));
-		return true;
+	protected boolean pruefeAbhebung(Geldbetrag betrag) {
+		return !getKontostand().minus(betrag).isNegativ();
 	}
 
 	// Übung 9

@@ -14,11 +14,10 @@ import java.util.stream.Collectors;
 
 import bankprojekt.basisdaten.Kunde;
 import bankprojekt.basisdaten.Konto;
-import bankprojekt.basisdaten.Girokonto;
-import bankprojekt.basisdaten.Sparbuch;
 import bankprojekt.basisdaten.Geldbetrag;
 import bankprojekt.basisdaten.UeberweisungsfaehigesKonto;
 import bankprojekt.exceptions.GesperrtException;
+import bankprojekt.fabriken.Kontofabrik;
 
 /**
  * Verwaltet Konten und Kunden einer Bank unter Verwendung von Java Collections.
@@ -107,18 +106,6 @@ public class Bank implements Serializable {
     }
 
     /**
-     * Fügt ein (Mock-)Konto in die Kontenliste der Bank ein und liefert die
-     * dabei vergebene Kontonummer zurück. Nur für Testzwecke!
-     * * @param k Das einzufügende Konto (normalerweise ein Mock-Objekt)
-     * @return Die vergebene Kontonummer
-     */
-    public long mockEinfuegen(Konto k) {
-        long nummer = naechsteFreieKontonummer++;
-        konten.put(nummer, k);
-        return nummer;
-    }
-
-    /**
      * Liefert eine Map aller gespeicherten Konten, wobei die Kontonummern als Schlüssel fungieren.
      *
      * @return eine Map mit Kontonummern als Schlüsseln und den zugehörigen Konto-Objekten als Werten.
@@ -137,30 +124,27 @@ public class Bank implements Serializable {
     }
 
     /**
-     * Erstellt ein Girokonto für den Kunden mit einer neuen Nummer.
-     * @param inhaber Der Kontoinhaber.
-     * @throws NullPointerException Falls der inhaber null ist.
-     * @return Die neu vergebene Kontonummer.
+     * Übung 11 b): Erstellt mit Hilfe der übergebenen {@link Kontofabrik} ein neues
+     * Konto für den angegebenen Inhaber, vergibt dafür eine neue Kontonummer und
+     * speichert das Konto in der Bankverwaltung.
+     * <p>
+     * Diese Methode ersetzt im Sinne des Abstract-Factory-Musters die früheren
+     * Methoden {@code girokontoErstellen}, {@code sparbuchErstellen} und
+     * {@code mockEinfuegen}: Welcher Kontotyp entsteht, bestimmt allein die Fabrik;
+     * die Bank ist nur noch für Nummernvergabe und Speicherung zuständig.
+     *
+     * @param fabrik die Fabrik, die das gewünschte Konto erzeugt
+     * @param inhaber der Kontoinhaber
+     * @return die neu vergebene Kontonummer
+     * @throws NullPointerException falls die Fabrik oder der Inhaber null ist
      */
-    public long girokontoErstellen(Kunde inhaber) throws NullPointerException {
-        if(inhaber == null) throw new NullPointerException("Kunde ist null");
+    public long kontoErstellen(Kontofabrik fabrik, Kunde inhaber) throws NullPointerException {
+        if (fabrik == null) throw new NullPointerException("Fabrik ist null");
+        if (inhaber == null) throw new NullPointerException("Kunde ist null");
         long kontonummer = naechsteFreieKontonummer++;
-        Girokonto konto = new Girokonto(inhaber, kontonummer, dispo_default);
+        Konto konto = fabrik.erstellen(inhaber, kontonummer);
         konten.put(kontonummer, konto);
         return kontonummer;
-    }
-    /**
-     * Erstellt ein Sparbuch für den Kunden mit einer neuen Nummer.
-     * @param inhaber Der Kontoinhaber.
-     * @throws NullPointerException Falls der inhaber null ist.
-     * @return Die neu vergebene Kontonummer.
-     */
-    public long sparbuchErstellen(Kunde inhaber) throws NullPointerException {
-        if(inhaber == null) throw new NullPointerException("Kunde ist null");
-        long nummer = naechsteFreieKontonummer++;
-        Sparbuch neu = new Sparbuch(inhaber, nummer);
-        konten.put(nummer, neu);
-        return nummer;
     }
 
     /**

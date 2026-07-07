@@ -176,17 +176,69 @@ public abstract class Konto implements Comparable<Konto>, Serializable
         setKontostand(getKontostand().plus(betrag));
     }
 
-    /**
+    /** Übung 11:
      * Mit dieser Methode wird der geforderte Betrag vom Konto in bar ausgezahlt, wenn es nicht gesperrt ist
-     * und die speziellen Abheberegeln des jeweiligen Kontotyps die Abhebung erlauben
+     * und die speziellen Abheberegeln des jeweiligen Kontotyps die Abhebung erlauben.
+     * <p>
+     * Übung 11: Diese Methode ist die <b>Template-Methode</b>. Sie legt den für alle
+     * Kontoarten gleichen Ablauf einer Abhebung ein für alle Mal fest:
+     * <ol>
+     *   <li>Prüfung der Parameter (nicht null, nicht negativ),</li>
+     *   <li>Prüfung der Sperre,</li>
+     *   <li>kontotyp-spezifische Prüfung über die Einschubmethode {@link #pruefeAbhebung(Geldbetrag)},</li>
+     *   <li>Abbuchung vom Kontostand,</li>
+     *   <li>kontotyp-spezifische Nachbearbeitung über {@link #nachAbhebung(Geldbetrag)}.</li>
+     * </ol>
+     * Sie ist deshalb {@code final} – die Unterklassen können den Ablauf nicht
+     * verändern, sondern nur ihre Regeln über die beiden Einschubmethoden einbringen.
+     *
      * @param betrag abzuhebender Betrag
      * @throws GesperrtException Wenn das Konto gesperrt ist
      * @throws IllegalArgumentException Wenn der Betrag negativ oder null ist
      * @return True, wenn die Abhebung geklappt hat,
      * 		   false, wenn sie abgelehnt wurde
      */
-    public abstract boolean abheben(Geldbetrag betrag)
-            throws GesperrtException;
+    public final synchronized boolean abheben(Geldbetrag betrag)
+            throws GesperrtException {
+        if (betrag == null || betrag.isNegativ())
+            throw new IllegalArgumentException("Betrag ungültig");
+        if (this.isGesperrt())
+            throw new GesperrtException(this.getKontonummer());
+        if (!pruefeAbhebung(betrag))
+            return false;
+        setKontostand(getKontostand().minus(betrag));
+        nachAbhebung(betrag);
+        return true;
+    }
+
+    /** Übung 11:
+     * Einschubmethode (primitive Operation) der Template-Methode {@link #abheben(Geldbetrag)}.
+     * Eine Unterklasse entscheidet hier nach ihren eigenen Regeln, ob die Abhebung
+     * des angegebenen Betrags erlaubt ist. Wenn diese Methode aufgerufen wird, ist
+     * der Betrag bereits als gültig geprüft (nicht null, nicht negativ) und das Konto
+     * ist nicht gesperrt; die Unterklasse muss diese Fälle also nicht erneut behandeln.
+     * <p>
+     * Die Methode ist {@code protected}: Sie gehört zum internen Mechanismus der
+     * Template-Methode und darf nicht von beliebigem fremden Code aufgerufen werden,
+     * sondern nur innerhalb der Vererbungshierarchie.
+     *
+     * @param betrag der abzuhebende Betrag (gültig, Konto nicht gesperrt)
+     * @return true, wenn die Abhebung nach den Regeln der Unterklasse erlaubt ist
+     */
+    protected abstract boolean pruefeAbhebung(Geldbetrag betrag);
+
+    /** Übung 11:
+     * Einschubmethode (Haken) der Template-Methode {@link #abheben(Geldbetrag)}.
+     * Sie wird nach einer erfolgreichen Abbuchung aufgerufen, damit eine Unterklasse
+     * zusätzliche Buchführung erledigen kann (z. B. das Sparbuch die im Monat bereits
+     * abgehobene Summe fortschreiben oder das Festgeldkonto den noch gekündigten
+     * Betrag verringern). Die Standardimplementierung tut nichts.
+     *
+     * @param betrag der soeben erfolgreich abgehobene Betrag
+     */
+    protected void nachAbhebung(Geldbetrag betrag) {
+        // Standardverhalten: keine zusätzliche Buchführung nötig.
+    }
 
     /**
      * Sperrt das Konto, sind Aktionen zum Schaden des Benutzers nicht mehr möglich.

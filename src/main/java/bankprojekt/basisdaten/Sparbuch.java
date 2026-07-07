@@ -2,7 +2,6 @@ package bankprojekt.basisdaten;
 
 import java.time.LocalDate;
 
-import bankprojekt.exceptions.GesperrtException;
 import bankprojekt.exceptions.UngueltigeKontonummerException;
 import bankprojekt.nuetzliches.Kalender;
 
@@ -85,27 +84,17 @@ public class Sparbuch extends Konto {
     }
 
     /**
-     * Versucht, einen angegebenen Geldbetrag vom Sparbuch abzuheben. Dabei wird überprüft,
-     * ob der Betrag gültig ist, das Konto nicht gesperrt ist und die Abhebe-Bedingungen
-     * des Sparbuchs erfüllt sind (wie Mindestguthaben und maximale Abhebesumme). Wenn die
-     * Bedingungen erfüllt sind, wird der Betrag vom Kontostand abgezogen.
+     * Übung 11: Einschubmethode der Template-Methode {@link Konto#abheben(Geldbetrag)}.
+     * Prüft die Abhebe-Bedingungen des Sparbuchs: Der Kontostand darf nach der Abhebung
+     * nicht unter das {@link #MINIMUM} fallen und die im laufenden Monat insgesamt
+     * abgehobene Summe darf {@link #ABHEBESUMME} nicht überschreiten. Beim Übergang in
+     * einen neuen Monat wird die bereits abgehobene Summe zuvor zurückgesetzt.
      *
-     * @param betrag der abzuhebende Geldbetrag. Darf nicht null oder negativ sein.
-     * @return true, wenn der Betrag erfolgreich abgehoben wurde; false, wenn die Abhebe-Bedingungen
-     *         nicht erfüllt sind (z. B. Unterschreiten des Mindestguthabens oder Überschreiten
-     *         der maximalen Abhebesumme).
-     * @throws IllegalArgumentException wenn der übergebene Betrag null oder negativ ist.
-     * @throws GesperrtException wenn das Konto gesperrt ist.
+     * @param betrag der abzuhebende Geldbetrag (gültig, Konto nicht gesperrt)
+     * @return true, wenn Mindestguthaben und Monatslimit eingehalten werden
      */
     @Override
-    public boolean abheben (Geldbetrag betrag) throws GesperrtException{
-        if (betrag == null || betrag.isNegativ()) {
-            throw new IllegalArgumentException("Betrag ungültig");
-        }
-        if(this.isGesperrt())
-        {
-            throw new GesperrtException(this.getKontonummer());
-        }
+    protected boolean pruefeAbhebung(Geldbetrag betrag) {
         LocalDate heute = kalender.getHeutigesDatum();
         if (heute.getMonth() != zeitpunkt.getMonth() || heute.getYear() != zeitpunkt.getYear()) {
             bereitsAbgehoben = Geldbetrag.NULL_EURO;
@@ -121,15 +110,21 @@ public class Sparbuch extends Konto {
         }
 
         Geldbetrag neu = getKontostand().minus(betrag);
-        if (neu.compareTo(Sparbuch.MINIMUM) >= 0 &&
-                bereitsAbgehoben.plus(betrag).compareTo(Sparbuch.ABHEBESUMME) <= 0) {
-            setKontostand(neu);
-            bereitsAbgehoben = bereitsAbgehoben.plus(betrag);
-            zeitpunkt = heute; // Zeitpunkt der letzten erfolgreichen Abhebung aktualisieren
-            return true;
-        } else {
-            return false;
-        }
+        return neu.compareTo(Sparbuch.MINIMUM) >= 0
+                && bereitsAbgehoben.plus(betrag).compareTo(Sparbuch.ABHEBESUMME) <= 0;
+    }
+
+    /**
+     * Übung 11: Nachbearbeitung der Template-Methode {@link Konto#abheben(Geldbetrag)}.
+     * Schreibt nach einer erfolgreichen Abhebung die im laufenden Monat bereits
+     * abgehobene Summe fort und merkt sich den Zeitpunkt der Abhebung.
+     *
+     * @param betrag der soeben abgehobene Betrag
+     */
+    @Override
+    protected void nachAbhebung(Geldbetrag betrag) {
+        bereitsAbgehoben = bereitsAbgehoben.plus(betrag);
+        zeitpunkt = kalender.getHeutigesDatum();
     }
 
     /**
