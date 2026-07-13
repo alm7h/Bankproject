@@ -3,6 +3,11 @@ package bankprojekt.aktienhandel;
 // Übung 9: komplette Klasse neu erstellt (Aufgabe 2) und auf
 // ExecutorService.submit(...) zur Threadsteuerung umgestellt.
 import java.beans.PropertyChangeListener;
+
+// Übung 12: PropertyChangeSupport importiert, damit das Aktienkonto als
+// beobachtetes Subjekt seine Beobachter ueber Depotaenderungen (Kauf/Verkauf)
+// informieren kann (Observer-Muster, Aufgabe 12 a).
+import java.beans.PropertyChangeSupport;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -57,6 +62,14 @@ public class Aktienkonto extends Konto {
 	 */
 	private final Map<String, Integer> depot = new HashMap<>();
 
+
+	// Übung 12: Das Aktienkonto ist das beobachtete Subjekt des Observer-Musters.
+	// Ueber diesen PropertyChangeSupport werden die angemeldeten Beobachter bei
+	// jeder Aenderung des Depotbestands (Aktien kommen hinzu oder werden entfernt)
+	// benachrichtigt - NICHT bei blossen Kursaenderungen. PropertyChangeSupport ist
+	// thread-sicher, das Feuern erfolgt aus den Worker-Threads der Auftraege heraus.
+	private final PropertyChangeSupport depotAenderungen = new PropertyChangeSupport(this);
+
 	// Übung 9
 	/**
 	 * erstellt ein Aktienkonto fuer den angegebenen Inhaber mit der angegebenen
@@ -76,7 +89,7 @@ public class Aktienkonto extends Konto {
 		super();
 	}
 
-	// Claude changed it
+
 	// Übung 11 (Bemerkung): Die fruehere ueberschriebene abheben()-Methode wurde durch
 	// die Einschubmethode pruefeAbhebung() ersetzt, da abheben() jetzt die finale
 	// Template-Methode in Konto ist. Die Pruefregel bleibt identisch (Abheben nur, bis
@@ -132,7 +145,16 @@ public class Aktienkonto extends Konto {
 			synchronized (this) {
 				Geldbetrag gesamtpreis = kurs.mal(anzahl);
 				if (abheben(gesamtpreis)) {
+
+					// Übung 12: alten Bestand merken, damit die Beobachter ueber die
+					// konkrete Aenderung (alter -> neuer Bestand dieser WKN) informiert
+					// werden koennen.
+					int alterBestand = depot.getOrDefault(wkn, 0);
 					depot.merge(wkn, anzahl, Integer::sum);
+					int neuerBestand = depot.get(wkn);
+					// Übung 12: Beobachter ueber den Zuwachs im Depot benachrichtigen
+					// (Property-Name = WKN, alter/neuer Bestand als Werte).
+					depotAenderungen.firePropertyChange(wkn, alterBestand, neuerBestand);
 					return gesamtpreis;
 				}
 				// Kontostand nicht ausreichend -> nichts kaufen, 0 € zurueck.
@@ -172,6 +194,10 @@ public class Aktienkonto extends Konto {
 					return Geldbetrag.NULL_EURO;
 				Geldbetrag erloes = kurs.mal(bestand);
 				depot.remove(wkn);   // kompletten Bestand dieser Aktie verkaufen
+
+				// Übung 12: Beobachter ueber das Entfernen der Aktien aus dem Depot
+				// benachrichtigen (alter Bestand -> 0 fuer diese WKN).
+				depotAenderungen.firePropertyChange(wkn, bestand, 0);
 				einzahlen(erloes);   // Erloes dem Kontostand gutschreiben
 				return erloes;
 			}
@@ -220,5 +246,28 @@ public class Aktienkonto extends Konto {
 	 */
 	public synchronized int getDepotbestand(String wkn) {
 		return depot.getOrDefault(wkn, 0);
+	}
+
+
+	// Übung 12: An-/Abmeldung der Beobachter (Observer-Muster). Das Aktienkonto ist
+	// das beobachtete Subjekt; ein angemeldeter Beobachter wird bei jeder
+	// Depotaenderung (Kauf/Verkauf) ueber propertyChange(...) benachrichtigt.
+	/**
+	 * Meldet einen Beobachter an, der bei jeder Aenderung des Aktiendepots
+	 * (Kauf oder Verkauf von Aktien) benachrichtigt wird.
+	 * @param beobachter der zu benachrichtigende Listener
+	 */
+	public void addPropertyChangeListener(PropertyChangeListener beobachter) {
+		depotAenderungen.addPropertyChangeListener(beobachter);
+	}
+
+
+	// Übung 12: Gegenstueck zur Anmeldung eines Depot-Beobachters.
+	/**
+	 * Meldet einen zuvor angemeldeten Depot-Beobachter wieder ab.
+	 * @param beobachter der abzumeldende Listener
+	 */
+	public void removePropertyChangeListener(PropertyChangeListener beobachter) {
+		depotAenderungen.removePropertyChangeListener(beobachter);
 	}
 }

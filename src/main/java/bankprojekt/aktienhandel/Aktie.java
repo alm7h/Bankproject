@@ -106,7 +106,7 @@ public class Aktie {
 		KURS_SCHEDULER.scheduleAtFixedRate(this::kursAendern, zeit, zeit, TimeUnit.SECONDS);
 	}
 
-	// Claude changed it
+
 	/**
 	 * Veraendert den aktuellen Kurs der Aktie um einen zufaelligen Prozentsatz.
 	 * Diese Methode wird regelmaessig vom {@link #KURS_SCHEDULER} aufgerufen.
