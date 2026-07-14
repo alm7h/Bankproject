@@ -1,10 +1,24 @@
 package bankprojekt.basisdaten;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigInteger;
 
 import bankprojekt.exceptions.GesperrtException;
 import bankprojekt.exceptions.UngueltigeKontonummerException;
+
+// Übung 13: JavaFX-Properties für Kontostand, Gesperrt-Zustand und die
+// Plus/Minus-Anzeige, damit die Oberfläche das Konto beobachten kann.
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanWrapper;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.SimpleBooleanProperty;
 
 /**
  * Stellt ein allgemeines Bank-Konto dar
@@ -29,7 +43,10 @@ public abstract class Konto implements Comparable<Konto>, Serializable
      * Wenn das Konto gesperrt ist (gesperrt = true), können keine Aktionen daran mehr vorgenommen werden,
      * die zum Schaden des Kontoinhabers wären (abheben, Inhaberwechsel)
      */
-    private boolean gesperrt;
+    // Übung 13 (c): Der Gesperrt-Zustand ist jetzt eine JavaFX-Property.
+    // transient, weil Properties nicht serialisierbar sind; der boolesche Wert
+    // wird in writeObject/readObject von Hand gesichert.
+    private transient BooleanProperty gesperrt;
 
     /**
      * der Kontoinhaber
@@ -39,7 +56,17 @@ public abstract class Konto implements Comparable<Konto>, Serializable
     /**
      * der aktuelle Kontostand
      */
-    private Geldbetrag kontostand = Geldbetrag.NULL_EURO;
+    // Übung 13 (b): Der Kontostand steckt in einem ReadOnlyObjectWrapper, damit er
+    // von außen nur gelesen (kontostandProperty() liefert ReadOnlyObjectProperty),
+    // aber nicht verändert werden kann. Ebenfalls transient (siehe writeObject/readObject).
+    private transient ReadOnlyObjectWrapper<Geldbetrag> kontostand;
+
+    /**
+     * Übung 13 (d): Zeigt an, ob der Kontostand im Plus (>= 0) oder im Minus ist.
+     * Die Property ist über ein Binding an den Kontostand gekoppelt und wird
+     * dadurch immer automatisch aktuell gehalten.
+     */
+    private transient ReadOnlyBooleanWrapper imPlus;
 
     /**
      * Setzt die beiden Eigenschaften Kontoinhaber und Kontonummer auf die angegebenen Werte,
@@ -57,7 +84,26 @@ public abstract class Konto implements Comparable<Konto>, Serializable
             throw new UngueltigeKontonummerException();
         this.inhaber = inhaber;
         this.nummer = kontonummer;
-        this.gesperrt = false;
+        // Übung 13: Properties (Kontostand, Gesperrt, Plus/Minus) aufbauen
+        eigenschaftenInitialisieren(Geldbetrag.NULL_EURO, false);
+    }
+
+    /**
+     * Übung 13: Baut die drei transienten Properties (Kontostand, Gesperrt-Zustand
+     * und die Plus/Minus-Anzeige) auf und verknüpft die Plus/Minus-Property über
+     * ein Binding fest mit dem Kontostand, sodass sie immer aktuell bleibt.
+     * Wird sowohl vom Konstruktor als auch nach dem Deserialisieren aufgerufen.
+     *
+     * @param startKontostand der anfängliche bzw. eingelesene Kontostand
+     * @param startGesperrt der anfängliche bzw. eingelesene Gesperrt-Zustand
+     */
+    private void eigenschaftenInitialisieren(Geldbetrag startKontostand, boolean startGesperrt) {
+        this.kontostand = new ReadOnlyObjectWrapper<>(startKontostand);
+        this.gesperrt = new SimpleBooleanProperty(startGesperrt);
+        this.imPlus = new ReadOnlyBooleanWrapper();
+        // im Plus = Kontostand ist nicht negativ; hängt am Kontostand und bleibt so aktuell
+        this.imPlus.bind(Bindings.createBooleanBinding(
+                () -> !this.kontostand.get().isNegativ(), this.kontostand));
     }
 
     /**
@@ -80,6 +126,15 @@ public abstract class Konto implements Comparable<Konto>, Serializable
      * @return true, wenn das Konto gesperrt ist
      */
     public boolean isGesperrt() {
+        return gesperrt.get();   // Übung 13: Wert aus der Property lesen
+    }
+
+    /**
+     * Übung 13 (c): Der Gesperrt-Zustand als Property, damit die Oberfläche ihn
+     * beobachten und anzeigen kann.
+     * @return der Gesperrt-Zustand als BooleanProperty
+     */
+    public BooleanProperty gesperrtProperty() {
         return gesperrt;
     }
 
@@ -111,7 +166,34 @@ public abstract class Konto implements Comparable<Konto>, Serializable
      * @return   Kontostand
      */
     public Geldbetrag getKontostand() {
-        return kontostand;
+        return kontostand.get();   // Übung 13: Wert aus der Property lesen
+    }
+
+    /**
+     * Übung 13 (b): Der Kontostand als von außen nur lesbare Property. Dadurch kann
+     * die Oberfläche den Kontostand beobachten, ihn aber nicht verändern.
+     * @return der Kontostand als ReadOnlyObjectProperty
+     */
+    public ReadOnlyObjectProperty<Geldbetrag> kontostandProperty() {
+        return kontostand.getReadOnlyProperty();
+    }
+
+    /**
+     * Übung 13 (d): Property, die anzeigt, ob der Kontostand im Plus (>= 0) ist.
+     * Sie wird automatisch über ein Binding an den Kontostand aktuell gehalten
+     * und kann von außen nur gelesen werden.
+     * @return true-Property, wenn der Kontostand nicht negativ ist
+     */
+    public ReadOnlyBooleanProperty imPlusProperty() {
+        return imPlus.getReadOnlyProperty();
+    }
+
+    /**
+     * Übung 13 (d): Liefert, ob der Kontostand aktuell im Plus (nicht negativ) ist.
+     * @return true, wenn der Kontostand nicht negativ ist
+     */
+    public boolean isImPlus() {
+        return imPlus.get();
     }
 
     /**
@@ -120,7 +202,7 @@ public abstract class Konto implements Comparable<Konto>, Serializable
      */
     protected void setKontostand(Geldbetrag kontostand) {
         if(kontostand != null)
-            this.kontostand = kontostand;
+            this.kontostand.set(kontostand);   // Übung 13: Wert in die Property schreiben
     }
 
     /**
@@ -244,14 +326,14 @@ public abstract class Konto implements Comparable<Konto>, Serializable
      * Sperrt das Konto, sind Aktionen zum Schaden des Benutzers nicht mehr möglich.
      */
     public void sperren() {
-        this.gesperrt = true;
+        this.gesperrt.set(true);   // Übung 13: Wert in die Property schreiben
     }
 
     /**
      * Entsperrt das Konto, alle Kontoaktionen sind wieder möglich.
      */
     public void entsperren() {
-        this.gesperrt = false;
+        this.gesperrt.set(false);   // Übung 13: Wert in die Property schreiben
     }
 
     @Override
@@ -325,7 +407,36 @@ public abstract class Konto implements Comparable<Konto>, Serializable
         if (neu == null) {
             throw new NullPointerException("Die neue Währung darf nicht null");
         }
-        this.kontostand = this.kontostand.umrechnen(neu);
+        // Übung 13: Kontostand über die Property setzen (umgerechneter Wert)
+        this.kontostand.set(this.kontostand.get().umrechnen(neu));
+    }
+
+    /**
+     * Übung 13: Da Kontostand und Gesperrt-Zustand jetzt in transienten
+     * JavaFX-Properties stecken, werden ihre reinen Werte hier von Hand
+     * mitserialisiert.
+     * @param out der Ausgabestrom
+     * @throws IOException bei einem Fehler beim Schreiben
+     */
+    @Serial
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        out.defaultWriteObject();            // nummer, inhaber
+        out.writeObject(kontostand.get());   // Kontostand (Geldbetrag ist serialisierbar)
+        out.writeBoolean(gesperrt.get());    // Gesperrt-Zustand
+    }
+
+    /**
+     * Übung 13: Baut nach dem Einlesen die transienten Properties wieder auf.
+     * @param in der Eingabestrom
+     * @throws IOException bei einem Fehler beim Lesen
+     * @throws ClassNotFoundException falls eine Klasse nicht gefunden wird
+     */
+    @Serial
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        Geldbetrag gelesenerStand = (Geldbetrag) in.readObject();
+        boolean gelesenGesperrt = in.readBoolean();
+        eigenschaftenInitialisieren(gelesenerStand, gelesenGesperrt);
     }
 }
 
