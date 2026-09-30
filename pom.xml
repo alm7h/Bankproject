@@ -35,6 +35,14 @@
             <version>22.0.1</version>
         </dependency>
 
+        <!-- Übung 14: FXML-Oberfläche (FXMLLoader, @FXML). Ersetzt die von Hand
+             programmierte KontoOberflaeche aus Übung 13 durch eine FXML-Datei. -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>22.0.1</version>
+        </dependency>
+
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
