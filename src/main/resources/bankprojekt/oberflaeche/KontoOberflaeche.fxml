@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Übung 14 a): Diese FXML-Datei ersetzt die von Hand programmierte
+     KontoOberflaeche aus Übung 13 (View). Layout, statische Initialisierungen
+     (Aktions-Auswahl, ToggleGroup), der Ereignisaufruf (onAction) und die
+     Einbindung der CSS-Datei sind hier deklariert – so wenig Java-Code wie möglich.
+     fx:controller verweist auf den wiederverwendeten MVC-Controller. -->
+
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
+<?import javafx.geometry.Insets?>
+<?import javafx.collections.FXCollections?>
+<?import java.lang.String?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="bankprojekt.oberflaeche.KontoController"
+            stylesheets="@konto.css"
+            styleClass="wurzel">
+
+    <!-- Übung 14: Die ToggleGroup verbindet die beiden RadioButtons – komplett in FXML. -->
+    <fx:define>
+        <ToggleGroup fx:id="gesperrtGruppe"/>
+    </fx:define>
+
+    <!-- Übung 14: Die Überschrift zeigt die Kontonummer.
+         Den konkreten Text setzt der Controller (er hängt vom Model ab). -->
+    <top>
+        <Label fx:id="ueberschrift" styleClass="ueberschrift"
+               maxWidth="Infinity" alignment="CENTER" text="Kontonummer">
+            <BorderPane.margin>
+                <Insets top="10" bottom="10"/>
+            </BorderPane.margin>
+        </Label>
+    </top>
+
+    <center>
+        <GridPane hgap="10" vgap="12" styleClass="anzeige">
+            <padding>
+                <Insets top="10" right="20" bottom="10" left="20"/>
+            </padding>
+            <columnConstraints>
+                <ColumnConstraints minWidth="90"/>
+                <ColumnConstraints/>
+            </columnConstraints>
+
+            <!-- Zeile 0: Kontostand und darunter das Pleite-Bild -->
+            <Label text="Kontostand:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+            <VBox spacing="4" GridPane.rowIndex="0" GridPane.columnIndex="1">
+                <Label fx:id="stand" styleClass="stand" text="0,00 EUR"/>
+                <!-- Übung 14: Pleite-Bild. Die Bildquelle steht in der FXML-Datei,
+                     die Sichtbarkeit bindet der Controller an den Kontostand. -->
+                <ImageView fx:id="pleiteBild" fitHeight="60.0" preserveRatio="true">
+                    <image>
+                        <Image url="@pleite.jpg"/>
+                    </image>
+                </ImageView>
+            </VBox>
+
+            <!-- Zeile 1: Gesperrt-Zustand über zwei RadioButtons einer ToggleGroup -->
+            <Label text="Gesperrt:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+            <HBox spacing="10" GridPane.rowIndex="1" GridPane.columnIndex="1">
+                <RadioButton fx:id="gesperrtRadio" text="gesperrt" toggleGroup="$gesperrtGruppe"/>
+                <RadioButton fx:id="freigegebenRadio" text="freigegeben" toggleGroup="$gesperrtGruppe"/>
+            </HBox>
+
+            <!-- Zeile 2: Name des Inhabers -->
+            <Label text="Name:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+            <Label fx:id="name" styleClass="wert" text="Mustermann, Max"
+                   GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+            <!-- Zeile 3: Adresse des Inhabers (änderbar) -->
+            <Label text="Adresse" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+            <TextArea fx:id="adresse" prefColumnCount="25" prefRowCount="3"
+                      GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+        </GridPane>
+    </center>
+
+    <bottom>
+        <HBox spacing="10" alignment="CENTER" styleClass="aktionen">
+            <padding>
+                <Insets top="10" right="20" bottom="15" left="20"/>
+            </padding>
+
+            <!-- Übung 14: Erste ChoiceBox – die Geldbeträge füllt der Controller,
+                 weil sich Geldbetrag-Objekte nicht sinnvoll in FXML erzeugen lassen. -->
+            <ChoiceBox fx:id="betragAuswahl" prefWidth="150"/>
+
+            <!-- Übung 14: Zweite ChoiceBox – die beiden Aktionen direkt in FXML. -->
+            <ChoiceBox fx:id="aktionAuswahl" prefWidth="120">
+                <items>
+                    <FXCollections fx:factory="observableArrayList">
+                        <String fx:value="Abheben"/>
+                        <String fx:value="Einzahlen"/>
+                    </FXCollections>
+                </items>
+            </ChoiceBox>
+
+            <!-- Übung 14: Ereignisaufruf direkt in FXML verdrahtet. -->
+            <Button text="Aktion auslösen" defaultButton="true"
+                    styleClass="aktion-knopf" onAction="#aktionAusloesen"/>
+        </HBox>
+    </bottom>
+</BorderPane>

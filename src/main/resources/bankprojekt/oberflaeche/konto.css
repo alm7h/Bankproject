@@ -1,0 +1,35 @@
+/*
+ * Übung 14 a): Aus der Oberfläche ausgelagerte Formatierungen.
+ * Laut Aufgabenstellung muss mindestens eine Formatierung in eine CSS-Datei;
+ * hier sind Schriftgrößen, Farben und der Akzent-Knopf ausgelagert.
+ */
+
+.wurzel {
+    -fx-background-color: white;
+}
+
+/* Übung 14: Überschrift mit der Kontonummer – große, zentrierte Schrift. */
+.ueberschrift {
+    -fx-font-size: 30px;
+    -fx-font-family: "Sans Serif";
+    -fx-text-fill: #303030;
+}
+
+/* Übung 14: einheitliche Schriftgröße der Beschriftungen im Anzeigebereich. */
+.anzeige .label {
+    -fx-font-size: 14px;
+}
+
+/* Übung 14: Name und Kontostand etwas hervorgehoben. */
+.wert,
+.stand {
+    -fx-text-fill: #1a6ea8;
+    -fx-font-size: 14px;
+}
+
+/* Übung 14: Auslöse-Knopf in Akzentfarbe (wie im Entwurf). */
+.aktion-knopf {
+    -fx-base: #2f80ed;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
