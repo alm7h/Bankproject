@@ -23,8 +23,8 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
      * @param inhaber Kontoinhaber
      * @param kontonummer Kontonummer
      * @param dispo Dispo
-     * @throws IllegalArgumentException wenn der inhaber null ist
-     * 				    oder der angegebene dispo null, negativ bzw. NaN oder 0 ist
+     * @throws NullPointerException wenn der inhaber null ist
+     * @throws IllegalArgumentException wenn der angegebene dispo null, negativ bzw. NaN oder 0 ist
      * @throws UngueltigeKontonummerException wenn kontonummer ungültig ist
      */
     public Girokonto(Kunde inhaber, long kontonummer, Geldbetrag dispo)

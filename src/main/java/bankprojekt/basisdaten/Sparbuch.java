@@ -60,7 +60,7 @@ public class Sparbuch extends Konto {
      * abgefragt.
      * @param inhaber der Kontoinhaber
      * @param kontonummer die Wunsch-Kontonummer
-     * @throws IllegalArgumentException wenn inhaber null ist
+     * @throws NullPointerException wenn inhaber null ist
      * @throws UngueltigeKontonummerException wenn kontonummer ungültig ist
      */
     public Sparbuch(Kunde inhaber, long kontonummer) {
@@ -72,7 +72,8 @@ public class Sparbuch extends Konto {
      * @param inhaber der Kontoinhaber
      * @param kontonummer die Wunsch-Kontonummer
      * @param kalender der Kalender, der für die Abfrage des heutigen Datums benutzt wird
-     * @throws IllegalArgumentException wenn inhaber oder kalender null ist
+     * @throws NullPointerException wenn inhaber null ist
+     * @throws IllegalArgumentException wenn kalender null ist
      * @throws UngueltigeKontonummerException wenn kontonummer ungültig ist
      */
     public Sparbuch(Kunde inhaber, long kontonummer, Kalender kalender) {
