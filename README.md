@@ -56,7 +56,7 @@ The `spielereien` package holds runnable `main` demo programs (the presentation 
 - JavaFX back-office app (FXML + controllers) with login: manage customers, accounts and staff users, audit log of every action
 - Passwords stored only as salted PBKDF2 hashes; login locked for 60 s after 5 failed attempts
 - Persistence: save/load a whole bank via Java serialization, several banks in one zip file; the Verwaltung app saves its data automatically after every change
-- Unit tests with JUnit 5 and Mockito (about 530 tests)
+- Unit tests with JUnit 5 and Mockito (about 680 tests, including the JavaFX UI); the build fails if a class of the back office or the UI drops below 90 % coverage
 - Code quality: SpotBugs static analysis, JaCoCo coverage, Javadoc generation
 
 
@@ -188,11 +188,11 @@ Available demos:
 ```
 ./mvnw -q test
 ```
-A JaCoCo coverage report is generated during tests. It covers all of `bankprojekt` except the JavaFX UI (`bankprojekt.oberflaeche`). Find the HTML report in:
+A JaCoCo coverage report is generated during tests. It covers all of `bankprojekt`, including the JavaFX UI. `./mvnw verify` additionally checks that every class in `bankprojekt.verwaltung` and `bankprojekt.oberflaeche` has at least 90 % line and branch coverage and fails otherwise. Only the two JavaFX entry points `Start` and `BankAnwendung` are exempt: `Application.launch` can run only once per JVM, and `start` shows the window. Their logic lives in the tested `Fenstersteuerung`. Find the HTML report in:
 ```
 ./target/site/jacoco/index.html
 ```
-Every push and pull request is also built and tested by GitHub Actions (`.github/workflows/build.yml`) with JDK 21, once with the default and once with a German locale. The JaCoCo report of each run can be downloaded from the run's page (artifact `jacoco-report`).
+Every push and pull request is also built and tested by GitHub Actions (`.github/workflows/build.yml`) with JDK 21, once with the default and once with a German locale. The build runs under `xvfb-run`, a virtual screen that JavaFX needs for the UI tests. The JaCoCo report of each run can be downloaded from the run's page (artifact `jacoco-report`).
 Run a single test class or method:
 ```
 ./mvnw -q test -Dtest=BankTest
@@ -222,13 +222,14 @@ The archive `target/Bankproject-1.0-SNAPSHOT-submission.zip` contains the source
 ## Tests
 The test suite lives in `src/test/java/bankprojekt`, in the same packages as the classes under test, and uses only JUnit 5 and Mockito.
 
-- **About 530 tests**, around 97 % line and branch coverage of `bankprojekt` (without the UI).
+- **About 680 tests**, around 98 % line and branch coverage of `bankprojekt`, UI included.
 - Every account type, `Geldbetrag`, `Waehrung`, `Kunde`, the factories, the `Bank` (including transfers, reports and persistence), the exceptions and `Kalender` have their own test classes, as do the back-office classes `Bankverwaltung`, `Kundendaten`, `Anmeldung` (lockout with an adjustable test clock), `Passwortschutz` and `Datenspeicher`.
 - Test names and comments are in German, e.g. `geldAbheben_gibtFalse_wennUeberDispo`.
 - The suite does not depend on the computer's language settings: locale-dependent output is tested with `Locale.GERMANY`, set and restored around each test. To double-check:
   ```
   ./mvnw -q test -DargLine="-Duser.language=de -Duser.country=DE"
   ```
+- The JavaFX UI is tested with plain JUnit, without an extra test library. The extension `JavaFxErweiterung` starts JavaFX once and runs every test on the JavaFX thread. Tests load the real FXML views, type into fields and press buttons. Modal dialogs are answered in code (`Dialogantworten`), so no window ever opens, and an unexpected dialog fails the test. The login lockout is tested with an adjustable clock.
 - The stock trading tests contain no `sleep()`: they wait for results with `Future.get(timeout)` and use price limits that are met immediately, so they don't depend on random price changes.
 
 
