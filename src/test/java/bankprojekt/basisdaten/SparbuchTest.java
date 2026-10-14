@@ -88,6 +88,12 @@ class SparbuchTest {
         }
 
         @Test
+        void konstruktor_wirftNullPointerException_wennInhaberNull() {
+            assertThrows(NullPointerException.class, () -> new Sparbuch(null, 4711));
+            assertThrows(NullPointerException.class, () -> new Sparbuch(null, 4711, new Kalender()));
+        }
+
+        @Test
         void konstruktor_wirftIllegalArgumentException_wennKalenderNull() {
             assertThrows(IllegalArgumentException.class, () -> new Sparbuch(inhaber, 4711, null));
         }

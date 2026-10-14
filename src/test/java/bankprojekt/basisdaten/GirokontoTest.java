@@ -56,6 +56,11 @@ class GirokontoTest {
         }
 
         @Test
+        void konstruktor_wirftNullPointerException_wennInhaberNull() {
+            assertThrows(NullPointerException.class, () -> new Girokonto(null, 1, new Geldbetrag(500)));
+        }
+
+        @Test
         void konstruktor_wirftIllegalArgumentException_beiUngueltigemDispo() {
             assertThrows(IllegalArgumentException.class, () -> new Girokonto(inhaber, 1, null));
             assertThrows(IllegalArgumentException.class, () -> new Girokonto(inhaber, 1, new Geldbetrag(-0.01)));
