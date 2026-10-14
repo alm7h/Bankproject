@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Formular für Benutzer: Anlegen (alle Felder), Bearbeiten (nur Anzeigename)
+     und Passwort zurücksetzen (nur Passwort). Welche Felder gelten, legt der
+     Controller über den Modus fest. -->
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+
+<GridPane xmlns="http://javafx.com/javafx"
+          xmlns:fx="http://javafx.com/fxml"
+          fx:controller="bankprojekt.oberflaeche.BenutzerFormularController"
+          styleClass="formular" prefWidth="420">
+
+    <columnConstraints>
+        <ColumnConstraints minWidth="140"/>
+        <ColumnConstraints hgrow="ALWAYS"/>
+    </columnConstraints>
+
+    <Label text="Benutzername *" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+    <TextField fx:id="benutzername" promptText="z. B. e.mustermann" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+    <Label text="Anzeigename *" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+    <TextField fx:id="anzeigename" promptText="z. B. Erika Mustermann" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+    <Label fx:id="passwortBeschriftung" text="Passwort *" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+    <PasswordField fx:id="passwort" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+    <Label fx:id="wiederholungBeschriftung" text="Passwort wiederholen *" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+    <PasswordField fx:id="wiederholung" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+    <Label fx:id="hinweis" styleClass="hinweis" maxWidth="Infinity"
+           GridPane.rowIndex="4" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+
+    <Label fx:id="fehler" styleClass="fehlermeldung" maxWidth="Infinity"
+           GridPane.rowIndex="5" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+</GridPane>

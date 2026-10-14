@@ -34,6 +34,12 @@ public class HauptfensterController {
     /** Navigationsknopf „Konten" */
     @FXML
     private ToggleButton kontenKnopf;
+    /** Navigationsknopf „Benutzer" */
+    @FXML
+    private ToggleButton benutzerKnopf;
+    /** Navigationsknopf „Protokoll" */
+    @FXML
+    private ToggleButton protokollKnopf;
     /** Arbeitsbereich für die aktuelle Ansicht */
     @FXML
     private StackPane inhalt;
@@ -102,6 +108,22 @@ public class HauptfensterController {
      */
     private KontenController kontenAnsicht() {
         return zeigen("konten.fxml", kontenKnopf);
+    }
+
+    /**
+     * Zeigt die Benutzerverwaltung.
+     */
+    @FXML
+    private void benutzerZeigen() {
+        zeigen("benutzer.fxml", benutzerKnopf);
+    }
+
+    /**
+     * Zeigt das Protokoll.
+     */
+    @FXML
+    private void protokollZeigen() {
+        zeigen("protokoll.fxml", protokollKnopf);
     }
 
     /**

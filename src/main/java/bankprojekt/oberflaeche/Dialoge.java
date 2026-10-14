@@ -124,9 +124,11 @@ final class Dialoge {
         dialog.setTitle(titel);
         dialog.setHeaderText(titel);
         ButtonType speichernTyp = new ButtonType("Speichern", ButtonData.OK_DONE);
+        // eigene Beschriftung statt ButtonType.CANCEL, das je nach Locale "Cancel" heißt
+        ButtonType abbrechenTyp = new ButtonType("Abbrechen", ButtonData.CANCEL_CLOSE);
         DialogPane flaeche = dialog.getDialogPane();
         flaeche.setContent(inhalt);
-        flaeche.getButtonTypes().addAll(speichernTyp, ButtonType.CANCEL);
+        flaeche.getButtonTypes().addAll(speichernTyp, abbrechenTyp);
         gestalten(flaeche);
         fehlerfeld.setText("");
         Button speichernKnopf = (Button) flaeche.lookupButton(speichernTyp);

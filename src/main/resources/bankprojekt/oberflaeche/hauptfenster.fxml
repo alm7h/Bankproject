@@ -29,6 +29,10 @@
                           toggleGroup="$navigation" onAction="#kundenZeigen"/>
             <ToggleButton fx:id="kontenKnopf" text="Konten" styleClass="navigation"
                           toggleGroup="$navigation" onAction="#kontenZeigen"/>
+            <ToggleButton fx:id="benutzerKnopf" text="Benutzer" styleClass="navigation"
+                          toggleGroup="$navigation" onAction="#benutzerZeigen"/>
+            <ToggleButton fx:id="protokollKnopf" text="Protokoll" styleClass="navigation"
+                          toggleGroup="$navigation" onAction="#protokollZeigen"/>
 
             <Region VBox.vgrow="ALWAYS"/>
 
