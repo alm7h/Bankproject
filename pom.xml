@@ -74,8 +74,12 @@
                         </goals>
                         <configuration>
                             <includes>
-                                <include>bankprojekt/verwaltung/Bank.class</include>
+                                <include>bankprojekt/**</include>
                             </includes>
+                            <excludes>
+                                <exclude>bankprojekt/oberflaeche/**</exclude>
+                                <exclude>bankprojekt/aktienhandel/Aktienspielereien*</exclude>
+                            </excludes>
                         </configuration>
                     </execution>
                 </executions>
