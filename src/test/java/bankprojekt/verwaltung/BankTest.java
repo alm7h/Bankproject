@@ -5,7 +5,14 @@ import bankprojekt.basisdaten.Girokonto;
 import bankprojekt.basisdaten.Konto;
 import bankprojekt.basisdaten.Kunde;
 import bankprojekt.basisdaten.Sparbuch;
+import bankprojekt.aktienhandel.Aktienkonto;
+import bankprojekt.basisdaten.Festgeldkonto;
+import bankprojekt.basisdaten.Kinderkonto;
+import bankprojekt.fabriken.AktienkontoFabrik;
+import bankprojekt.fabriken.FestgeldkontoFabrik;
 import bankprojekt.fabriken.GirokontoFabrik;
+import bankprojekt.fabriken.KinderkontoFabrik;
+import bankprojekt.fabriken.Kontofabrik;
 import bankprojekt.fabriken.SparbuchFabrik;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -620,6 +627,8 @@ class GeldUeberweisenTests {
         assertThrows(IllegalArgumentException.class, () -> bank.geldUeberweisen(a, b, null, "x"));
         // negativer Betrag
         assertThrows(IllegalArgumentException.class, () -> bank.geldUeberweisen(a, b, new Geldbetrag(-1), "x"));
+        // Betrag 0
+        assertThrows(IllegalArgumentException.class, () -> bank.geldUeberweisen(a, b, Geldbetrag.NULL_EURO, "x"));
         // null Verwendungszweck
         assertThrows(IllegalArgumentException.class, () -> bank.geldUeberweisen(a, b, new Geldbetrag(1), null));
         // gleiche Kontonummern
@@ -757,6 +766,196 @@ class KontenEinesKundenLoeschenTests {
         // Neues Konto für Bob bekommt die nächste freie Nummer (4), keine Wiederverwendung von 1/3
         long b2 = bank.kontoErstellen(new SparbuchFabrik(),bob);
         assertEquals(4L, b2, "Kontonummernzaehler darf durch Massenloeschung nicht zurueckgesetzt werden");
+    }
+}
+
+/**
+ * kontoErstellen mit weiteren Fabriken und Fehlerfällen.
+ */
+@Nested
+class KontoErstellenTests {
+    @Test
+    void kontoErstellen_wirftNullPointerException_wennFabrikNull_undZaehlerBleibtUnveraendert() {
+        Bank bank = new Bank(12345100L);
+        assertThrows(NullPointerException.class, () -> bank.kontoErstellen(null, Kunde.MUSTERMANN));
+        assertTrue(bank.getKonten().isEmpty());
+        assertEquals(1L, bank.kontoErstellen(new SparbuchFabrik(), Kunde.MUSTERMANN));
+    }
+
+    @Test
+    void kontoErstellen_speichertKontenAllerFabriktypen() {
+        Bank bank = new Bank(12345101L);
+        long kind = bank.kontoErstellen(new KinderkontoFabrik(), Kunde.MUSTERMANN);
+        long fest = bank.kontoErstellen(new FestgeldkontoFabrik(), Kunde.MUSTERMANN);
+        long aktie = bank.kontoErstellen(new AktienkontoFabrik(), Kunde.MUSTERMANN);
+        assertInstanceOf(Kinderkonto.class, bank.getKonten().get(kind));
+        assertInstanceOf(Festgeldkonto.class, bank.getKonten().get(fest));
+        assertInstanceOf(Aktienkonto.class, bank.getKonten().get(aktie));
+        assertEquals(java.util.List.of(1L, 2L, 3L), java.util.List.of(kind, fest, aktie));
+    }
+
+    @Test
+    void kontoErstellen_speichertGenauDasKontoDerFabrik_mitVergebenerNummer() {
+        Bank bank = new Bank(12345102L);
+        Konto[] erzeugt = new Konto[1];
+        Kontofabrik fabrik = new Kontofabrik() {
+            @Override
+            public Konto erstellen(Kunde inhaber, long kontonummer) {
+                erzeugt[0] = new Sparbuch(inhaber, kontonummer);
+                return erzeugt[0];
+            }
+        };
+        long nr = bank.kontoErstellen(fabrik, Kunde.MUSTERMANN);
+        assertSame(erzeugt[0], bank.getKonten().get(nr));
+        assertEquals(nr, erzeugt[0].getKontonummer());
+    }
+
+    @Test
+    void kontoErstellen_verbrauchtKeineKontonummer_wennDieFabrikScheitert() {
+        Bank bank = new Bank(12345103L);
+        // Ungültiger Dispo: die Fabrik wirft beim Erstellen eine IllegalArgumentException
+        assertThrows(IllegalArgumentException.class,
+                () -> bank.kontoErstellen(new GirokontoFabrik(null), Kunde.MUSTERMANN));
+        assertTrue(bank.getKonten().isEmpty(), "Es darf kein Konto gespeichert sein");
+        // Wie beim null-Inhaber darf ein gescheiterter Aufruf den Zähler nicht verändern
+        assertEquals(1L, bank.kontoErstellen(new SparbuchFabrik(), Kunde.MUSTERMANN),
+                "Die Nummer des gescheiterten Kontos muss wieder vergeben werden");
+    }
+}
+
+/**
+ * getKundenMitLeeremKonto: laut JavaDoc Kunden mit mindestens einem Konto mit
+ * negativem Kontostand, jeder Kunde nur einmal.
+ */
+@Nested
+class KundenMitLeeremKontoTests {
+    private final Kunde alice = new Kunde("Alice", "Anders", "Allee 1", 1990, 1, 1);
+    private final Kunde bob = new Kunde("Bob", "Bauer", "Berg 2", 1991, 2, 2);
+
+    @Test
+    void getKundenMitLeeremKonto_istLeer_ohneKonten() {
+        assertTrue(new Bank(12345110L).getKundenMitLeeremKonto().isEmpty());
+    }
+
+    @Test
+    void getKundenMitLeeremKonto_enthaeltNurKundenMitNegativemKontostand() throws Exception {
+        Bank bank = new Bank(12345111L);
+        long a = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default), alice);
+        bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default), bob);   // Kontostand genau 0
+        bank.geldAbheben(a, new Geldbetrag(10));
+        assertEquals(java.util.List.of(alice), bank.getKundenMitLeeremKonto());
+    }
+
+    @Test
+    void getKundenMitLeeremKonto_enthaeltKundenNurEinmal_auchBeiMehrerenUeberzogenenKonten() throws Exception {
+        Bank bank = new Bank(12345112L);
+        long a1 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default), alice);
+        long a2 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default), alice);
+        long b = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default), bob);
+        bank.geldAbheben(a1, new Geldbetrag(10));
+        bank.geldAbheben(a2, new Geldbetrag(20));
+        bank.geldEinzahlen(b, new Geldbetrag(5));
+        assertEquals(java.util.List.of(alice), bank.getKundenMitLeeremKonto());
+    }
+}
+
+/**
+ * getKundengeburtstage: eine Zeile "Nachname, Vorname: Geburtstag" pro Kunde,
+ * sortiert nach Monat und Tag (Jahr ignoriert), ohne Duplikate.
+ */
+@Nested
+class KundengeburtstageTests {
+    @Test
+    void getKundengeburtstage_istLeer_ohneKonten() {
+        assertEquals("", new Bank(12345120L).getKundengeburtstage());
+    }
+
+    @Test
+    void getKundengeburtstage_sortiertNachMonatUndTag_undIgnoriertDasJahr() {
+        Bank bank = new Bank(12345121L);
+        bank.kontoErstellen(new SparbuchFabrik(), new Kunde("Dora", "Dez", "x", 1950, 12, 1));
+        bank.kontoErstellen(new SparbuchFabrik(), new Kunde("Jan", "Jung", "x", 2005, 1, 15));
+        bank.kontoErstellen(new SparbuchFabrik(), new Kunde("Mia", "Mai", "x", 1980, 5, 3));
+        String erwartet = String.join(System.lineSeparator(),
+                "Jung, Jan: 2005-01-15",
+                "Mai, Mia: 1980-05-03",
+                "Dez, Dora: 1950-12-01");
+        assertEquals(erwartet, bank.getKundengeburtstage());
+    }
+
+    @Test
+    void getKundengeburtstage_listetJedenKundenNurEinmal() {
+        Bank bank = new Bank(12345122L);
+        Kunde mia = new Kunde("Mia", "Mai", "x", 1980, 5, 3);
+        bank.kontoErstellen(new SparbuchFabrik(), mia);
+        bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default), mia);
+        assertEquals("Mai, Mia: 1980-05-03", bank.getKundengeburtstage());
+    }
+}
+
+/**
+ * getAnzahlSenioren und schenkungAnNeuerwachsene verwenden direkt LocalDate.now(),
+ * daher werden die Geburtstage relativ zum heutigen Datum gebildet.
+ */
+@Nested
+class AltersabhaengigeTests {
+    private final java.time.LocalDate heute = java.time.LocalDate.now();
+
+    private Kunde kunde(String vorname, java.time.LocalDate geburtstag) {
+        return new Kunde(vorname, "Test", "x", geburtstag);
+    }
+
+    @Test
+    void getAnzahlSenioren_istNull_ohneKonten() {
+        assertEquals(0, new Bank(12345130L).getAnzahlSenioren());
+    }
+
+    @Test
+    void getAnzahlSenioren_zaehltAbGenau67Jahren() {
+        Bank bank = new Bank(12345131L);
+        bank.kontoErstellen(new SparbuchFabrik(), kunde("Genau", heute.minusYears(67)));
+        bank.kontoErstellen(new SparbuchFabrik(), kunde("Knapp", heute.minusYears(67).plusDays(1)));
+        bank.kontoErstellen(new SparbuchFabrik(), kunde("Alt", heute.minusYears(90)));
+        assertEquals(2, bank.getAnzahlSenioren(), "67 Jahre ab heute zählen, einen Tag jünger nicht");
+    }
+
+    @Test
+    void getAnzahlSenioren_zaehltJedenKundenNurEinmal() {
+        Bank bank = new Bank(12345132L);
+        Kunde senior = kunde("Senior", heute.minusYears(70));
+        bank.kontoErstellen(new SparbuchFabrik(), senior);
+        bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default), senior);
+        assertEquals(1, bank.getAnzahlSenioren());
+    }
+
+    @Test
+    void schenkungAnNeuerwachsene_zahltNurKundenEin_dieDiesesJahr18Werden() {
+        Bank bank = new Bank(12345133L);
+        int jahr18 = heute.getYear() - 18;
+        long januar = bank.kontoErstellen(new SparbuchFabrik(), kunde("Januar", java.time.LocalDate.of(jahr18, 1, 1)));
+        long dezember = bank.kontoErstellen(new SparbuchFabrik(), kunde("Dezember", java.time.LocalDate.of(jahr18, 12, 31)));
+        long wird17 = bank.kontoErstellen(new SparbuchFabrik(), kunde("Siebzehn", java.time.LocalDate.of(jahr18 + 1, 1, 1)));
+        long wird19 = bank.kontoErstellen(new SparbuchFabrik(), kunde("Neunzehn", java.time.LocalDate.of(jahr18 - 1, 12, 31)));
+
+        bank.schenkungAnNeuerwachsene(new Geldbetrag(100));
+
+        assertEquals(new Geldbetrag(100), bank.getKontostand(januar));
+        assertEquals(new Geldbetrag(100), bank.getKontostand(dezember));
+        assertEquals(Geldbetrag.NULL_EURO, bank.getKontostand(wird17));
+        assertEquals(Geldbetrag.NULL_EURO, bank.getKontostand(wird19));
+    }
+
+    @Test
+    void schenkungAnNeuerwachsene_zahltProKundeGenauAufEinKontoEin() {
+        Bank bank = new Bank(12345134L);
+        Kunde neu18 = kunde("Volljaehrig", java.time.LocalDate.of(heute.getYear() - 18, 1, 1));
+        long k1 = bank.kontoErstellen(new SparbuchFabrik(), neu18);
+        long k2 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default), neu18);
+
+        bank.schenkungAnNeuerwachsene(new Geldbetrag(100));
+
+        Geldbetrag summe = bank.getKontostand(k1).plus(bank.getKontostand(k2));
+        assertEquals(new Geldbetrag(100), summe, "Genau ein Konto erhält die Schenkung");
     }
 }
 }
