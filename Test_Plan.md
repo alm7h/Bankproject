@@ -13,11 +13,11 @@ Goal: work through the domain bottom-up, one class at a time, so each layer is t
 | 2 `WaehrungTest` | ✅ done | 13 | `test: add unit tests for Waehrung` |
 | 3 `KundeTest` | ✅ done | 22 | `fix(Kunde)`, `test: add unit tests for Kunde` |
 | 4 `KontoTest` | ✅ done | 48 | `test: add unit tests for Konto`, `test: call equals directly…` |
-| 5 `GirokontoTest` | ✅ done | 23 (was 3, duplicate removed) | `test: extend Girokonto tests for dispo, transfers and currency switch` |
+| 5 `GirokontoTest` | ✅ done | 25 (was 3, duplicate removed) | `test: extend Girokonto tests…`, 2× `fix(Girokonto)`, `test: cover transfers to locked accounts…` (+5 `BankMockitoTest`, +1 `BankTest`) |
 | 6 `SparbuchTest` / `SparbuchMockitoTest` | ⏭ next | | |
 | 7–16 | open | | |
 
-**Suite total: 225 tests, all green** — on the default locale and with `-Duser.language=de -Duser.country=DE`.
+**Suite total: 233 tests, all green** — on the default locale and with `-Duser.language=de -Duser.country=DE`.
 
 ## Bugs found and fixed
 | # | Class | Bug | Fix |
@@ -25,8 +25,10 @@ Goal: work through the domain bottom-up, one class at a time, so each layer is t
 | 1 | `Geldbetrag` | `umrechnen(null)` threw `NullPointerException`, JavaDoc promises `IllegalArgumentException` | explicit null check |
 | 2 | `Geldbetrag` | `hashCode` hashed the raw amount while `equals` compares the euro value → 1 EUR equals 61.5 MKD but hash codes differed (Object contract broken) | private `inEuro()` shared by `compareTo` and `hashCode` |
 | 3 | `Kunde` | String constructor used the locale's SHORT date format: German `"15.03.85"` → 2085 (rejected as future), en_001 `"01/01/90"` → year 90 AD | fixed `dd.MM.yy` pattern, two-digit year resolved into the last 100 years; `GirokontoTest`/`SparbuchTest` literals changed to `"01.01.90"` |
+| 4 | `Girokonto` | `setDispo` accepted a dispo of 0 although its JavaDoc requires "größer als 0" | 0 is rejected in every currency; `KundenUndKontenSortieren` demo switched from dispo 0 to 500 EUR |
+| 5 | `Girokonto` / `Bank` | a locked account still received transfers (`ueberweisungEmpfangen`) | `ueberweisungEmpfangen` throws `GesperrtException` (declared in `UeberweisungsfaehigesKonto`); `Bank.geldUeberweisen` checks the receiver's lock before debiting and returns false, rollback also catches `GesperrtException` |
 
-**Coverage (JaCoCo, branches):** `Geldbetrag` 30/30, `Konto` 40/40, `Kunde` 16/18 (the 2 missing are the locale branch in the static initializer, which can't be reached without reloading the class).
+**Coverage (JaCoCo, branches):** `Geldbetrag` 30/30, `Konto` 40/40, `Kunde` 16/18 (the 2 missing are the locale branch in the static initializer, which can't be reached without reloading the class), `Girokonto` 31/32 (the `dispo != null` check in `waehrungswechsel` is unreachable), `Bank.geldUeberweisen` fully covered.
 
 **Lessons for the remaining tests:**
 - Check `equals` against `null` and foreign types by calling it directly (`assertFalse(x.equals(null))`). `assertNotEquals(null, x)` never calls `x.equals`.
@@ -39,7 +41,7 @@ Goal: work through the domain bottom-up, one class at a time, so each layer is t
 - **Out of scope:** `bankprojekt.oberflaeche` (JavaFX UI), `spielereien.*`, `aktienhandel.Aktienspielereien`, and `EinAusgabe` (interactive console input). These are presentation layer.
 - **Existing tests:** extend them, and fix clear defects. Each change gets reported.
 - **Conventions:** German comments and test names (match the existing style, e.g. `geldAbheben_gibtFalse_wennUeberDispo`). No `@author` tags in new files. No `Thread.sleep` in tests. Locale-dependent assertions run under `Locale.GERMANY`, which is saved and restored around each test.
-- **AI attribution:** nothing in the code or comments says the work was AI-generated. Every commit message ends with the trailer `Assisted-by: Claude Code (Claude Opus 5.5)`. All earlier branch commits were rewritten to carry it as well.
+- **AI attribution:** nothing in the code or comments says the work was AI-generated. Commit messages from `a53f2e9` on carry no attribution trailer; the earlier branch commits keep theirs (the branch is pushed, so its history is not rewritten).
 - **Commits:** on branch `test/testsuite`. One commit per test class or fix. Conventional-commit subjects (`test:`, `fix(Klasse):`, `docs:`, `build:`) with an explanatory body. Never commit a red build.
 
 ## Prioritized order (one class at a time, run the tests after each one)
