@@ -4,30 +4,52 @@
 Test coverage is thin and lopsided. `Bank` is well covered (BankTest has about 40 tests, plus BankMockitoTest), and `Sparbuch` is partly covered. `Girokonto` has only 3 tests, and `Aktienkonto` has only its observer tests. **These classes have no tests at all:** `Geldbetrag`, `Waehrung`, `Konto` (the Template Method `abheben`, IBAN, properties, serialization), `Kunde`, `Kinderkonto`, `Festgeldkonto`, every factory, `Aktie`, the exceptions, and `Bank` persistence and stream reports (`speichern`/`einlesen`, `getKundenMitLeeremKonto`, `getKundengeburtstage`, `getAnzahlSenioren`, `schenkungAnNeuerwachsene`).
 Goal: work through the domain bottom-up, one class at a time, so each layer is tested before the layers that depend on it.
 
+## Status
+| Step | State | Tests | Commit(s) |
+|---|---|---|---|
+| 0 Baseline | ✅ done | 69 existing, all green (locale en_001) | — |
+| JaCoCo scope | ✅ done | — | `build: widen JaCoCo report scope…` |
+| 1 `GeldbetragTest` | ✅ done | 52 | 2× `fix(Geldbetrag)`, `test: add unit tests for Geldbetrag` |
+| 2 `WaehrungTest` | ✅ done | 13 | `test: add unit tests for Waehrung` |
+| 3 `KundeTest` | ✅ done | 22 | `fix(Kunde)`, `test: add unit tests for Kunde` |
+| 4 `KontoTest` | ⏭ next | | |
+| 5–16 | open | | |
+
+**Suite total: 156 tests, all green** — on the default locale and with `-Duser.language=de -Duser.country=DE`.
+
+## Bugs found and fixed
+| # | Class | Bug | Fix |
+|---|---|---|---|
+| 1 | `Geldbetrag` | `umrechnen(null)` threw `NullPointerException`, JavaDoc promises `IllegalArgumentException` | explicit null check |
+| 2 | `Geldbetrag` | `hashCode` hashed the raw amount while `equals` compares the euro value → 1 EUR equals 61.5 MKD but hash codes differed (Object contract broken) | private `inEuro()` shared by `compareTo` and `hashCode` |
+| 3 | `Kunde` | String constructor used the locale's SHORT date format: German `"15.03.85"` → 2085 (rejected as future), en_001 `"01/01/90"` → year 90 AD | fixed `dd.MM.yy` pattern, two-digit year resolved into the last 100 years; `GirokontoTest`/`SparbuchTest` literals changed to `"01.01.90"` |
+
 ## Decisions (confirmed with you)
 - **Tools:** only JUnit 5 (Jupiter, including `@Nested`, `@ParameterizedTest`, which is part of `junit-jupiter`) and Mockito 5.15 (`@ExtendWith(MockitoExtension.class)`, `@Mock`, `ArgumentCaptor`). No new dependencies.
-- **When a test finds a bug:** I write the failing test, **stop and report it**, and don't change production code until you decide.
+- **When a test finds a bug:** I write the failing test, **stop and report it**, and don't change production code until you decide. Once you decide, the production fix gets its own `fix(Klasse): …` commit, and the test class follows in a `test: …` commit.
 - **JaCoCo:** widen the existing report's `<includes>` in `pom.xml` from `Bank.class` to `bankprojekt/**`, and add `<excludes>` for `bankprojekt/oberflaeche/**` and `bankprojekt/aktienhandel/Aktienspielereien*`. No new plugin.
 - **Out of scope:** `bankprojekt.oberflaeche` (JavaFX UI), `spielereien.*`, `aktienhandel.Aktienspielereien`, and `EinAusgabe` (interactive console input). These are presentation layer.
 - **Existing tests:** extend them, and fix clear defects. Each change gets reported.
-- **Conventions:** German comments and test names (match the existing style, e.g. `geldAbheben_gibtFalse_wennUeberDispo`). No `@author` tags in new files. No `Thread.sleep` in tests.
+- **Conventions:** German comments and test names (match the existing style, e.g. `geldAbheben_gibtFalse_wennUeberDispo`). No `@author` tags in new files. No `Thread.sleep` in tests. Locale-dependent assertions run under `Locale.GERMANY`, which is saved and restored around each test.
+- **No AI attribution anywhere:** nothing in code, comments, commit messages or PR descriptions says the work was AI-generated. No `Co-Authored-By` trailer.
+- **Commits:** on branch `test/testsuite`. One commit per test class or fix. Conventional-commit subjects (`test:`, `fix(Klasse):`, `docs:`, `build:`) with an explanatory body. Never commit a red build.
 
 ## Prioritized order (one class at a time, run the tests after each one)
 
-**Step 0 – Baseline.** Run `mvn test` with IntelliJ's bundled Maven and record which tests pass or fail today. Any red test gets reported before anything else.
+**Step 0 – Baseline.** ✅ Run `mvn test` with IntelliJ's bundled Maven and record which tests pass or fail today. Any red test gets reported before anything else.
 
 ### Priority 1 — Value types: everything else depends on them (`basisdaten`)
-1. **`GeldbetragTest`** (new). This is the most important class: every balance and rule goes through it. Cover the constructors (NaN/Infinity/null currency → IAE), `plus`/`minus` (null or negative → IAE, currency conversion into this object's currency), `mal`, `umrechnen` (same currency returns the same instance, rounding to 2 decimal places), `isNegativ`, `compareTo` across currencies, `equals`/`hashCode`, `toString`, and immutability (the original is unchanged after an operation).
-   - ⚠️ Expected finding: equal amounts in different currencies give different `hashCode` values → **stop and report**.
-2. **`WaehrungTest`** (new, small). Exchange rates, codes (`kuerzel`), `toString`.
-3. **`KundeTest`** (new). All 4 constructors, null checks in the setters, future birthday → IAE, `getName`, `equals`/`hashCode`/`compareTo` by name, `adresseProperty`, and a serialization round trip (the address is restored).
-   - ⚠️ The String-date constructor and `getAnrede()` depend on the locale. I'll test them with `Locale` saved and restored in `@BeforeEach`/`@AfterEach`. If that isn't enough, I'll ask you.
+1. ✅ **`GeldbetragTest`** (new). This is the most important class: every balance and rule goes through it. Cover the constructors (NaN/Infinity/null currency → IAE), `plus`/`minus` (null or negative → IAE, currency conversion into this object's currency), `mal`, `umrechnen` (same currency returns the same instance, rounding to 2 decimal places), `isNegativ`, `compareTo` across currencies, `equals`/`hashCode`, `toString`, and immutability (the original is unchanged after an operation).
+   - ⚠️ Expected finding: equal amounts in different currencies give different `hashCode` values → **stop and report**. *Confirmed and fixed (bugs #1 and #2).*
+2. ✅ **`WaehrungTest`** (new, small). Exchange rates, codes (`kuerzel`), `toString`.
+3. ✅ **`KundeTest`** (new). All 4 constructors, null checks in the setters, future birthday → IAE, `getName`, `equals`/`hashCode`/`compareTo` by name, `adresseProperty`, and a serialization round trip (the address is restored).
+   - ⚠️ The String-date constructor and `getAnrede()` depend on the locale. I'll test them with `Locale` saved and restored in `@BeforeEach`/`@AfterEach`. If that isn't enough, I'll ask you. *The String constructor turned out to be buggy (bug #3, fixed).*
 
 ### Priority 2 — The core abstraction (`Konto`, Template Method)
 4. **`KontoTest`** (new). Uses a small concrete test subclass or a Mockito spy (`mock(Konto.class, CALLS_REAL_METHODS)`) to test the **Template Method** in isolation. It checks the order validate → lock → `pruefeAbhebung` → deduct → `nachAbhebung`, and confirms the hooks are not called on rejection or when the account is locked (Mockito `inOrder`/`never`). Also: constructor limits (−1, 0, 9 999 999 999, 10 000 000 000), `einzahlen`, `sperren`/`entsperren`/`setInhaber` while locked, `getIban` (a known-valid IBAN, BLZ out of range → ""), `getKontonummerFormatiert`, `equals`/`hashCode`/`compareTo`, `waehrungswechsel`, the JavaFX properties (`kontostandProperty`, `imPlusProperty` binding, `gesperrtProperty`; no FX toolkit needed), and a serialization round trip (balance and lock state survive).
 
 ### Priority 3 — Concrete account types (each has its own `pruefeAbhebung` rule)
-5. **`GirokontoTest`** (extend and clean up). Fix the locale-dependent `"01/01/90"` and remove the duplicate test. Add the dispo boundary (exactly −dispo is allowed, 0.01 more is rejected), `setDispo` validation, `ueberweisungAbsenden`/`ueberweisungEmpfangen` (locked, null parameters, cover check), and `waehrungswechsel` converting the dispo too.
+5. **`GirokontoTest`** (extend and clean up). ~~Fix the locale-dependent `"01/01/90"`~~ (done with bug #3). Remove the duplicate test. Add the dispo boundary (exactly −dispo is allowed, 0.01 more is rejected), `setDispo` validation, `ueberweisungAbsenden`/`ueberweisungEmpfangen` (locked, null parameters, cover check), and `waehrungswechsel` converting the dispo too.
 6. **`SparbuchTest` / `SparbuchMockitoTest`** (extend). Exact boundaries: MINIMUM 0.50 €, 2000 €/month, a year change with the same month number (Jan 2026 → Jan 2027 must reset), a rejected withdrawal must not count toward the monthly total, and the `Kalender(null)` constructor → IAE.
 7. **`KinderkontoTest`** (new). Exactly 50 € is allowed, 50.01 € is rejected, no overdraft.
 8. **`FestgeldkontoTest`** (new). `kuendigen` (capped at the balance, null/negative → IAE), withdrawing at most the cancelled amount (`gekuendigt`), the cancelled amount shrinking after a withdrawal, and no second withdrawal of the same amount.
