@@ -4,9 +4,35 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.example</groupId>
+    <groupId>io.github.alm7h</groupId>
     <artifactId>Bankproject</artifactId>
     <version>1.0-SNAPSHOT</version>
+
+    <name>Bankproject</name>
+    <description>Java 21 banking domain with a JavaFX UI: account types, money in multiple currencies,
+        transfers, persistence and concurrent stock trading, with design patterns and an extensive
+        JUnit 5 / Mockito test suite.</description>
+    <url>https://github.com/alm7h/Bankproject</url>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>alm7h</id>
+            <name>Mohameed Al-Harethi</name>
+            <url>https://github.com/alm7h</url>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/alm7h/Bankproject</url>
+        <connection>scm:git:https://github.com/alm7h/Bankproject.git</connection>
+    </scm>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -132,6 +158,15 @@
                 </executions>
             </plugin>
 
+            <!-- Startet die JavaFX-Oberfläche mit "mvn javafx:run" (JavaFX auf dem Modulpfad) -->
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <configuration>
+                    <mainClass>bankprojekt.oberflaeche.Start</mainClass>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
