@@ -78,7 +78,6 @@
                             </includes>
                             <excludes>
                                 <exclude>bankprojekt/oberflaeche/**</exclude>
-                                <exclude>bankprojekt/aktienhandel/Aktienspielereien*</exclude>
                             </excludes>
                         </configuration>
                     </execution>
