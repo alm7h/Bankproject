@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Formular zum Anlegen und Bearbeiten eines Kunden (Pflichtfelder mit *). -->
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+
+<GridPane xmlns="http://javafx.com/javafx"
+          xmlns:fx="http://javafx.com/fxml"
+          fx:controller="bankprojekt.oberflaeche.KundeFormularController"
+          styleClass="formular" prefWidth="460">
+
+    <columnConstraints>
+        <ColumnConstraints minWidth="120"/>
+        <ColumnConstraints hgrow="ALWAYS"/>
+    </columnConstraints>
+
+    <Label text="Kundennummer" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+    <Label fx:id="kundennummer" styleClass="feldname" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+    <Label text="Vorname *" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+    <TextField fx:id="vorname" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+    <Label text="Nachname *" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+    <TextField fx:id="nachname" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+    <Label text="Geburtsdatum *" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+    <TextField fx:id="geburtsdatum" promptText="TT.MM.JJJJ" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+    <Label text="Adresse *" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+    <TextArea fx:id="adresse" prefRowCount="3" promptText="Straße und Hausnummer&#10;PLZ Ort"
+              GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+    <Label text="Telefon" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+    <TextField fx:id="telefon" promptText="z. B. +49 30 123456" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+
+    <Label text="E-Mail *" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+    <TextField fx:id="email" promptText="name@beispiel.de" GridPane.rowIndex="6" GridPane.columnIndex="1"/>
+
+    <Label fx:id="fehler" styleClass="fehlermeldung" maxWidth="Infinity"
+           GridPane.rowIndex="7" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+</GridPane>

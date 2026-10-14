@@ -1,0 +1,240 @@
+/*
+ * Gestaltung der Bankverwaltung: dunkle Seitenleiste, helle Arbeitsfläche,
+ * eine Akzentfarbe für Hauptaktionen und farbige Status-Markierungen.
+ */
+
+.root {
+    -fx-font-family: "System";
+    -fx-font-size: 13px;
+    -akzent: #2f6fed;
+    -akzent-dunkel: #2459c4;
+    -gefahr: #c0392b;
+    -text: #1f2937;
+    -text-leise: #6b7280;
+    -rand: #dfe3ea;
+    -flaeche: #f4f6fa;
+    -fx-background-color: -flaeche;
+}
+
+/* ------------------------------------------------------------ Anmeldung */
+
+.anmeldung {
+    -fx-background-color: linear-gradient(to bottom right, #1f2a44, #2f4a7a);
+}
+
+.karte {
+    -fx-background-color: white;
+    -fx-background-radius: 10;
+    -fx-border-color: -rand;
+    -fx-border-radius: 10;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.25), 18, 0, 0, 4);
+}
+
+.titel {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text;
+}
+
+.untertitel {
+    -fx-text-fill: -text-leise;
+}
+
+.feldname {
+    -fx-text-fill: -text;
+    -fx-font-weight: bold;
+}
+
+.fehlermeldung {
+    -fx-text-fill: -gefahr;
+    -fx-wrap-text: true;
+}
+
+.hinweis {
+    -fx-text-fill: -text-leise;
+    -fx-font-size: 12px;
+    -fx-wrap-text: true;
+}
+
+/* ------------------------------------------------------------ Knöpfe */
+
+.button {
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.primaer {
+    -fx-base: -akzent;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.primaer:hover {
+    -fx-base: -akzent-dunkel;
+}
+
+.gefahr {
+    -fx-text-fill: -gefahr;
+}
+
+/* ------------------------------------------------------------ Seitenleiste */
+
+.seitenleiste {
+    -fx-background-color: #1f2a44;
+    -fx-padding: 20 0 16 0;
+    -fx-spacing: 4;
+    -fx-pref-width: 210;
+}
+
+.seitenleiste .marke {
+    -fx-text-fill: white;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-padding: 0 20 18 20;
+}
+
+.navigation {
+    -fx-background-color: transparent;
+    -fx-text-fill: #c7d0e0;
+    -fx-alignment: center-left;
+    -fx-padding: 10 20 10 20;
+    -fx-font-size: 14px;
+    -fx-background-radius: 0;
+    -fx-max-width: Infinity;
+    -fx-cursor: hand;
+}
+
+.navigation:hover {
+    -fx-background-color: #2a3757;
+    -fx-text-fill: white;
+}
+
+.navigation:selected {
+    -fx-background-color: #2f4a7a;
+    -fx-text-fill: white;
+    -fx-border-color: transparent transparent transparent -akzent;
+    -fx-border-width: 0 0 0 4;
+}
+
+.seitenleiste .benutzerinfo {
+    -fx-text-fill: #c7d0e0;
+    -fx-padding: 0 20 4 20;
+    -fx-wrap-text: true;
+}
+
+.abmelden {
+    -fx-background-color: transparent;
+    -fx-border-color: #4b5d82;
+    -fx-border-radius: 6;
+    -fx-text-fill: white;
+}
+
+.abmelden:hover {
+    -fx-background-color: #2a3757;
+}
+
+/* ------------------------------------------------------------ Arbeitsbereich */
+
+.arbeitsbereich {
+    -fx-padding: 20 24 16 24;
+    -fx-spacing: 12;
+}
+
+.ueberschrift {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text;
+}
+
+.werkzeugleiste {
+    -fx-spacing: 8;
+    -fx-alignment: center-left;
+}
+
+.fusszeile {
+    -fx-text-fill: -text-leise;
+}
+
+.table-view {
+    -fx-background-color: white;
+    -fx-border-color: -rand;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+}
+
+.table-view .column-header .label {
+    -fx-font-weight: bold;
+    -fx-text-fill: -text;
+}
+
+.table-row-cell.inaktiv .text {
+    -fx-fill: #9ca3af;
+}
+
+.table-row-cell.inaktiv:selected .text {
+    -fx-fill: white;
+}
+
+/* ------------------------------------------------------------ Status-Markierungen */
+
+.status {
+    -fx-padding: 1 8 1 8;
+    -fx-background-radius: 10;
+    -fx-font-size: 12px;
+}
+
+.status-aktiv {
+    -fx-background-color: #dcfce7;
+    -fx-text-fill: #166534;
+}
+
+.status-gesperrt {
+    -fx-background-color: #fee2e2;
+    -fx-text-fill: #991b1b;
+}
+
+.status-aufgeloest,
+.status-deaktiviert {
+    -fx-background-color: #e5e7eb;
+    -fx-text-fill: #374151;
+}
+
+/* ------------------------------------------------------------ Detailbereich */
+
+.detail {
+    -fx-background-color: white;
+    -fx-border-color: -rand;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 16;
+    -fx-spacing: 10;
+}
+
+.detail .detail-titel {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text;
+}
+
+.detail .kontostand {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #166534;
+}
+
+.detail .kontostand.negativ {
+    -fx-text-fill: -gefahr;
+}
+
+.detail .feldname {
+    -fx-text-fill: -text-leise;
+    -fx-font-weight: normal;
+}
+
+/* ------------------------------------------------------------ Formulare */
+
+.formular {
+    -fx-hgap: 10;
+    -fx-vgap: 10;
+    -fx-padding: 8 4 4 4;
+}
