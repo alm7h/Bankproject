@@ -1,7 +1,10 @@
 # Baut das Projekt bei jedem Push auf main und bei jedem Pull Request:
-# Kompilieren, SpotBugs, alle Tests, JaCoCo-Bericht, JavaDoc und Paketierung (mvn verify).
+# Kompilieren, SpotBugs, alle Tests, JaCoCo-Bericht und -Mindestabdeckung, JavaDoc und
+# Paketierung (mvn verify).
 # Die Tests laufen zweimal - mit Standard-Locale und mit deutscher Locale -, weil
 # Ausgaben wie Geldbetrag.toString vom Locale abhängen.
+# Die Oberflächentests starten JavaFX; dafür braucht es einen Bildschirm, den xvfb
+# (virtueller X-Server) bereitstellt. Fenster werden dabei keine angezeigt.
 name: Build
 
 on:
@@ -34,13 +37,16 @@ jobs:
           java-version: '21'
           cache: maven
 
+      - name: Provide a virtual screen for JavaFX (xvfb)
+        run: command -v xvfb-run || (sudo apt-get update && sudo apt-get install -y xvfb)
+
       - name: Build and test (default locale)
         if: matrix.locale == 'default'
-        run: ./mvnw -B verify
+        run: xvfb-run -a ./mvnw -B verify
 
       - name: Build and test (German locale)
         if: matrix.locale == 'de_DE'
-        run: ./mvnw -B verify -DargLine="-Duser.language=de -Duser.country=DE"
+        run: xvfb-run -a ./mvnw -B verify -DargLine="-Duser.language=de -Duser.country=DE"
 
       - name: Keep the coverage report
         if: matrix.locale == 'default'
