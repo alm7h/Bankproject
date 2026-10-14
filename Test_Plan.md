@@ -12,10 +12,11 @@ Goal: work through the domain bottom-up, one class at a time, so each layer is t
 | 1 `GeldbetragTest` | ✅ done | 52 | 2× `fix(Geldbetrag)`, `test: add unit tests for Geldbetrag` |
 | 2 `WaehrungTest` | ✅ done | 13 | `test: add unit tests for Waehrung` |
 | 3 `KundeTest` | ✅ done | 22 | `fix(Kunde)`, `test: add unit tests for Kunde` |
-| 4 `KontoTest` | ⏭ next | | |
-| 5–16 | open | | |
+| 4 `KontoTest` | ✅ done | 48 | `test: add unit tests for Konto`, `test: call equals directly…` |
+| 5 `GirokontoTest` | ⏭ next | | |
+| 6–16 | open | | |
 
-**Suite total: 156 tests, all green** — on the default locale and with `-Duser.language=de -Duser.country=DE`.
+**Suite total: 205 tests, all green** — on the default locale and with `-Duser.language=de -Duser.country=DE`.
 
 ## Bugs found and fixed
 | # | Class | Bug | Fix |
@@ -23,6 +24,12 @@ Goal: work through the domain bottom-up, one class at a time, so each layer is t
 | 1 | `Geldbetrag` | `umrechnen(null)` threw `NullPointerException`, JavaDoc promises `IllegalArgumentException` | explicit null check |
 | 2 | `Geldbetrag` | `hashCode` hashed the raw amount while `equals` compares the euro value → 1 EUR equals 61.5 MKD but hash codes differed (Object contract broken) | private `inEuro()` shared by `compareTo` and `hashCode` |
 | 3 | `Kunde` | String constructor used the locale's SHORT date format: German `"15.03.85"` → 2085 (rejected as future), en_001 `"01/01/90"` → year 90 AD | fixed `dd.MM.yy` pattern, two-digit year resolved into the last 100 years; `GirokontoTest`/`SparbuchTest` literals changed to `"01.01.90"` |
+
+**Coverage (JaCoCo, branches):** `Geldbetrag` 30/30, `Konto` 40/40, `Kunde` 16/18 (the 2 missing are the locale branch in the static initializer, which can't be reached without reloading the class).
+
+**Lessons for the remaining tests:**
+- Check `equals` against `null` and foreign types by calling it directly (`assertFalse(x.equals(null))`). `assertNotEquals(null, x)` never calls `x.equals`.
+- `Konto.ausgebenAufDerKonsole()` prints to the console from the business layer, against the course convention. It stays untested; it's reported, not fixed.
 
 ## Decisions (confirmed with you)
 - **Tools:** only JUnit 5 (Jupiter, including `@Nested`, `@ParameterizedTest`, which is part of `junit-jupiter`) and Mockito 5.15 (`@ExtendWith(MockitoExtension.class)`, `@Mock`, `ArgumentCaptor`). No new dependencies.
@@ -46,7 +53,7 @@ Goal: work through the domain bottom-up, one class at a time, so each layer is t
    - ⚠️ The String-date constructor and `getAnrede()` depend on the locale. I'll test them with `Locale` saved and restored in `@BeforeEach`/`@AfterEach`. If that isn't enough, I'll ask you. *The String constructor turned out to be buggy (bug #3, fixed).*
 
 ### Priority 2 — The core abstraction (`Konto`, Template Method)
-4. **`KontoTest`** (new). Uses a small concrete test subclass or a Mockito spy (`mock(Konto.class, CALLS_REAL_METHODS)`) to test the **Template Method** in isolation. It checks the order validate → lock → `pruefeAbhebung` → deduct → `nachAbhebung`, and confirms the hooks are not called on rejection or when the account is locked (Mockito `inOrder`/`never`). Also: constructor limits (−1, 0, 9 999 999 999, 10 000 000 000), `einzahlen`, `sperren`/`entsperren`/`setInhaber` while locked, `getIban` (a known-valid IBAN, BLZ out of range → ""), `getKontonummerFormatiert`, `equals`/`hashCode`/`compareTo`, `waehrungswechsel`, the JavaFX properties (`kontostandProperty`, `imPlusProperty` binding, `gesperrtProperty`; no FX toolkit needed), and a serialization round trip (balance and lock state survive).
+4. ✅ **`KontoTest`** (new). Uses a small concrete test subclass or a Mockito spy (`mock(Konto.class, CALLS_REAL_METHODS)`) to test the **Template Method** in isolation. It checks the order validate → lock → `pruefeAbhebung` → deduct → `nachAbhebung`, and confirms the hooks are not called on rejection or when the account is locked (Mockito `inOrder`/`never`). Also: constructor limits (−1, 0, 9 999 999 999, 10 000 000 000), `einzahlen`, `sperren`/`entsperren`/`setInhaber` while locked, `getIban` (a known-valid IBAN, BLZ out of range → ""), `getKontonummerFormatiert`, `equals`/`hashCode`/`compareTo`, `waehrungswechsel`, the JavaFX properties (`kontostandProperty`, `imPlusProperty` binding, `gesperrtProperty`; no FX toolkit needed), and a serialization round trip (balance and lock state survive).
 
 ### Priority 3 — Concrete account types (each has its own `pruefeAbhebung` rule)
 5. **`GirokontoTest`** (extend and clean up). ~~Fix the locale-dependent `"01/01/90"`~~ (done with bug #3). Remove the duplicate test. Add the dispo boundary (exactly −dispo is allowed, 0.01 more is rejected), `setDispo` validation, `ueberweisungAbsenden`/`ueberweisungEmpfangen` (locked, null parameters, cover check), and `waehrungswechsel` converting the dispo too.
