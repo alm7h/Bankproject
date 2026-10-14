@@ -38,7 +38,7 @@ Goal: work through the domain bottom-up, one class at a time, so each layer is t
 - **Out of scope:** `bankprojekt.oberflaeche` (JavaFX UI), `spielereien.*`, `aktienhandel.Aktienspielereien`, and `EinAusgabe` (interactive console input). These are presentation layer.
 - **Existing tests:** extend them, and fix clear defects. Each change gets reported.
 - **Conventions:** German comments and test names (match the existing style, e.g. `geldAbheben_gibtFalse_wennUeberDispo`). No `@author` tags in new files. No `Thread.sleep` in tests. Locale-dependent assertions run under `Locale.GERMANY`, which is saved and restored around each test.
-- **No AI attribution anywhere:** nothing in code, comments, commit messages or PR descriptions says the work was AI-generated. No `Co-Authored-By` trailer.
+- **AI attribution:** nothing in the code or comments says the work was AI-generated. Every commit message ends with the trailer `Assisted-by: Claude Code (Claude Opus 5.5)`. All earlier branch commits were rewritten to carry it as well.
 - **Commits:** on branch `test/testsuite`. One commit per test class or fix. Conventional-commit subjects (`test:`, `fix(Klasse):`, `docs:`, `build:`) with an explanatory body. Never commit a red build.
 
 ## Prioritized order (one class at a time, run the tests after each one)
