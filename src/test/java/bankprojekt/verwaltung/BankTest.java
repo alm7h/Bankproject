@@ -958,4 +958,34 @@ class AltersabhaengigeTests {
         assertEquals(new Geldbetrag(100), summe, "Genau ein Konto erhält die Schenkung");
     }
 }
+
+/**
+ * getKonten liefert nur eine lesbare Sicht auf die Konten der Bank.
+ */
+@Nested
+class GetKontenSichtTests {
+    @Test
+    void getKonten_laesstSichNichtVeraendern() {
+        Bank bank = new Bank(12345140L);
+        long nr = bank.kontoErstellen(new SparbuchFabrik(), Kunde.MUSTERMANN);
+        Map<Long, Konto> konten = bank.getKonten();
+        assertThrows(UnsupportedOperationException.class,
+                () -> konten.put(99L, new Sparbuch(Kunde.MUSTERMANN, 99)));
+        assertThrows(UnsupportedOperationException.class, () -> konten.remove(nr));
+        assertThrows(UnsupportedOperationException.class, konten::clear);
+        assertEquals(1, bank.getKonten().size());
+    }
+
+    @Test
+    void getKonten_zeigtImmerDenAktuellenStand_undKontenBleibenBearbeitbar() {
+        Bank bank = new Bank(12345141L);
+        Map<Long, Konto> sicht = bank.getKonten();
+        long nr = bank.kontoErstellen(new SparbuchFabrik(), Kunde.MUSTERMANN);
+        assertTrue(sicht.containsKey(nr), "Die Sicht zeigt auch später angelegte Konten");
+        sicht.get(nr).sperren();
+        assertTrue(bank.getKonten().get(nr).isGesperrt());
+        bank.kontoLoeschen(nr);
+        assertTrue(sicht.isEmpty());
+    }
+}
 }
