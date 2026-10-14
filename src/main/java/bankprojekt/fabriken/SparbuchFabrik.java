@@ -9,6 +9,12 @@ import bankprojekt.basisdaten.Sparbuch;
  * @author m.alharethi
  */
 public class SparbuchFabrik extends Kontofabrik {
+    /**
+     * Erzeugt eine Fabrik für Sparbücher.
+     */
+    public SparbuchFabrik() {
+    }
+
 
     @Override
     public Konto erstellen(Kunde inhaber, long kontonummer) {

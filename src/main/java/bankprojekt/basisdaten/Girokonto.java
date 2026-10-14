@@ -23,8 +23,8 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
      * @param inhaber Kontoinhaber
      * @param kontonummer Kontonummer
      * @param dispo Dispo
-     * @throws IllegalArgumentException wenn der inhaber null ist
-     * 				    oder der angegebene dispo negativ bzw. NaN ist
+     * @throws NullPointerException wenn der inhaber null ist
+     * @throws IllegalArgumentException wenn der angegebene dispo null, negativ bzw. NaN oder 0 ist
      * @throws UngueltigeKontonummerException wenn kontonummer ungültig ist
      */
     public Girokonto(Kunde inhaber, long kontonummer, Geldbetrag dispo)
@@ -53,27 +53,30 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
     /**
      * setzt den Dispo neu
      * @param dispo muss größer sein als 0
-     * @throws IllegalArgumentException wenn dispo negativ bzw. NaN ist
+     * @throws IllegalArgumentException wenn dispo null, negativ bzw. NaN oder 0 ist
      */
     public void setDispo(Geldbetrag dispo) {
-        if(dispo == null || dispo.isNegativ())
+        // Ein Dispo von 0 wurde bisher entgegen der Dokumentation ("größer als 0") akzeptiert.
+        // equals vergleicht den Eurowert, daher wird 0 in jeder Währung abgelehnt.
+        if(dispo == null || dispo.isNegativ() || dispo.equals(Geldbetrag.NULL_EURO))
             throw new IllegalArgumentException("Der Dispo ist nicht gültig!");
         this.dispo = dispo;
     }
 
     /**
-     * Sends a bank transfer from the current account to the specified recipient's account.
-     * The transfer is only executed if the account is not locked, the provided parameters are valid,
-     * and sufficient funds including overdraft (dispo) are available.
+     * Bucht eine Überweisung von this an den angegebenen Empfänger ab. Die Überweisung
+     * wird nur ausgeführt, wenn das Konto nicht gesperrt ist, alle Parameter gültig sind
+     * und die Deckung einschließlich Dispo ausreicht. Die Sperre wird vor den Parametern
+     * geprüft.
      *
-     * @param betrag the amount to be transferred. Must not be null or negative.
-     * @param empfaenger the recipient of the transfer. Must not be null.
-     * @param nachKontonr the account number of the recipient.
-     * @param nachBlz the bank code (BLZ) of the recipient's bank.
-     * @param verwendungszweck the purpose or reason for the transfer. Must not be null.
-     * @return true if the transfer was successful, false if there are insufficient funds.
-     * @throws GesperrtException if the account is locked and the transfer cannot be processed.
-     * @throws IllegalArgumentException if any of the provided parameters are null, invalid, or negative.
+     * @param betrag der zu überweisende Betrag, darf nicht null oder negativ sein
+     * @param empfaenger Name des Empfängers, darf nicht null sein
+     * @param nachKontonr Kontonummer des Empfängers
+     * @param nachBlz Bankleitzahl der Bank des Empfängers
+     * @param verwendungszweck Verwendungszweck, darf nicht null sein
+     * @return true, wenn die Überweisung abgebucht wurde, false, wenn die Deckung nicht reicht
+     * @throws GesperrtException wenn das Konto gesperrt ist
+     * @throws IllegalArgumentException wenn einer der Parameter null, ungültig oder negativ ist
      */
 
     @Override
@@ -109,31 +112,35 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
     }
 
     /**
-     * Processes the receipt of a bank transfer into the account. The method validates the input parameters,
-     * and if valid, adds the transferred amount to the account balance.
+     * Bucht eine eingehende Überweisung auf this. Ein gesperrtes Konto darf keine
+     * Überweisungen empfangen; die Sperre wird – wie beim Absenden – vor den Parametern geprüft.
+     * Sind alle Parameter gültig, wird der Betrag dem Kontostand gutgeschrieben.
      *
-     * @param betrag the amount of money received. Must not be null or negative.
-     * @param vonName the name of the sender. Must not be null.
-     * @param vonKontonr the account number of the sender.
-     * @param vonBlz the bank code (BLZ) of the sender's bank.
-     * @param verwendungszweck the purpose or reason for the transfer. Must not be null.
-     * @throws IllegalArgumentException if any of the provided parameters are null, invalid, or negative.
+     * @param betrag der empfangene Betrag, darf nicht null oder negativ sein
+     * @param vonName Name des Senders, darf nicht null sein
+     * @param vonKontonr Kontonummer des Senders
+     * @param vonBlz Bankleitzahl des Senderkontos
+     * @param verwendungszweck Verwendungszweck, darf nicht null sein
+     * @throws GesperrtException wenn this gesperrt ist
+     * @throws IllegalArgumentException wenn einer der Parameter null, ungültig oder negativ ist
      */
     @Override
     public void ueberweisungEmpfangen(Geldbetrag betrag, String vonName, long vonKontonr, long vonBlz, String verwendungszweck)
+            throws GesperrtException
     {
+        // Bisher wurde auch auf einem gesperrten Konto gutgeschrieben
+        if (this.isGesperrt())
+            throw new GesperrtException(this.getKontonummer());
         if (betrag == null || betrag.isNegativ()|| vonName == null || verwendungszweck == null)
             throw new IllegalArgumentException("Parameter fehlerhaft");
         setKontostand(getKontostand().plus(betrag));
     }
 
     /**
-     * Returns a string representation of the Girokonto object, including the account details
-     * and the overdraft limit (dispo). The account details are retrieved from the superclass's
-     * toString method.
+     * Liefert die Textdarstellung des Girokontos: die Kontoart, die allgemeinen
+     * Kontodaten aus {@link Konto#toString()} und den Dispo.
      *
-     * @return a formatted string containing the account type, details from the superclass,
-     *         and the overdraft limit (dispo).
+     * @return Kontoart, Kontodaten und Dispo als Text
      */
     @Override
     public String toString()

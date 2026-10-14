@@ -60,7 +60,7 @@ public class Sparbuch extends Konto {
      * abgefragt.
      * @param inhaber der Kontoinhaber
      * @param kontonummer die Wunsch-Kontonummer
-     * @throws IllegalArgumentException wenn inhaber null ist
+     * @throws NullPointerException wenn inhaber null ist
      * @throws UngueltigeKontonummerException wenn kontonummer ungültig ist
      */
     public Sparbuch(Kunde inhaber, long kontonummer) {
@@ -72,7 +72,8 @@ public class Sparbuch extends Konto {
      * @param inhaber der Kontoinhaber
      * @param kontonummer die Wunsch-Kontonummer
      * @param kalender der Kalender, der für die Abfrage des heutigen Datums benutzt wird
-     * @throws IllegalArgumentException wenn inhaber oder kalender null ist
+     * @throws NullPointerException wenn inhaber null ist
+     * @throws IllegalArgumentException wenn kalender null ist
      * @throws UngueltigeKontonummerException wenn kontonummer ungültig ist
      */
     public Sparbuch(Kunde inhaber, long kontonummer, Kalender kalender) {
@@ -129,10 +130,10 @@ public class Sparbuch extends Konto {
     }
 
     /**
-     * Returns a string representation of the savings account. The string includes the account details
-     * from the superclass and additional information specific to the savings account, such as the interest rate.
+     * Liefert die Textdarstellung des Sparbuchs: die Kontoart, die allgemeinen
+     * Kontodaten aus {@link Konto#toString()} und den Zinssatz.
      *
-     * @return a string containing details about the savings account, including superclass details and the interest rate
+     * @return Kontoart, Kontodaten und Zinssatz als Text
      */
 
     @Override

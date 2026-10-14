@@ -15,6 +15,7 @@ import java.util.function.Predicate;
 import bankprojekt.basisdaten.Geldbetrag;
 import bankprojekt.basisdaten.Konto;
 import bankprojekt.basisdaten.Kunde;
+import bankprojekt.exceptions.GesperrtException;
 
 /**
  * Ein Konto, das zusätzlich ein Aktiendepot verwaltet. Über {@link #kaufauftrag}
@@ -60,6 +61,10 @@ public class Aktienkonto extends Konto {
 
 
 
+	/**
+	 * Verwaltet die Beobachter des Depots und benachrichtigt sie bei jedem Kauf bzw.
+	 * Verkauf (Property-Name = WKN, alter und neuer Bestand als Werte).
+	 */
 	private final PropertyChangeSupport depotAenderungen = new PropertyChangeSupport(this);
 
 
@@ -100,9 +105,10 @@ public class Aktienkonto extends Konto {
 	 * Zahlt den angegebenen Betrag ein. Ueberschrieben nur, um die Einzahlung mit
 	 * den Kauf-/Verkaufaufträgen über denselben Lock zu synchronisieren.
 	 * @param betrag einzuzahlender Betrag
+	 * @throws GesperrtException wenn das Konto gesperrt ist
 	 */
 	@Override
-	public synchronized void einzahlen(Geldbetrag betrag) {
+	public synchronized void einzahlen(Geldbetrag betrag) throws GesperrtException {
 		super.einzahlen(betrag);
 	}
 
@@ -116,9 +122,17 @@ public class Aktienkonto extends Konto {
 	 * @param wkn Wertpapierkennnummer der gewünschten Aktie
 	 * @param anzahl gewünschte Stückzahl
 	 * @param hoechstpreis Kurs, unter den der Aktienkurs fallen muss, bevor gekauft wird
+	 * Ein gesperrtes Konto kann keinen Kaufauftrag erteilen. Wird das Konto gesperrt,
+	 * während der Auftrag noch auf den passenden Kurs wartet, wird nichts gekauft.
+	 *
 	 * @return Future auf den tatsächlich bezahlten Gesamtkaufpreis (0 €, wenn nicht gekauft wurde)
+	 * @throws GesperrtException wenn das Konto beim Erteilen des Auftrags gesperrt ist
 	 */
-	public Future<Geldbetrag> kaufauftrag(String wkn, int anzahl, Geldbetrag hoechstpreis) {
+	public Future<Geldbetrag> kaufauftrag(String wkn, int anzahl, Geldbetrag hoechstpreis)
+			throws GesperrtException {
+		// Ein gesperrtes Konto darf keine Aufträge erteilen (wie beim Überweisen)
+		if (isGesperrt())
+			throw new GesperrtException(getKontonummer());
 		// Threadsteuerung über den ExecutorService: submit liefert direkt das Future.
 		return HANDEL.submit(() -> {
 			Aktie aktie = Aktie.getAktie(wkn);
@@ -129,6 +143,10 @@ public class Aktienkonto extends Konto {
 			Geldbetrag kurs = warteAufKurs(aktie, k -> k.compareTo(hoechstpreis) <= 0);
 
 			synchronized (this) {
+				// Während des Wartens gesperrt -> nichts kaufen (abheben würde sonst eine
+				// GesperrtException werfen, die erst beim Future.get() auftauchen würde).
+				if (isGesperrt())
+					return Geldbetrag.NULL_EURO;
 				Geldbetrag gesamtpreis = kurs.mal(anzahl);
 				if (abheben(gesamtpreis)) {
 
@@ -158,9 +176,18 @@ public class Aktienkonto extends Konto {
 	 *
 	 * @param wkn Wertpapierkennnummer der zu verkaufenden Aktie
 	 * @param minimalpreis Kurs, den die Aktie mindestens erreichen muss, bevor verkauft wird
-	 * @return Future auf den Gesamterlös (0 €, wenn die Aktie nicht im Depot ist)
+	 * Ein gesperrtes Konto kann keinen Verkaufauftrag erteilen. Wird das Konto gesperrt,
+	 * während der Auftrag noch auf den passenden Kurs wartet, wird nichts verkauft und
+	 * die Aktien bleiben im Depot.
+	 *
+	 * @return Future auf den Gesamterlös (0 €, wenn nicht verkauft wurde)
+	 * @throws GesperrtException wenn das Konto beim Erteilen des Auftrags gesperrt ist
 	 */
-	public Future<Geldbetrag> verkaufauftrag(String wkn, Geldbetrag minimalpreis) {
+	public Future<Geldbetrag> verkaufauftrag(String wkn, Geldbetrag minimalpreis)
+			throws GesperrtException {
+		// Ein gesperrtes Konto darf keine Aufträge erteilen (wie beim Überweisen)
+		if (isGesperrt())
+			throw new GesperrtException(getKontonummer());
 		// Threadsteuerung über den ExecutorService: submit liefert direkt das Future.
 		return HANDEL.submit(() -> {
 			Aktie aktie = Aktie.getAktie(wkn);
@@ -176,15 +203,23 @@ public class Aktienkonto extends Konto {
 
 			synchronized (this) {
 				int bestand = depot.getOrDefault(wkn, 0);
-				if (bestand <= 0)
+				// Während des Wartens gesperrt oder Bestand inzwischen verkauft -> nichts verkaufen
+				if (bestand <= 0 || isGesperrt())
 					return Geldbetrag.NULL_EURO;
 				Geldbetrag erloes = kurs.mal(bestand);
+				// Bemerkung: Erst den Erlös gutschreiben, dann die Aktien aus dem Depot
+				// nehmen. Wird das Konto genau jetzt gesperrt (sperren() ist nicht
+				// synchronisiert), scheitert die Einzahlung - dann bleibt alles unverändert.
+				try {
+					einzahlen(erloes);   // Erlös dem Kontostand gutschreiben
+				} catch (GesperrtException e) {
+					return Geldbetrag.NULL_EURO;
+				}
 				depot.remove(wkn);   // kompletten Bestand dieser Aktie verkaufen
 
 				// Beobachter über das Entfernen der Aktien aus dem Depot
 				// benachrichtigen (alter Bestand -> 0 für diese WKN).
 				depotAenderungen.firePropertyChange(wkn, bestand, 0);
-				einzahlen(erloes);   // Erlös dem Kontostand gutschreiben
 				return erloes;
 			}
 		});

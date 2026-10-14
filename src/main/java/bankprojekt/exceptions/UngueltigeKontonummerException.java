@@ -6,4 +6,10 @@ package bankprojekt.exceptions;
  */
 @SuppressWarnings("serial")
 public class UngueltigeKontonummerException extends RuntimeException {
+    /**
+     * Erzeugt die Exception für eine ungültige Kontonummer.
+     */
+    public UngueltigeKontonummerException() {
+    }
+
 }

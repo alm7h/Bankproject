@@ -32,6 +32,12 @@ import javafx.scene.image.ImageView;
  * @author m.alharethi
  */
 public class KontoController {
+    /**
+     * Wird vom FXMLLoader beim Laden der Oberfläche aufgerufen.
+     */
+    public KontoController() {
+    }
+
 
     // Anzeige-Elemente – vom FXMLLoader über die fx:ids eingefügt.
 
@@ -152,7 +158,8 @@ public class KontoController {
                 zeigeMeldung("Einzahlung von " + betrag + " erfolgreich.");
             }
         } catch (GesperrtException e) {
-            zeigeMeldung("Das Konto ist gesperrt – Abheben nicht möglich.");
+            // Gilt für beide Aktionen: Auch Einzahlungen sind auf ein gesperrtes Konto nicht möglich
+            zeigeMeldung("Das Konto ist gesperrt – " + aktion + " nicht möglich.");
         } catch (IllegalArgumentException e) {
             zeigeMeldung("Aktion nicht möglich: " + e.getMessage());
         }

@@ -26,6 +26,12 @@ import javafx.stage.Stage;
  * @author m.alharethi
  */
 public class KontoAnwendung extends Application {
+    /**
+     * Wird von JavaFX beim Start der Anwendung aufgerufen.
+     */
+    public KontoAnwendung() {
+    }
+
 
     /**
      * Erzeugt das Model, lädt die FXML-Oberfläche und verbindet beide.

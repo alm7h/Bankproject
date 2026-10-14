@@ -8,6 +8,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,7 +29,7 @@ class SparbuchMockitoTest {
     private Kalender kalenderMock;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws GesperrtException {
         Kunde inhaber = new Kunde("Max", "Mustermann", "Weg 1", 2000, 1, 1);
         // Startdatum: 1. Januar 2026
         when(kalenderMock.getHeutigesDatum()).thenReturn(LocalDate.of(2026, 1, 1));
@@ -83,5 +87,98 @@ class SparbuchMockitoTest {
         boolean zweiteAbhebung = sparbuch.abheben(new Geldbetrag(1500, Waehrung.EURO));
         assertFalse(zweiteAbhebung,
                 "Zweite Abhebung im selben Monat, die das Limit überschreitet, muss abgelehnt werden");
+    }
+
+    @Test
+    void abheben_erlaubtGenau2000_undLehntDanachEinenCentAb() throws GesperrtException {
+        assertTrue(sparbuch.abheben(new Geldbetrag(2000)));
+        assertFalse(sparbuch.abheben(new Geldbetrag(0.01)), "Monatslimit ist ausgeschöpft");
+        assertEquals(new Geldbetrag(3000), sparbuch.getKontostand());
+    }
+
+    @Test
+    void abheben_summiertMehrereAbhebungenImMonat() throws GesperrtException {
+        assertTrue(sparbuch.abheben(new Geldbetrag(1500)));
+        assertTrue(sparbuch.abheben(new Geldbetrag(500)));
+        assertFalse(sparbuch.abheben(new Geldbetrag(0.01)));
+    }
+
+    @Test
+    void abgelehnteAbhebung_zaehltNichtZurMonatssumme() throws GesperrtException {
+        assertFalse(sparbuch.abheben(new Geldbetrag(2000.01)));
+        // Die abgelehnten 2000,01 € dürfen das Limit nicht verbrauchen
+        assertTrue(sparbuch.abheben(new Geldbetrag(2000)));
+    }
+
+    @Test
+    void monatslimit_rechnetFremdwaehrungInEuroUm() throws GesperrtException {
+        // 123000 MKD entsprechen genau 2000 €
+        assertTrue(sparbuch.abheben(new Geldbetrag(123000, Waehrung.DENAR)));
+        assertFalse(sparbuch.abheben(new Geldbetrag(0.01)));
+    }
+
+    @Test
+    void monatslimit_giltBisZumLetztenTagDesMonats() throws GesperrtException {
+        assertTrue(sparbuch.abheben(new Geldbetrag(2000)));
+        when(kalenderMock.getHeutigesDatum()).thenReturn(LocalDate.of(2026, 1, 31));
+        assertFalse(sparbuch.abheben(new Geldbetrag(0.01)), "Noch derselbe Monat");
+    }
+
+    @Test
+    void monatslimit_wirdBeimJahreswechselImGleichenMonatZurueckgesetzt() throws GesperrtException {
+        // Januar 2026 -> Januar 2027: gleicher Monat, aber anderes Jahr
+        assertTrue(sparbuch.abheben(new Geldbetrag(2000)));
+        when(kalenderMock.getHeutigesDatum()).thenReturn(LocalDate.of(2027, 1, 1));
+        assertTrue(sparbuch.abheben(new Geldbetrag(2000)), "Neues Jahr, neues Limit");
+    }
+
+    @Test
+    void monatslimit_wirdNachAbgelehnterAbhebungImNeuenMonatNurEinmalZurueckgesetzt() throws GesperrtException {
+        assertTrue(sparbuch.abheben(new Geldbetrag(2000)));
+        when(kalenderMock.getHeutigesDatum()).thenReturn(LocalDate.of(2026, 2, 1));
+        // Erste Abhebung im Februar scheitert am Limit, setzt aber den Monat um
+        assertFalse(sparbuch.abheben(new Geldbetrag(2000.01)));
+        assertTrue(sparbuch.abheben(new Geldbetrag(2000)));
+        assertFalse(sparbuch.abheben(new Geldbetrag(0.01)));
+    }
+
+    /**
+     * Ein Kalender mit festem Datum. Ein Mockito-Mock ist nicht serialisierbar,
+     * daher wird für den Serialisierungstest diese kleine Unterklasse verwendet.
+     */
+    private static class FesterKalender extends Kalender {
+        private static final long serialVersionUID = 1L;
+        private final LocalDate datum;
+
+        FesterKalender(LocalDate datum) {
+            this.datum = datum;
+        }
+
+        @Override
+        public LocalDate getHeutigesDatum() {
+            return datum;
+        }
+    }
+
+    @Test
+    void serialisierung_bewahrtMonatssumme() throws Exception {
+        Sparbuch original = new Sparbuch(new Kunde("Max", "Mustermann", "Weg 1", 2000, 1, 1),
+                4711, new FesterKalender(LocalDate.of(2026, 1, 1)));
+        original.einzahlen(new Geldbetrag(5000));
+        assertTrue(original.abheben(new Geldbetrag(1500)));
+
+        ByteArrayOutputStream puffer = new ByteArrayOutputStream();
+        try (ObjectOutputStream out = new ObjectOutputStream(puffer)) {
+            out.writeObject(original);
+        }
+        Sparbuch gelesen;
+        try (ObjectInputStream in = new ObjectInputStream(
+                new ByteArrayInputStream(puffer.toByteArray()))) {
+            gelesen = (Sparbuch) in.readObject();
+        }
+
+        assertEquals(new Geldbetrag(3500), gelesen.getKontostand());
+        assertFalse(gelesen.abheben(new Geldbetrag(500.01)), "Bereits abgehobene 1500 € bleiben erhalten");
+        assertTrue(gelesen.abheben(new Geldbetrag(500)));
     }
 }

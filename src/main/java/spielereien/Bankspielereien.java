@@ -15,8 +15,15 @@ import bankprojekt.verwaltung.Bank;
  */
 public class Bankspielereien {
 	/**
+	 * Nicht instanziierbar: Die Klasse enthält nur das Demo-Programm.
+	 */
+	private Bankspielereien() {
+	}
+
+	/**
 	 * Probiert die Stream-Methoden der Bank-Klasse aus.
 	 * @param args wird nicht verwendet
+	 * @throws GesperrtException wenn auf ein gesperrtes Konto eingezahlt wird (kommt hier nicht vor)
 	 */
 	public static void main(String[] args) throws GesperrtException {
 		Bank bank = new Bank(12345);

@@ -1,5 +1,7 @@
 package bankprojekt.aktienhandel;
 
+import bankprojekt.exceptions.GesperrtException;
+
 // Neuer Test für das Observer-Muster des Aktienkontos.
 // Geprüft wird mit Mockito, dass ein angemeldeter Beobachter bei jeder
 // Depotänderung (Kauf bzw. Verkauf von Aktien) korrekt benachrichtigt wird.
@@ -33,7 +35,7 @@ class AktienkontoObserverTest {
 	// verwaltet und den Konstruktor bei doppelter WKN abweist.
 	private static final Geldbetrag KURS = new Geldbetrag(100.0);
 
-	private Aktienkonto neuesKontoMitGuthaben() {
+	private Aktienkonto neuesKontoMitGuthaben() throws GesperrtException {
 		Aktienkonto konto = new Aktienkonto(new Kunde(), 1234);
 		konto.einzahlen(new Geldbetrag(1_000_000.0)); // reichlich Guthaben für den Kauf
 		return konto;

@@ -10,6 +10,12 @@ import bankprojekt.basisdaten.Kunde;
  * @author m.alharethi
  */
 public class FestgeldkontoFabrik extends Kontofabrik {
+    /**
+     * Erzeugt eine Fabrik für Festgeldkonten.
+     */
+    public FestgeldkontoFabrik() {
+    }
+
 
     @Override
     public Konto erstellen(Kunde inhaber, long kontonummer) {

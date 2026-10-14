@@ -7,6 +7,8 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.time.format.FormatStyle;
 import java.util.Locale;
 import java.util.Objects;
@@ -55,13 +57,13 @@ public class Kunde implements Comparable<Kunde>, Serializable {
      * Der Nachname
      */
     private String nachname;
-    /**
-     * Die Adresse
-    * Die Adresse ist jetzt als JavaFX-Property verfügbar, damit die
-    * Oberfläche sie direkt an ein Steuerelement binden kann. Das Feld ist
-    * transient, weil JavaFX-Properties nicht serialisierbar sind; der reine
-    * String-Wert wird in writeObject/readObject von Hand gesichert.
-    */
+    /*
+     * Die Adresse (dokumentiert an adresseProperty())
+     * Die Adresse ist als JavaFX-Property verfügbar, damit die
+     * Oberfläche sie direkt an ein Steuerelement binden kann. Das Feld ist
+     * transient, weil JavaFX-Properties nicht serialisierbar sind; der reine
+     * String-Wert wird in writeObject/readObject von Hand gesichert.
+     */
     private transient StringProperty adresse = new SimpleStringProperty();
     /**
      * Geburtstag
@@ -96,14 +98,45 @@ public class Kunde implements Comparable<Kunde>, Serializable {
      * @param vorname Vorname
      * @param nachname Nachname
      * @param adresse Adresse
-     * @param geburtstag Geburtstag im Format tt.mm.yy
+     * @param geburtstag Geburtstag im Format tt.mm.yy (unabhängig vom eingestellten Locale);
+     *                   die zweistellige Jahreszahl wird als das letzte passende Jahr
+     *                   innerhalb der vergangenen 100 Jahre gedeutet (z. B. "85" als 1985,
+     *                   "05" als 2005)
      * @throws java.time.format.DateTimeParseException Falls das Format des übergebenen Datums nicht korrekt ist
      * @throws NullPointerException Falls einer der Parameter null ist
+     * @throws IllegalArgumentException Falls der Geburtstag in der Zukunft liegt
      */
     public Kunde(String vorname, String nachname,
                  String adresse, String geburtstag)  {
-        this(vorname, nachname, adresse,
-                LocalDate.parse(geburtstag, DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)));
+        this(vorname, nachname, adresse, geburtstagParsen(geburtstag));
+    }
+
+    /**
+     * Wandelt einen Geburtstag im Format tt.mm.yy in ein Datum um.
+     * <p>
+     * Bisher wurde das kurze Datumsformat des Standard-Locales verwendet. Das war
+     * fehlerhaft: Mit deutschem Locale wurde "85" als 2085 gelesen (und der Kunde dann
+     * als "in der Zukunft geboren" abgelehnt), mit anderen Locales wurde z. B. "90"
+     * sogar als Jahr 90 n. Chr. gelesen. Deshalb wird nun ein festes Muster verwendet,
+     * und zweistellige Jahre werden in den Bereich der letzten 100 Jahre
+     * (bis einschließlich des aktuellen Jahres) gelegt – ein Geburtstag kann ja nicht
+     * in der Zukunft liegen.
+     *
+     * @param geburtstag Geburtstag im Format tt.mm.yy
+     * @return das zugehörige Datum
+     * @throws java.time.format.DateTimeParseException Falls das Format nicht korrekt ist
+     * @throws NullPointerException Falls geburtstag null ist
+     */
+    private static LocalDate geburtstagParsen(String geburtstag) {
+        if (geburtstag == null)
+            throw new NullPointerException("Geburtstag darf nicht null sein");
+        DateTimeFormatter format = new DateTimeFormatterBuilder()
+                .appendPattern("dd.MM.")
+                // Basisdatum: vor 99 Jahren -> zweistellige Jahre liegen im Bereich
+                // [aktuelles Jahr - 99, aktuelles Jahr]
+                .appendValueReduced(ChronoField.YEAR, 2, 2, LocalDate.now().minusYears(99))
+                .toFormatter();
+        return LocalDate.parse(geburtstag, format);
     }
 
     /**
@@ -196,7 +229,13 @@ public class Kunde implements Comparable<Kunde>, Serializable {
     public LocalDate getGeburtstag() {
         return geburtstag;
     }
-    
+
+    /**
+     * Setzt den Geburtstag des Kunden.
+     * @param geburtstag neuer Geburtstag, darf nicht in der Zukunft liegen
+     * @throws NullPointerException wenn geburtstag null ist
+     * @throws IllegalArgumentException wenn geburtstag nach dem heutigen Datum liegt
+     */
     public void setGeburtstag(LocalDate geburtstag) throws NullPointerException, IllegalArgumentException {
         if(geburtstag == null) throw new NullPointerException("Geburtstag darf nicht null");
         if (geburtstag.isAfter(LocalDate.now())) {
@@ -247,10 +286,10 @@ public class Kunde implements Comparable<Kunde>, Serializable {
     }
 
     /**
-     * Calculates the hash code for the customer object based on the customer's full name.
-     * The full name is derived from the combination of the customer's last name and first name.
+     * Berechnet den Hashcode des Kunden aus seinem vollständigen Namen
+     * ("Nachname, Vorname"), passend zu {@link #equals(Object)}.
      *
-     * @return the hash code value for this customer
+     * @return Hashcode des Kunden
      */
     @Override
     public int hashCode()
@@ -267,12 +306,12 @@ public class Kunde implements Comparable<Kunde>, Serializable {
     }
 
     /**
-     * Compares this customer object to another customer based on their full names.
-     * The comparison is determined using the lexicographical order of the full names.
+     * Vergleicht this mit einem anderen Kunden anhand des vollständigen Namens
+     * ("Nachname, Vorname") in lexikographischer Reihenfolge.
      *
-     * @param other the customer to be compared with this customer
-     * @return a negative integer, zero, or a positive integer as this customer's
-     *         name is less than, equal to, or greater than the other customer's name
+     * @param other der Vergleichskunde
+     * @return eine negative Zahl, 0 oder eine positive Zahl, je nachdem, ob der Name
+     *         von this vor, gleich oder nach dem Namen von other einzuordnen ist
      */
     @Override
     public int compareTo(Kunde other) {

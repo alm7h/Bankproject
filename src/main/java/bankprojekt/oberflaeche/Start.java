@@ -18,6 +18,12 @@ import javafx.application.Application;
  * @author m.alharethi
  */
 public class Start {
+    /**
+     * Nicht instanziierbar: Die Klasse enthält nur die main-Methode.
+     */
+    private Start() {
+    }
+
 
     /**
      * Startet die JavaFX-Anwendung, indem die {@link KontoAnwendung} als

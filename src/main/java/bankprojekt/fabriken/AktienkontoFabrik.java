@@ -11,6 +11,12 @@ import bankprojekt.basisdaten.Kunde;
  * @author m.alharethi
  */
 public class AktienkontoFabrik extends Kontofabrik {
+    /**
+     * Erzeugt eine Fabrik für Aktienkonten.
+     */
+    public AktienkontoFabrik() {
+    }
+
 
     @Override
     public Konto erstellen(Kunde inhaber, long kontonummer) {

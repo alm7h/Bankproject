@@ -85,11 +85,16 @@ public class Aktie {
 	 * 		                            oder es eine Aktie mit dieser WKN bereits gibt
 	 */
 	public Aktie(String wkn, Geldbetrag k) {
-		if(wkn == null || k == null || k.isNegativ() || alleAktien.containsKey(wkn))
-			throw new IllegalArgumentException();	
+		if(wkn == null || k == null || k.isNegativ())
+			throw new IllegalArgumentException();
 		this.wkn = wkn;
 		this.kurs = k;
-		alleAktien.put(wkn, this);
+		// Bemerkung: Prüfen und Eintragen in EINEM atomaren Schritt (putIfAbsent).
+		// Bisher wurde erst mit containsKey geprüft und danach mit put eingetragen;
+		// erzeugten zwei Threads gleichzeitig eine Aktie mit derselben WKN, konnten
+		// beide die Prüfung bestehen und die zweite Aktie überschrieb die erste.
+		if (alleAktien.putIfAbsent(wkn, this) != null)
+			throw new IllegalArgumentException();
 
 
 		// Bemerkung: Zufällige Zeitspanne zeit zwischen 1 und 5 Sekunden (beide
@@ -117,7 +122,13 @@ public class Aktie {
 		// Alten Kurs merken, um die Beobachter zu informieren
 		Geldbetrag alterKurs = this.kurs;
 		// Kurs um diese Prozentzahl verändern: neuer Kurs = alter Kurs * (1 + p/100)
-		this.kurs = this.kurs.mal(1.0 + prozent / 100.0);
+		// Bemerkung: Bewusst NICHT über Geldbetrag.mal, denn mal rundet auf Cent. Bei
+		// einem Kurs unter etwa 0,17 € ist eine Änderung um höchstens 3 % kleiner als ein
+		// halber Cent und würde immer auf den alten Kurs zurückgerundet - der Kurs bliebe
+		// stehen. Der Kurs wird daher ungerundet geführt; gerundet wird erst der
+		// Gesamtpreis eines Kaufs bzw. Verkaufs (kurs.mal(anzahl) im Aktienkonto).
+		this.kurs = new Geldbetrag(alterKurs.getBetrag() * (1.0 + prozent / 100.0),
+				alterKurs.getWaehrung());
 		// Alle angemeldeten Beobachter über die Kursänderung
 		// informieren (Grundlage für die Kauf-/Verkaufaufträge im Aktienkonto).
 		kursAenderungen.firePropertyChange("kurs", alterKurs, this.kurs);

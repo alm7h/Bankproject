@@ -16,6 +16,12 @@ import bankprojekt.basisdaten.Kunde;
  * @author m.alharethi
  */
 public abstract class Kontofabrik {
+    /**
+     * Konstruktor für die konkreten Fabriken (Unterklassen).
+     */
+    protected Kontofabrik() {
+    }
+
 
     /**
      * Erzeugt ein neues Konto für den angegebenen Inhaber mit der angegebenen

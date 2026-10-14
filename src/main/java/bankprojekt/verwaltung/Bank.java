@@ -32,7 +32,14 @@ public class Bank implements Serializable {
      */
     private static final long serialVersionUID = 1L;
 
+    /**
+     * Bankleitzahl der Bank.
+     */
     private final long bankleitzahl;
+    /**
+     * Standard-Dispo (500 €) für Girokonten dieser Bank, z. B. für eine
+     * {@code GirokontoFabrik}.
+     */
     Geldbetrag dispo_default;
     /**
      * Speichert Konten mit der Kontonummer als Schlüssel.
@@ -108,11 +115,18 @@ public class Bank implements Serializable {
 
     /**
      * Liefert eine Map aller gespeicherten Konten, wobei die Kontonummern als Schlüssel fungieren.
+     * <p>
+     * Die Map ist eine nur lesbare Sicht auf die Konten der Bank: Konten können über sie
+     * gelesen (und z. B. gesperrt), aber nicht hinzugefügt oder entfernt werden. Bisher wurde
+     * die interne Map selbst geliefert, sodass Aufrufer Konten an der Nummernvergabe und den
+     * Fabriken vorbei einfügen oder löschen konnten. Neue Konten entstehen nur über
+     * {@link #kontoErstellen(Kontofabrik, Kunde)}, gelöscht wird über {@link #kontoLoeschen(long)}.
      *
-     * @return eine Map mit Kontonummern als Schlüsseln und den zugehörigen Konto-Objekten als Werten.
+     * @return eine nicht veränderbare Map mit Kontonummern als Schlüsseln und den zugehörigen
+     *         Konto-Objekten als Werten
      */
     public Map<Long, Konto> getKonten() {
-        return konten;
+        return Collections.unmodifiableMap(konten);
     }
 
     /**
@@ -133,6 +147,10 @@ public class Bank implements Serializable {
      * Methoden {@code girokontoErstellen}, {@code sparbuchErstellen} und
      * {@code mockEinfuegen}: Welcher Kontotyp entsteht, bestimmt allein die Fabrik;
      * die Bank ist nur noch für Nummernvergabe und Speicherung zuständig.
+     * <p>
+     * Scheitert das Erzeugen in der Fabrik (z. B. mit einer IllegalArgumentException),
+     * wird die Exception weitergegeben, kein Konto gespeichert und keine Kontonummer
+     * verbraucht.
      *
      * @param fabrik die Fabrik, die das gewünschte Konto erzeugt
      * @param inhaber der Kontoinhaber
@@ -142,8 +160,12 @@ public class Bank implements Serializable {
     public long kontoErstellen(Kontofabrik fabrik, Kunde inhaber) throws NullPointerException {
         if (fabrik == null) throw new NullPointerException("Fabrik ist null");
         if (inhaber == null) throw new NullPointerException("Kunde ist null");
-        long kontonummer = naechsteFreieKontonummer++;
+        long kontonummer = naechsteFreieKontonummer;
         Konto konto = fabrik.erstellen(inhaber, kontonummer);
+        // Der Zähler wird erst nach erfolgreichem Erzeugen erhöht. Bisher wurde er schon
+        // vorher erhöht, sodass eine in der Fabrik gescheiterte Kontoanlage eine
+        // Kontonummer verbrauchte, ohne dass ein Konto gespeichert wurde.
+        naechsteFreieKontonummer++;
         konten.put(kontonummer, konto);
         return kontonummer;
     }
@@ -231,6 +253,7 @@ public class Bank implements Serializable {
      * @param betrag Der Geldbetrag, der abgehoben werden soll.
      * @return true, wenn die Abhebung erfolgreich war, false, wenn die Kontonummer
      *         nicht existiert oder die Abhebung nicht ausgeführt werden konnte.
+     * @throws GesperrtException wenn das Konto gesperrt ist
      */
     public boolean geldAbheben(long von, Geldbetrag betrag) throws GesperrtException {
         Konto k = konten.get(von);
@@ -246,8 +269,9 @@ public class Bank implements Serializable {
      *
      * @param auf   Die Kontonummer des Kontos, auf das der Betrag eingezahlt werden soll.
      * @param betrag Der einzuzahlende Geldbetrag.
+     * @throws GesperrtException wenn das Konto gesperrt ist
      */
-    public void geldEinzahlen(long auf, Geldbetrag betrag) {
+    public void geldEinzahlen(long auf, Geldbetrag betrag) throws GesperrtException {
 
         Konto k = konten.get(auf);
 
@@ -266,8 +290,9 @@ public class Bank implements Serializable {
      * @param betrag Der zu überweisende Geldbetrag. Muss positiv und nicht null sein.
      * @param verwendungszweck Der Verwendungszweck der Überweisung. Darf nicht null sein.
      * @return true, wenn die Überweisung erfolgreich war, false, wenn sie aufgrund
-     *         von Bedingungen (z.B. fehlende Konten, nicht transferfähige Konten)
-     *         nicht durchgeführt werden konnte.
+     *         von Bedingungen (z.B. fehlende Konten, nicht transferfähige Konten,
+     *         gesperrtes Empfängerkonto) nicht durchgeführt werden konnte.
+     *         In diesem Fall bleiben beide Kontostände unverändert.
      * @throws GesperrtException Wenn das sendende Konto gesperrt ist.
      * @throws IllegalArgumentException Wenn einer der Parameter ungültig ist,
      *         z.B. bei identischen Kontonummern, einem negativen Betrag oder
@@ -296,6 +321,11 @@ public class Bank implements Serializable {
             // Mindestens eines der Konten ist nicht ueberweisungsfaehig
             return false;
         }
+        if (empfaenger.isGesperrt()) {
+            // Ein gesperrtes Konto empfaengt keine Ueberweisungen. Die Pruefung erfolgt vor der
+            // Abbuchung, damit beim Sender gar nicht erst etwas abgebucht wird.
+            return false;
+        }
 
         String empfaengerName = empfaenger.getInhaber().getName();
         String senderName = sender.getInhaber().getName();
@@ -311,13 +341,16 @@ public class Bank implements Serializable {
         try {
             empfaenger.ueberweisungEmpfangen(betrag, senderName, vonKontonr, this.bankleitzahl, verwendungszweck);
             return true;
-        } catch (RuntimeException e) {
-            // Rollback: Gutschrift fehlgeschlagen -> Betrag dem Sender wieder gutschreiben
+        } catch (RuntimeException | GesperrtException e) {
+            // Rollback: Gutschrift fehlgeschlagen -> Betrag dem Sender wieder gutschreiben.
+            // GesperrtException: Das Empfaengerkonto wurde zwischen Pruefung und Gutschrift gesperrt.
             try {
                 sender.einzahlen(betrag);
-            } catch (RuntimeException rollbackFehler) {
-                // Sollte praktisch nicht auftreten (Einzahlung validiert nur Betrag != null/negativ),
-                // aber falls doch, bleibt als Schutz zumindest ein definierter Rueckgabewert.
+            } catch (RuntimeException | GesperrtException rollbackFehler) {
+                // Sollte praktisch nicht auftreten: Der Betrag ist gueltig und der Sender war
+                // beim Abbuchen nicht gesperrt. Nur wenn er genau zwischen Abbuchung und Rollback
+                // gesperrt wurde, scheitert die Einzahlung; dann bleibt als Schutz zumindest ein
+                // definierter Rueckgabewert.
             }
             return false;
         }
@@ -422,7 +455,9 @@ public class Bank implements Serializable {
     /**
      * Zahlt auf EIN Konto jedes Kunden, der in diesem Kalenderjahr 18 wird, den
      * übergebenen Betrag ein. Hat ein solcher Kunde mehrere Konten, wird genau
-     * eines davon (das erste gefundene) ausgewählt.
+     * eines davon (das erste gefundene) ausgewählt. Gesperrte Konten werden dabei
+     * übergangen, da auf sie nicht eingezahlt werden kann; hat ein Kunde nur gesperrte
+     * Konten, erhält er keine Schenkung.
      * @param betrag der einzuzahlende Geldbetrag
      */
     public void schenkungAnNeuerwachsene(Geldbetrag betrag) {
@@ -431,6 +466,8 @@ public class Bank implements Serializable {
         konten.values().stream()
                 // Nur Konten von Kunden, die dieses Jahr 18 werden
                 .filter(k -> k.getInhaber().getGeburtstag().getYear() == aktuellesJahr - 18)
+                // Gesperrte Konten können nichts empfangen -> ein freies Konto des Kunden wählen
+                .filter(k -> !k.isGesperrt())
                 // Pro Kunde nur ein Konto: nach Inhaber gruppieren, jeweils erstes Konto nehmen
                 .collect(Collectors.toMap(
                         Konto::getInhaber,          // Schlüssel: Kunde
@@ -438,6 +475,12 @@ public class Bank implements Serializable {
                         (k1, k2) -> k1))            // bei Kollision: erstes behalten
                 .values()
                 // Einzahlung vornehmen
-                .forEach(k -> k.einzahlen(betrag));
+                .forEach(k -> {
+                    try {
+                        k.einzahlen(betrag);
+                    } catch (GesperrtException e) {
+                        // Konto wurde zwischen Auswahl und Einzahlung gesperrt -> keine Schenkung
+                    }
+                });
     }
 }

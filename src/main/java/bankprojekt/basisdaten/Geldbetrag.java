@@ -1,7 +1,6 @@
 package bankprojekt.basisdaten;
 
 import java.io.Serializable;
-import java.util.Objects;
 import org.decimal4j.util.DoubleRounder;
 
 /**
@@ -78,6 +77,10 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
      * @throws IllegalArgumentException Falls die Zielwährung null ist.
      */
     public Geldbetrag umrechnen(Waehrung zielwaehrung) {
+        // null ausdrücklich prüfen, damit wie dokumentiert eine IllegalArgumentException
+        // statt einer zufälligen NullPointerException entsteht
+        if (zielwaehrung == null)
+            throw new IllegalArgumentException("Die Zielwährung darf nicht null sein");
         if (this.waehrung == zielwaehrung) return this;
         double inEuro = this.betrag / this.waehrung.getUmrechnungskursZuEuro();
         // Umrechnung und Rundung auf 2 Stellen
@@ -105,67 +108,80 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     /**
      * rechnet this + summand
      * @param summand zu addierender Betrag
-     * @return this + summand in der Währung von this
+     * @return this + summand in der Währung von this, auf 2 Nachkommastellen (Cent) gerundet
      * @throws IllegalArgumentException wenn summand null ist
      */
     public Geldbetrag plus(Geldbetrag summand) {
         if(summand == null || summand.isNegativ()) throw new IllegalArgumentException("Summand ist null oder negativ");
         // Den Summanden in die Währung von 'this' umrechnen
         Geldbetrag konvertiert = summand.umrechnen(this.waehrung);
-        return new Geldbetrag(this.betrag + konvertiert.getBetrag(), this.waehrung);
+        return new Geldbetrag(aufCentRunden(this.betrag + konvertiert.getBetrag()), this.waehrung);
     }
     /**
      * rechnet this - subtrahend
      * @param subtrahend abzuziehender Betrag
-     * @return this - subtrahend in der Währung von this
+     * @return this - subtrahend in der Währung von this, auf 2 Nachkommastellen (Cent) gerundet
      * @throws IllegalArgumentException wenn subtrahend null ist
      */
     public Geldbetrag minus(Geldbetrag subtrahend) {
         if(subtrahend == null || subtrahend.isNegativ()) throw new IllegalArgumentException("Subtrahend ist null oder negativ");
         // Den Subtrahenden in die Währung von 'this' umrechnen
         Geldbetrag konvertiert = subtrahend.umrechnen(this.waehrung);
-        return new Geldbetrag(this.betrag - konvertiert.getBetrag(), this.waehrung);
+        return new Geldbetrag(aufCentRunden(this.betrag - konvertiert.getBetrag()), this.waehrung);
     }
 
     /**
      * multipliziert this mit faktor
      * @param faktor Faktor der Multiplikation
-     * @return das faktor-Fache von this
+     * @return das faktor-Fache von this, auf 2 Nachkommastellen (Cent) gerundet
      * @throws IllegalArgumentException wenn Faktor nicht finit ist
      */
     public Geldbetrag mal(double faktor)
     {
         if(!Double.isFinite(faktor))
             throw new IllegalArgumentException("Faktor ist nicht finit");
-        return new Geldbetrag(this.betrag * faktor, this.waehrung);
+        return new Geldbetrag(aufCentRunden(this.betrag * faktor), this.waehrung);
     }
 
     /**
-     * Compares this Geldbetrag instance with another Geldbetrag instance for order.
-     * The comparison is based on the equivalent value of the amounts in Euros,
-     * calculated using the conversion rates of their respective currencies.
+     * Rundet ein Rechenergebnis auf 2 Nachkommastellen (Cent).
+     * <p>
+     * Bisher wurde mit den rohen double-Werten weitergerechnet. Dabei entstehen
+     * Rundungsfehler, die sich über mehrere Buchungen aufsummieren: z. B. ergab
+     * 1,00 - 0,90 den Wert 0,09999999999999998, sodass die restlichen 0,10 € nicht mehr
+     * abgehoben werden konnten, und 0,10 + 0,20 war nicht gleich 0,30. Deshalb wird jedes
+     * Ergebnis von plus, minus und mal – wie schon bei {@link #umrechnen(Waehrung)} –
+     * auf Cent gerundet.
      *
-     * @param o the Geldbetrag instance to compare to this instance
-     * @return a negative integer, zero, or a positive integer as this instance
-     *         is less than, equal to, or greater than the specified instance
-     * @throws NullPointerException if the specified Geldbetrag is null
+     * @param wert das ungerundete Ergebnis
+     * @return der auf 2 Nachkommastellen gerundete Wert
+     */
+    private static double aufCentRunden(double wert) {
+        return DoubleRounder.round(wert, 2);
+    }
+
+    /**
+     * Vergleicht this mit einem anderen Geldbetrag. Verglichen wird der Wert in Euro,
+     * der über die Umrechnungskurse der jeweiligen Währungen berechnet wird.
+     *
+     * @param o der Geldbetrag, mit dem this verglichen wird
+     * @return eine negative Zahl, 0 oder eine positive Zahl, je nachdem, ob this
+     *         kleiner, gleich oder größer als o ist
+     * @throws NullPointerException wenn o null ist
      */
     @Override
     public int compareTo(Geldbetrag o) throws NullPointerException {
         if(o == null) throw new NullPointerException();
         if(this ==  o) return 0;
-        double dieseInEuro = this.betrag / this.waehrung.getUmrechnungskursZuEuro();
-        double andereInEuro = o.betrag / o.waehrung.getUmrechnungskursZuEuro();
-        return Double.compare(dieseInEuro, andereInEuro);
+        return Double.compare(this.inEuro(), o.inEuro());
     }
 
     /**
-     * Determines whether this instance is equal to another specified object.
-     * The comparison is based on whether the other object is an instance of Geldbetrag
-     * and has the same equivalent value as this instance, determined using the compareTo method.
+     * Prüft, ob this gleich dem übergebenen Objekt ist. Das ist der Fall, wenn o ein
+     * Geldbetrag mit demselben Wert in Euro ist (Vergleich über compareTo).
      *
-     * @param o the object to compare for equality with this instance
-     * @return true if the specified object is equal to this instance, false otherwise
+     * @param o das Vergleichsobjekt
+     * @return true, wenn o ein gleichwertiger Geldbetrag ist, sonst false
      */
 
     @Override
@@ -176,23 +192,37 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     }
 
     /**
-     * Generates a hash code for this instance based on its `betrag` value.
+     * Berechnet den Hashcode aus dem Wert des Geldbetrags in Euro.
+     * <p>
+     * {@link #equals(Object)} vergleicht über den Eurowert, d. h. z. B. 1 EUR und
+     * 61,5 MKD sind gleich. Damit der Vertrag von {@link Object#hashCode()} erfüllt ist
+     * (gleiche Objekte liefern den gleichen Hashcode), muss deshalb auch der Hashcode
+     * aus genau demselben Eurowert berechnet werden – und nicht aus dem reinen Betrag
+     * in der jeweiligen Währung.
      *
-     * @return an integer hash code derived from the `betrag` property
+     * @return Hashcode des Eurowerts
      */
     @Override
     public int hashCode() {
-        return Objects.hash(this.getBetrag());
+        return Double.hashCode(inEuro());
     }
 
     /**
-     * Converts this Geldbetrag instance to its string representation.
-     * The string contains the monetary amount formatted to two decimal places,
-     * followed by the currency symbol.
+     * Rechnet den Betrag von this in Euro um (ohne Rundung). Wird von
+     * {@link #compareTo(Geldbetrag)} und {@link #hashCode()} gemeinsam genutzt, damit
+     * Vergleich und Hashcode garantiert auf demselben Wert beruhen.
      *
-     * @return a string representation of the Geldbetrag in the format "{betrag} {waehrung}"
-     *         where {betrag} is the amount formatted with two decimal places and
-     *         {waehrung} is the currency abbreviation.
+     * @return der Betrag von this in Euro
+     */
+    private double inEuro() {
+        return this.betrag / this.waehrung.getUmrechnungskursZuEuro();
+    }
+
+    /**
+     * Liefert die Textdarstellung des Geldbetrags: den Betrag mit zwei Nachkommastellen
+     * (im Format des Standard-Locales), gefolgt vom Kürzel der Währung.
+     *
+     * @return der Geldbetrag in der Form "{betrag} {waehrung}", z. B. "1.234,50 EUR"
      */
     @Override
     public String toString() {
