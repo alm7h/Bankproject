@@ -12,7 +12,7 @@ class SparbuchTest {
 
     @BeforeEach
     void setUp() {
-        inhaber = new Kunde("Max", "Mustermann", "Musterstraße 1", "01/01/90");
+        inhaber = new Kunde("Max", "Mustermann", "Musterstraße 1", "01.01.90");
         sparbuch = new Sparbuch(inhaber, 12345678);
         sparbuch.einzahlen(new Geldbetrag(1000, Waehrung.EURO));
     }

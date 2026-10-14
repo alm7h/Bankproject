@@ -7,6 +7,8 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.time.format.FormatStyle;
 import java.util.Locale;
 import java.util.Objects;
@@ -96,14 +98,45 @@ public class Kunde implements Comparable<Kunde>, Serializable {
      * @param vorname Vorname
      * @param nachname Nachname
      * @param adresse Adresse
-     * @param geburtstag Geburtstag im Format tt.mm.yy
+     * @param geburtstag Geburtstag im Format tt.mm.yy (unabhängig vom eingestellten Locale);
+     *                   die zweistellige Jahreszahl wird als das letzte passende Jahr
+     *                   innerhalb der vergangenen 100 Jahre gedeutet (z. B. "85" als 1985,
+     *                   "05" als 2005)
      * @throws java.time.format.DateTimeParseException Falls das Format des übergebenen Datums nicht korrekt ist
      * @throws NullPointerException Falls einer der Parameter null ist
+     * @throws IllegalArgumentException Falls der Geburtstag in der Zukunft liegt
      */
     public Kunde(String vorname, String nachname,
                  String adresse, String geburtstag)  {
-        this(vorname, nachname, adresse,
-                LocalDate.parse(geburtstag, DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)));
+        this(vorname, nachname, adresse, geburtstagParsen(geburtstag));
+    }
+
+    /**
+     * Wandelt einen Geburtstag im Format tt.mm.yy in ein Datum um.
+     * <p>
+     * Bisher wurde das kurze Datumsformat des Standard-Locales verwendet. Das war
+     * fehlerhaft: Mit deutschem Locale wurde "85" als 2085 gelesen (und der Kunde dann
+     * als "in der Zukunft geboren" abgelehnt), mit anderen Locales wurde z. B. "90"
+     * sogar als Jahr 90 n. Chr. gelesen. Deshalb wird nun ein festes Muster verwendet,
+     * und zweistellige Jahre werden in den Bereich der letzten 100 Jahre
+     * (bis einschließlich des aktuellen Jahres) gelegt – ein Geburtstag kann ja nicht
+     * in der Zukunft liegen.
+     *
+     * @param geburtstag Geburtstag im Format tt.mm.yy
+     * @return das zugehörige Datum
+     * @throws java.time.format.DateTimeParseException Falls das Format nicht korrekt ist
+     * @throws NullPointerException Falls geburtstag null ist
+     */
+    private static LocalDate geburtstagParsen(String geburtstag) {
+        if (geburtstag == null)
+            throw new NullPointerException("Geburtstag darf nicht null sein");
+        DateTimeFormatter format = new DateTimeFormatterBuilder()
+                .appendPattern("dd.MM.")
+                // Basisdatum: vor 99 Jahren -> zweistellige Jahre liegen im Bereich
+                // [aktuelles Jahr - 99, aktuelles Jahr]
+                .appendValueReduced(ChronoField.YEAR, 2, 2, LocalDate.now().minusYears(99))
+                .toFormatter();
+        return LocalDate.parse(geburtstag, format);
     }
 
     /**

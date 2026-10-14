@@ -16,7 +16,7 @@ class GirokontoTest {
 
     @BeforeEach
     void setUp() {
-        inhaber = new Kunde("Max", "Mustermann", "Musterstraße 1", "01/01/90");
+        inhaber = new Kunde("Max", "Mustermann", "Musterstraße 1", "01.01.90");
         konto = new Girokonto(inhaber, 12345678, new Geldbetrag(500, Waehrung.EURO));
     }
 
