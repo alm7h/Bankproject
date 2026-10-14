@@ -95,6 +95,43 @@ class FestgeldkontoTest {
             assertThrows(IllegalArgumentException.class, () -> konto.kuendigen(new Geldbetrag(-0.01)));
             assertEquals(new Geldbetrag(300), konto.getGekuendigterBetrag());
         }
+
+        @Test
+        void erneutesKuendigen_ersetztDenGekuendigtenBetrag() throws GesperrtException {
+            // Laut JavaDoc wird "der angegebene Betrag als gekündigt markiert" und auf den
+            // Kontostand begrenzt – ein neuer Aufruf legt den Betrag also neu fest, statt zu addieren
+            konto.kuendigen(new Geldbetrag(100));
+            konto.kuendigen(new Geldbetrag(50));
+            assertEquals(new Geldbetrag(50), konto.getGekuendigterBetrag());
+            konto.kuendigen(new Geldbetrag(800));
+            assertEquals(new Geldbetrag(800), konto.getGekuendigterBetrag());
+        }
+
+        @Test
+        void kuendigen_mitNull_nimmtDieKuendigungZurueck() throws GesperrtException {
+            konto.kuendigen(new Geldbetrag(300));
+            konto.kuendigen(Geldbetrag.NULL_EURO);
+            assertEquals(Geldbetrag.NULL_EURO, konto.getGekuendigterBetrag());
+            assertFalse(konto.abheben(new Geldbetrag(0.01)));
+        }
+
+        @Test
+        void kuendigen_wirftGesperrtException_wennGesperrt_undLaesstBetragUnveraendert() throws GesperrtException {
+            konto.kuendigen(new Geldbetrag(300));
+            konto.sperren();
+            assertThrows(GesperrtException.class, () -> konto.kuendigen(new Geldbetrag(500)));
+            // Die Sperre wird zuerst geprüft, daher keine IllegalArgumentException
+            assertThrows(GesperrtException.class, () -> konto.kuendigen(null));
+            assertEquals(new Geldbetrag(300), konto.getGekuendigterBetrag());
+        }
+
+        @Test
+        void kuendigen_istNachEntsperrenWiederMoeglich() throws GesperrtException {
+            konto.sperren();
+            konto.entsperren();
+            konto.kuendigen(new Geldbetrag(200));
+            assertEquals(new Geldbetrag(200), konto.getGekuendigterBetrag());
+        }
     }
 
     @Nested
