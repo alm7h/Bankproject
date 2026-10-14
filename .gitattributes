@@ -1,0 +1,14 @@
+# Einheitliche Zeilenenden: Textdateien werden im Repository mit LF gespeichert
+* text=auto eol=lf
+
+# Windows-Skripte brauchen CRLF
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binärdateien nie umwandeln
+*.jar binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.zip binary
