@@ -78,6 +78,10 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
      * @throws IllegalArgumentException Falls die Zielwährung null ist.
      */
     public Geldbetrag umrechnen(Waehrung zielwaehrung) {
+        // null ausdrücklich prüfen, damit wie dokumentiert eine IllegalArgumentException
+        // statt einer zufälligen NullPointerException entsteht
+        if (zielwaehrung == null)
+            throw new IllegalArgumentException("Die Zielwährung darf nicht null sein");
         if (this.waehrung == zielwaehrung) return this;
         double inEuro = this.betrag / this.waehrung.getUmrechnungskursZuEuro();
         // Umrechnung und Rundung auf 2 Stellen
