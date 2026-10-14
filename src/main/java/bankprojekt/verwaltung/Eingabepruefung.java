@@ -4,6 +4,9 @@ import java.time.LocalDate;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import bankprojekt.basisdaten.Geldbetrag;
+import bankprojekt.basisdaten.Waehrung;
+
 /**
  * Prüft und bereinigt Eingaben für die {@link Bankverwaltung}. Jede Methode
  * entfernt führende und folgende Leerzeichen und wirft bei ungültigen Werten
@@ -117,6 +120,29 @@ final class Eingabepruefung {
             throw new IllegalArgumentException("Der Benutzername muss 3 bis 30 Zeichen lang sein "
                     + "und darf nur Buchstaben, Ziffern, Punkt, Unter- und Bindestrich enthalten.");
         return name;
+    }
+
+    /**
+     * Prüft die Wahl von Kontoart und Währung.
+     * @param kontoart gewählte Kontoart
+     * @param waehrung gewählte Währung
+     * @throws IllegalArgumentException wenn eines davon fehlt
+     */
+    static void kontowahl(Kontoart kontoart, Waehrung waehrung) {
+        if (kontoart == null)
+            throw new IllegalArgumentException("Bitte eine Kontoart auswählen.");
+        if (waehrung == null)
+            throw new IllegalArgumentException("Bitte eine Währung auswählen.");
+    }
+
+    /**
+     * Prüft einen zu buchenden Betrag.
+     * @param betrag der Betrag
+     * @throws IllegalArgumentException wenn er fehlt oder nicht größer als 0 ist
+     */
+    static void betrag(Geldbetrag betrag) {
+        if (betrag == null || betrag.compareTo(Geldbetrag.NULL_EURO) <= 0)
+            throw new IllegalArgumentException("Der Betrag muss größer als 0 sein.");
     }
 
     /**

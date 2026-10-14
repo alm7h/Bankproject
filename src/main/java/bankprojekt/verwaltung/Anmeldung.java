@@ -7,7 +7,10 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Prüft die Anmeldung von Benutzern an der {@link Bankverwaltung}.
+ * Prüft die Anmeldung an der {@link Bankverwaltung} – von Mitarbeitern
+ * ({@link Benutzer}) und von Kunden ({@link Kundenzugang}) über dieselbe Maske; da
+ * Benutzernamen über beide Gruppen hinweg eindeutig sind, ergibt der Name, wer sich
+ * anmeldet.
  * <p>
  * Nach {@value #MAX_FEHLVERSUCHE} aufeinanderfolgenden Fehlversuchen wird die
  * Anmeldung für {@link #SPERRDAUER} gesperrt; in dieser Zeit wird kein Passwort
@@ -68,37 +71,49 @@ public final class Anmeldung {
     }
 
     /**
-     * Versucht, einen Benutzer anzumelden.
+     * Versucht, einen Mitarbeiter oder Kunden anzumelden.
      * @param benutzername der eingegebene Benutzername (Groß-/Kleinschreibung egal)
      * @param passwort das eingegebene Passwort
-     * @return das Ergebnis; bei Erfolg mit dem angemeldeten Benutzer
+     * @return das Ergebnis; bei Erfolg mit dem angemeldeten Mitarbeiter bzw. Kundenzugang
      */
     public Anmeldeergebnis anmelden(String benutzername, char[] passwort) {
         Duration rest = getRestsperre();
         if (!rest.isZero())
-            return new Anmeldeergebnis(Anmeldeergebnis.Status.GESPERRT, null, 0, rest);
+            return new Anmeldeergebnis(Anmeldeergebnis.Status.GESPERRT, null, null, 0, rest);
 
         String name = benutzername == null ? "" : benutzername.strip();
-        Optional<Benutzer> gefunden = verwaltung.findeBenutzer(name);
+        Optional<Benutzer> mitarbeiter = verwaltung.findeBenutzer(name);
+        Optional<Kundenzugang> kunde = mitarbeiter.isPresent() ? Optional.empty() : verwaltung.findeKundenzugang(name);
         boolean passwortRichtig;
-        if (gefunden.isPresent()) {
-            passwortRichtig = gefunden.get().passwortPruefen(passwort);
+        boolean aktiv;
+        if (mitarbeiter.isPresent()) {
+            passwortRichtig = mitarbeiter.get().passwortPruefen(passwort);
+            aktiv = mitarbeiter.get().isAktiv();
+        } else if (kunde.isPresent()) {
+            passwortRichtig = kunde.get().passwortPruefen(passwort);
+            aktiv = verwaltung.kundenzugangAktiv(kunde.get());
         } else {
-            // gleich viel Rechenzeit wie bei einem bekannten Benutzer
+            // gleich viel Rechenzeit wie bei einem bekannten Benutzernamen
             Passwortschutz.pruefen(passwort, Platzhalter.HASH);
             passwortRichtig = false;
+            aktiv = false;
         }
 
-        if (passwortRichtig && gefunden.get().isAktiv()) {
+        if (passwortRichtig && aktiv) {
             fehlversuche = 0;
-            verwaltung.anmeldungVermerken(gefunden.get());
-            return new Anmeldeergebnis(Anmeldeergebnis.Status.ERFOLGREICH, gefunden.get(), MAX_FEHLVERSUCHE,
-                    Duration.ZERO);
+            if (mitarbeiter.isPresent()) {
+                verwaltung.anmeldungVermerken(mitarbeiter.get());
+                return new Anmeldeergebnis(Anmeldeergebnis.Status.ERFOLGREICH, mitarbeiter.get(), null,
+                        MAX_FEHLVERSUCHE, Duration.ZERO);
+            }
+            verwaltung.kundenanmeldungVermerken(kunde.get());
+            return new Anmeldeergebnis(Anmeldeergebnis.Status.ERFOLGREICH, null, kunde.get(),
+                    MAX_FEHLVERSUCHE, Duration.ZERO);
         }
 
-        // Fehlversuch: falsche Zugangsdaten oder deaktivierter Benutzer
+        // Fehlversuch: falsche Zugangsdaten oder deaktivierter Zugang
         fehlversuche++;
-        String grund = passwortRichtig ? "Benutzer ist deaktiviert" : "Benutzername oder Passwort falsch";
+        String grund = passwortRichtig ? "Zugang ist deaktiviert" : "Benutzername oder Passwort falsch";
         verwaltung.protokollieren(name.isEmpty() ? "(leer)" : name, Protokollaktion.ANMELDUNG_FEHLGESCHLAGEN,
                 grund + " (Fehlversuch " + fehlversuche + " von " + MAX_FEHLVERSUCHE + ")");
         if (fehlversuche >= MAX_FEHLVERSUCHE) {
@@ -107,20 +122,30 @@ public final class Anmeldung {
             verwaltung.protokollieren(Bankverwaltung.SYSTEM, Protokollaktion.ANMELDUNG_GESPERRT,
                     MAX_FEHLVERSUCHE + " Fehlversuche – Anmeldung für "
                             + SPERRDAUER.toSeconds() + " Sekunden gesperrt");
-            return new Anmeldeergebnis(Anmeldeergebnis.Status.GESPERRT, null, 0, SPERRDAUER);
+            return new Anmeldeergebnis(Anmeldeergebnis.Status.GESPERRT, null, null, 0, SPERRDAUER);
         }
         Anmeldeergebnis.Status status = passwortRichtig
                 ? Anmeldeergebnis.Status.DEAKTIVIERT : Anmeldeergebnis.Status.FALSCHE_ZUGANGSDATEN;
-        return new Anmeldeergebnis(status, null, MAX_FEHLVERSUCHE - fehlversuche, Duration.ZERO);
+        return new Anmeldeergebnis(status, null, null, MAX_FEHLVERSUCHE - fehlversuche, Duration.ZERO);
     }
 
     /**
-     * Meldet einen Benutzer ab (wird protokolliert).
-     * @param benutzer der abzumeldende Benutzer; bei null geschieht nichts
+     * Meldet einen Mitarbeiter ab (wird protokolliert).
+     * @param benutzer der abzumeldende Mitarbeiter; bei null geschieht nichts
      */
     public void abmelden(Benutzer benutzer) {
         if (benutzer != null)
             verwaltung.protokollieren(benutzer.getBenutzername(), Protokollaktion.ABMELDUNG, "Abgemeldet");
+    }
+
+    /**
+     * Meldet einen Kunden vom Kundenportal ab (wird protokolliert).
+     * @param zugang der abzumeldende Kundenzugang; bei null geschieht nichts
+     */
+    public void abmelden(Kundenzugang zugang) {
+        if (zugang != null)
+            verwaltung.protokollieren(zugang.getBenutzername(), Protokollaktion.ABMELDUNG,
+                    "Vom Kundenportal abgemeldet");
     }
 
     /**

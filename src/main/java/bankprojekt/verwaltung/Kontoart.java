@@ -15,27 +15,46 @@ import bankprojekt.fabriken.SparbuchFabrik;
  */
 public enum Kontoart {
     /** Girokonto mit Dispo */
-    GIROKONTO("Girokonto"),
+    GIROKONTO("Girokonto",
+            "Das Konto für den Alltag: Überweisungen senden und empfangen, Dispo nach Prüfung."),
     /** Sparbuch (Sparkonto) */
-    SPARBUCH("Sparbuch"),
+    SPARBUCH("Sparbuch",
+            "Zum Sparen: bis zu 2.000 € im Monat verfügbar, ein kleiner Rest bleibt immer stehen."),
     /** Festgeldkonto */
-    FESTGELDKONTO("Festgeldkonto"),
+    FESTGELDKONTO("Festgeldkonto",
+            "Für feste Anlagen: Geld steht erst nach einer Kündigung zur Verfügung."),
     /** Kinderkonto */
-    KINDERKONTO("Kinderkonto"),
+    KINDERKONTO("Kinderkonto",
+            "Für Kinder: höchstens 50 € pro Abhebung, kein Überziehen."),
     /** Aktienkonto */
-    AKTIENKONTO("Aktienkonto");
+    AKTIENKONTO("Aktienkonto",
+            "Für den Wertpapierhandel: Guthaben für Kauf- und Verkaufsaufträge.");
 
     /**
      * Lesbare Bezeichnung für die Oberfläche
      */
     private final String bezeichnung;
+    /**
+     * kurze Beschreibung für Kunden (z. B. bei der Kontowahl im Kundenportal)
+     */
+    private final String beschreibung;
 
     /**
-     * Legt eine Kontoart mit ihrer lesbaren Bezeichnung an.
+     * Legt eine Kontoart mit ihrer lesbaren Bezeichnung und Beschreibung an.
      * @param bezeichnung lesbare Bezeichnung
+     * @param beschreibung kurze Beschreibung für Kunden
      */
-    Kontoart(String bezeichnung) {
+    Kontoart(String bezeichnung, String beschreibung) {
         this.bezeichnung = bezeichnung;
+        this.beschreibung = beschreibung;
+    }
+
+    /**
+     * Liefert eine kurze Beschreibung der Kontoart für Kunden.
+     * @return die Beschreibung
+     */
+    public String getBeschreibung() {
+        return beschreibung;
     }
 
     /**

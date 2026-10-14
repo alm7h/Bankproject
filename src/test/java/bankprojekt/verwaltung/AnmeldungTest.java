@@ -170,8 +170,62 @@ class AnmeldungTest {
         assertEquals("admin", letzterEintrag().benutzer());
 
         int eintraege = verwaltung.getProtokoll().size();
-        anmeldung.abmelden(null);
+        anmeldung.abmelden((Benutzer) null);
+        anmeldung.abmelden((Kundenzugang) null);
         assertEquals(eintraege, verwaltung.getProtokoll().size());
+    }
+
+    @Test
+    void kunde_meldetSichUeberDieselbeMaskeAn() {
+        Kundenakte anna = verwaltung.kundeAnlegen(admin, Testdaten.kunde("Anna", "Schmidt"));
+        Kundenzugang zugang = Testdaten.kundenzugang(verwaltung, "anna.s", anna.getKundennummer());
+
+        Anmeldeergebnis ergebnis = anmeldung.anmelden("Anna.S", Testdaten.PASSWORT.toCharArray());
+
+        assertTrue(ergebnis.isErfolgreich());
+        assertTrue(ergebnis.isKunde());
+        assertSame(zugang, ergebnis.kundenzugang());
+        assertNull(ergebnis.benutzer());
+        assertNotNull(zugang.getLetzteAnmeldung());
+        assertEquals("Im Kundenportal angemeldet", letzterEintrag().details());
+        assertFalse(anmeldung.anmelden("admin", Testdaten.PASSWORT.toCharArray()).isKunde(),
+                "Mitarbeiter sind keine Kunden");
+    }
+
+    @Test
+    void neukunde_mitOffenemAntrag_kannSichSchonAnmelden() {
+        Kundenzugang zugang = Testdaten.kundenzugang(verwaltung, "neu", null);
+        Anmeldeergebnis ergebnis = anmeldung.anmelden("neu", Testdaten.PASSWORT.toCharArray());
+        assertSame(zugang, ergebnis.kundenzugang());
+    }
+
+    @Test
+    void kundeEinesGesperrtenKunden_kannSichNichtAnmelden() {
+        Kundenakte anna = verwaltung.kundeAnlegen(admin, Testdaten.kunde("Anna", "Schmidt"));
+        Testdaten.kundenzugang(verwaltung, "anna.s", anna.getKundennummer());
+        verwaltung.kundeDeaktivieren(admin, anna.getKundennummer());
+
+        Anmeldeergebnis ergebnis = anmeldung.anmelden("anna.s", Testdaten.PASSWORT.toCharArray());
+
+        assertEquals(Anmeldeergebnis.Status.DEAKTIVIERT, ergebnis.status());
+        assertEquals("Zugang ist deaktiviert (Fehlversuch 1 von 5)", letzterEintrag().details());
+    }
+
+    @Test
+    void kunde_mitFalschemPasswort_zaehltAlsFehlversuch() {
+        Testdaten.kundenzugang(verwaltung, "neu", null);
+        Anmeldeergebnis ergebnis = anmeldung.anmelden("neu", "falsch".toCharArray());
+        assertEquals(Anmeldeergebnis.Status.FALSCHE_ZUGANGSDATEN, ergebnis.status());
+        assertFalse(ergebnis.isKunde());
+    }
+
+    @Test
+    void abmelden_einesKunden_wirdProtokolliert() {
+        Kundenzugang zugang = Testdaten.kundenzugang(verwaltung, "neu", null);
+        anmeldung.abmelden(zugang);
+        assertEquals(Protokollaktion.ABMELDUNG, letzterEintrag().aktion());
+        assertEquals("neu", letzterEintrag().benutzer());
+        assertEquals("Vom Kundenportal abgemeldet", letzterEintrag().details());
     }
 
     @Test

@@ -40,7 +40,31 @@ public enum Protokollaktion {
     /** Benutzer deaktiviert */
     BENUTZER_DEAKTIVIERT("Benutzer deaktiviert"),
     /** Benutzer wieder aktiviert */
-    BENUTZER_AKTIVIERT("Benutzer aktiviert");
+    BENUTZER_AKTIVIERT("Benutzer aktiviert"),
+    /** Neukunde hat sich im Kundenportal registriert und ein Konto beantragt */
+    REGISTRIERUNG("Registrierung"),
+    /** Kontoantrag im Kundenportal gestellt */
+    ANTRAG_GESTELLT("Antrag gestellt"),
+    /** Kontoantrag von Mitarbeitern genehmigt */
+    ANTRAG_GENEHMIGT("Antrag genehmigt"),
+    /** Kontoantrag von Mitarbeitern abgelehnt */
+    ANTRAG_ABGELEHNT("Antrag abgelehnt"),
+    /** Portalzugang für einen bestehenden Kunden eingerichtet */
+    PORTALZUGANG_EINGERICHTET("Portalzugang eingerichtet"),
+    /** Passwort eines Portalzugangs von Mitarbeitern zurückgesetzt */
+    PORTALPASSWORT_ZURUECKGESETZT("Portalpasswort zurückgesetzt"),
+    /** Kunde hat sein Portalpasswort geändert */
+    PASSWORT_GEAENDERT("Passwort geändert"),
+    /** Kunde hat seine Kontaktdaten geändert */
+    KONTAKTDATEN_GEAENDERT("Kontaktdaten geändert"),
+    /** Überweisung zwischen zwei Girokonten */
+    UEBERWEISUNG("Überweisung"),
+    /** Umbuchung zwischen zwei Konten desselben Kunden */
+    UMBUCHUNG("Umbuchung"),
+    /** Bareinzahlung am Schalter */
+    BAREINZAHLUNG("Bareinzahlung"),
+    /** Barauszahlung am Schalter */
+    BARAUSZAHLUNG("Barauszahlung");
 
     /**
      * Lesbare Bezeichnung der Aktion für die Oberfläche
