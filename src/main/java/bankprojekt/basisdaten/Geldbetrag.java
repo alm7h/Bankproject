@@ -108,39 +108,56 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     /**
      * rechnet this + summand
      * @param summand zu addierender Betrag
-     * @return this + summand in der Währung von this
+     * @return this + summand in der Währung von this, auf 2 Nachkommastellen (Cent) gerundet
      * @throws IllegalArgumentException wenn summand null ist
      */
     public Geldbetrag plus(Geldbetrag summand) {
         if(summand == null || summand.isNegativ()) throw new IllegalArgumentException("Summand ist null oder negativ");
         // Den Summanden in die Währung von 'this' umrechnen
         Geldbetrag konvertiert = summand.umrechnen(this.waehrung);
-        return new Geldbetrag(this.betrag + konvertiert.getBetrag(), this.waehrung);
+        return new Geldbetrag(aufCentRunden(this.betrag + konvertiert.getBetrag()), this.waehrung);
     }
     /**
      * rechnet this - subtrahend
      * @param subtrahend abzuziehender Betrag
-     * @return this - subtrahend in der Währung von this
+     * @return this - subtrahend in der Währung von this, auf 2 Nachkommastellen (Cent) gerundet
      * @throws IllegalArgumentException wenn subtrahend null ist
      */
     public Geldbetrag minus(Geldbetrag subtrahend) {
         if(subtrahend == null || subtrahend.isNegativ()) throw new IllegalArgumentException("Subtrahend ist null oder negativ");
         // Den Subtrahenden in die Währung von 'this' umrechnen
         Geldbetrag konvertiert = subtrahend.umrechnen(this.waehrung);
-        return new Geldbetrag(this.betrag - konvertiert.getBetrag(), this.waehrung);
+        return new Geldbetrag(aufCentRunden(this.betrag - konvertiert.getBetrag()), this.waehrung);
     }
 
     /**
      * multipliziert this mit faktor
      * @param faktor Faktor der Multiplikation
-     * @return das faktor-Fache von this
+     * @return das faktor-Fache von this, auf 2 Nachkommastellen (Cent) gerundet
      * @throws IllegalArgumentException wenn Faktor nicht finit ist
      */
     public Geldbetrag mal(double faktor)
     {
         if(!Double.isFinite(faktor))
             throw new IllegalArgumentException("Faktor ist nicht finit");
-        return new Geldbetrag(this.betrag * faktor, this.waehrung);
+        return new Geldbetrag(aufCentRunden(this.betrag * faktor), this.waehrung);
+    }
+
+    /**
+     * Rundet ein Rechenergebnis auf 2 Nachkommastellen (Cent).
+     * <p>
+     * Bisher wurde mit den rohen double-Werten weitergerechnet. Dabei entstehen
+     * Rundungsfehler, die sich über mehrere Buchungen aufsummieren: z. B. ergab
+     * 1,00 - 0,90 den Wert 0,09999999999999998, sodass die restlichen 0,10 € nicht mehr
+     * abgehoben werden konnten, und 0,10 + 0,20 war nicht gleich 0,30. Deshalb wird jedes
+     * Ergebnis von plus, minus und mal – wie schon bei {@link #umrechnen(Waehrung)} –
+     * auf Cent gerundet.
+     *
+     * @param wert das ungerundete Ergebnis
+     * @return der auf 2 Nachkommastellen gerundete Wert
+     */
+    private static double aufCentRunden(double wert) {
+        return DoubleRounder.round(wert, 2);
     }
 
     /**
