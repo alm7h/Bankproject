@@ -18,6 +18,18 @@ import bankprojekt.nuetzliches.EinAusgabe;
 public class    KontenSpielereien {
 
     /**
+     * Gibt das angegebene Konto auf der Konsole aus.
+     * <p>
+     * Stand bisher als Methode ausgebenAufDerKonsole() in Konto. Die Geschäftslogik
+     * (bankprojekt.*) soll aber nichts auf der Konsole ausgeben; die Ausgabe gehört
+     * in die Präsentationsschicht, also hierher zu den Spielereien.
+     * @param konto das auszugebende Konto
+     */
+    static void ausgebenAufDerKonsole(Konto konto) {
+        System.out.println(konto);
+    }
+
+    /**
      * Testprogramm für Konten
      * @param args wird nicht benutzt
      * @throws java.util.InputMismatchException wenn der Benutzer keine Zahl eingibt
@@ -72,8 +84,7 @@ public class    KontenSpielereien {
             double betrag = EinAusgabe.eingabePositiveKommazahl("Wie viel wollen Sie abheben?");
             boolean hatGeklappt = k.abheben(new Geldbetrag(betrag));
             System.out.println("Abhebung hat geklappt: " + hatGeklappt);
-            System.out.println(k.toString());
-            //k.ausgebenAufDerKonsole();
+            ausgebenAufDerKonsole(k);
         }
         catch (GesperrtException e)
         {

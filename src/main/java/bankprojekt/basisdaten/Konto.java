@@ -349,13 +349,6 @@ public abstract class Konto implements Comparable<Konto>, Serializable
                 + "Aktueller Kontostand: " + getKontostand() + " ";
     }
 
-    /**
-     * Gibt das this-Konto auf der Konsole aus
-     */
-    public void ausgebenAufDerKonsole() {
-        System.out.println(this);
-    }
-
 
     /**
      * Vergleich von this mit other; Zwei Konten gelten als gleich,
