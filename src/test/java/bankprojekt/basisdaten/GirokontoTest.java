@@ -59,6 +59,7 @@ class GirokontoTest {
         void konstruktor_wirftIllegalArgumentException_beiUngueltigemDispo() {
             assertThrows(IllegalArgumentException.class, () -> new Girokonto(inhaber, 1, null));
             assertThrows(IllegalArgumentException.class, () -> new Girokonto(inhaber, 1, new Geldbetrag(-0.01)));
+            assertThrows(IllegalArgumentException.class, () -> new Girokonto(inhaber, 1, Geldbetrag.NULL_EURO));
         }
 
         @Test
@@ -80,10 +81,17 @@ class GirokontoTest {
         }
 
         @Test
-        void setDispo_erlaubtNull() {
-            // Der Code lehnt nur null und negative Werte ab, ein Dispo von 0 ist zulässig
-            konto.setDispo(Geldbetrag.NULL_EURO);
-            assertEquals(Geldbetrag.NULL_EURO, konto.getDispo());
+        void setDispo_erlaubtKleinstenPositivenWert() {
+            konto.setDispo(new Geldbetrag(0.01));
+            assertEquals(new Geldbetrag(0.01), konto.getDispo());
+        }
+
+        @Test
+        void setDispo_wirftIllegalArgumentException_beiNull_undLaesstDispoUnveraendert() {
+            // Laut Dokumentation muss der Dispo größer als 0 sein – auch in Fremdwährung
+            assertThrows(IllegalArgumentException.class, () -> konto.setDispo(Geldbetrag.NULL_EURO));
+            assertThrows(IllegalArgumentException.class, () -> konto.setDispo(new Geldbetrag(0, Waehrung.DENAR)));
+            assertEquals(new Geldbetrag(500), konto.getDispo());
         }
 
         @Test

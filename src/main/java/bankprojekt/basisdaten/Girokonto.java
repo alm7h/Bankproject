@@ -24,7 +24,7 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
      * @param kontonummer Kontonummer
      * @param dispo Dispo
      * @throws IllegalArgumentException wenn der inhaber null ist
-     * 				    oder der angegebene dispo negativ bzw. NaN ist
+     * 				    oder der angegebene dispo null, negativ bzw. NaN oder 0 ist
      * @throws UngueltigeKontonummerException wenn kontonummer ungültig ist
      */
     public Girokonto(Kunde inhaber, long kontonummer, Geldbetrag dispo)
@@ -53,10 +53,12 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
     /**
      * setzt den Dispo neu
      * @param dispo muss größer sein als 0
-     * @throws IllegalArgumentException wenn dispo negativ bzw. NaN ist
+     * @throws IllegalArgumentException wenn dispo null, negativ bzw. NaN oder 0 ist
      */
     public void setDispo(Geldbetrag dispo) {
-        if(dispo == null || dispo.isNegativ())
+        // Ein Dispo von 0 wurde bisher entgegen der Dokumentation ("größer als 0") akzeptiert.
+        // equals vergleicht den Eurowert, daher wird 0 in jeder Währung abgelehnt.
+        if(dispo == null || dispo.isNegativ() || dispo.equals(Geldbetrag.NULL_EURO))
             throw new IllegalArgumentException("Der Dispo ist nicht gültig!");
         this.dispo = dispo;
     }
