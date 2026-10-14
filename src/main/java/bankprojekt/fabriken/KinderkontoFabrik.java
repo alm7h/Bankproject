@@ -10,6 +10,12 @@ import bankprojekt.basisdaten.Kunde;
  * @author m.alharethi
  */
 public class KinderkontoFabrik extends Kontofabrik {
+    /**
+     * Erzeugt eine Fabrik für Kinderkonten.
+     */
+    public KinderkontoFabrik() {
+    }
+
 
     @Override
     public Konto erstellen(Kunde inhaber, long kontonummer) {

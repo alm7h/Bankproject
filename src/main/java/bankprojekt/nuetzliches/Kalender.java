@@ -11,6 +11,12 @@ import java.time.LocalDate;
  */
 public class Kalender implements Serializable {
 	/**
+	 * Erzeugt einen Kalender, der das Datum des Systems liefert.
+	 */
+	public Kalender() {
+	}
+
+	/**
 	 * Versionsnummer für die Serialisierung.
 	 */
 	private static final long serialVersionUID = 1L;

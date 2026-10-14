@@ -36,6 +36,12 @@ import bankprojekt.exceptions.GesperrtException;
  * @author m.alharethi
  */
 public class Aktienspielereien {
+	/**
+	 * Nicht instanziierbar: Die Klasse enthält nur das Demo-Programm.
+	 */
+	private Aktienspielereien() {
+	}
+
 
 	/**
 	 * Verknüpft die Beschreibung eines Auftrags mit seinem Future, damit das

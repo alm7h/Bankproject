@@ -32,6 +32,12 @@ import javafx.scene.image.ImageView;
  * @author m.alharethi
  */
 public class KontoController {
+    /**
+     * Wird vom FXMLLoader beim Laden der Oberfläche aufgerufen.
+     */
+    public KontoController() {
+    }
+
 
     // Anzeige-Elemente – vom FXMLLoader über die fx:ids eingefügt.
 

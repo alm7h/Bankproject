@@ -161,14 +161,13 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     }
 
     /**
-     * Compares this Geldbetrag instance with another Geldbetrag instance for order.
-     * The comparison is based on the equivalent value of the amounts in Euros,
-     * calculated using the conversion rates of their respective currencies.
+     * Vergleicht this mit einem anderen Geldbetrag. Verglichen wird der Wert in Euro,
+     * der über die Umrechnungskurse der jeweiligen Währungen berechnet wird.
      *
-     * @param o the Geldbetrag instance to compare to this instance
-     * @return a negative integer, zero, or a positive integer as this instance
-     *         is less than, equal to, or greater than the specified instance
-     * @throws NullPointerException if the specified Geldbetrag is null
+     * @param o der Geldbetrag, mit dem this verglichen wird
+     * @return eine negative Zahl, 0 oder eine positive Zahl, je nachdem, ob this
+     *         kleiner, gleich oder größer als o ist
+     * @throws NullPointerException wenn o null ist
      */
     @Override
     public int compareTo(Geldbetrag o) throws NullPointerException {
@@ -178,12 +177,11 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     }
 
     /**
-     * Determines whether this instance is equal to another specified object.
-     * The comparison is based on whether the other object is an instance of Geldbetrag
-     * and has the same equivalent value as this instance, determined using the compareTo method.
+     * Prüft, ob this gleich dem übergebenen Objekt ist. Das ist der Fall, wenn o ein
+     * Geldbetrag mit demselben Wert in Euro ist (Vergleich über compareTo).
      *
-     * @param o the object to compare for equality with this instance
-     * @return true if the specified object is equal to this instance, false otherwise
+     * @param o das Vergleichsobjekt
+     * @return true, wenn o ein gleichwertiger Geldbetrag ist, sonst false
      */
 
     @Override
@@ -221,13 +219,10 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     }
 
     /**
-     * Converts this Geldbetrag instance to its string representation.
-     * The string contains the monetary amount formatted to two decimal places,
-     * followed by the currency symbol.
+     * Liefert die Textdarstellung des Geldbetrags: den Betrag mit zwei Nachkommastellen
+     * (im Format des Standard-Locales), gefolgt vom Kürzel der Währung.
      *
-     * @return a string representation of the Geldbetrag in the format "{betrag} {waehrung}"
-     *         where {betrag} is the amount formatted with two decimal places and
-     *         {waehrung} is the currency abbreviation.
+     * @return der Geldbetrag in der Form "{betrag} {waehrung}", z. B. "1.234,50 EUR"
      */
     @Override
     public String toString() {

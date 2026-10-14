@@ -64,18 +64,19 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
     }
 
     /**
-     * Sends a bank transfer from the current account to the specified recipient's account.
-     * The transfer is only executed if the account is not locked, the provided parameters are valid,
-     * and sufficient funds including overdraft (dispo) are available.
+     * Bucht eine Überweisung von this an den angegebenen Empfänger ab. Die Überweisung
+     * wird nur ausgeführt, wenn das Konto nicht gesperrt ist, alle Parameter gültig sind
+     * und die Deckung einschließlich Dispo ausreicht. Die Sperre wird vor den Parametern
+     * geprüft.
      *
-     * @param betrag the amount to be transferred. Must not be null or negative.
-     * @param empfaenger the recipient of the transfer. Must not be null.
-     * @param nachKontonr the account number of the recipient.
-     * @param nachBlz the bank code (BLZ) of the recipient's bank.
-     * @param verwendungszweck the purpose or reason for the transfer. Must not be null.
-     * @return true if the transfer was successful, false if there are insufficient funds.
-     * @throws GesperrtException if the account is locked and the transfer cannot be processed.
-     * @throws IllegalArgumentException if any of the provided parameters are null, invalid, or negative.
+     * @param betrag der zu überweisende Betrag, darf nicht null oder negativ sein
+     * @param empfaenger Name des Empfängers, darf nicht null sein
+     * @param nachKontonr Kontonummer des Empfängers
+     * @param nachBlz Bankleitzahl der Bank des Empfängers
+     * @param verwendungszweck Verwendungszweck, darf nicht null sein
+     * @return true, wenn die Überweisung abgebucht wurde, false, wenn die Deckung nicht reicht
+     * @throws GesperrtException wenn das Konto gesperrt ist
+     * @throws IllegalArgumentException wenn einer der Parameter null, ungültig oder negativ ist
      */
 
     @Override
@@ -136,12 +137,10 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
     }
 
     /**
-     * Returns a string representation of the Girokonto object, including the account details
-     * and the overdraft limit (dispo). The account details are retrieved from the superclass's
-     * toString method.
+     * Liefert die Textdarstellung des Girokontos: die Kontoart, die allgemeinen
+     * Kontodaten aus {@link Konto#toString()} und den Dispo.
      *
-     * @return a formatted string containing the account type, details from the superclass,
-     *         and the overdraft limit (dispo).
+     * @return Kontoart, Kontodaten und Dispo als Text
      */
     @Override
     public String toString()

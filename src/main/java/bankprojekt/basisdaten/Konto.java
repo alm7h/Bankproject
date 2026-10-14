@@ -41,14 +41,14 @@ public abstract class Konto implements Comparable<Konto>, Serializable
      */
     private final long nummer;
 
-    /**
-     * Wenn das Konto gesperrt ist (gesperrt = true), können keine Aktionen daran mehr vorgenommen werden,
-     * die zum Schaden des Kontoinhabers wären (abheben, Inhaberwechsel)
+    /*
+     * Wenn das Konto gesperrt ist (gesperrt = true), lässt es keine Buchungen und keinen
+     * Inhaberwechsel mehr zu (abheben, einzahlen, Überweisungen, setInhaber, ...).
      *
-    * Der Gesperrt-Zustand ist jetzt eine JavaFX-Property.
-    * transient, weil Properties nicht serialisierbar sind; der boolesche Wert
-    * wird in writeObject/readObject von Hand gesichert.
-      */
+     * Der Gesperrt-Zustand ist eine JavaFX-Property (dokumentiert an gesperrtProperty()).
+     * transient, weil Properties nicht serialisierbar sind; der boolesche Wert
+     * wird in writeObject/readObject von Hand gesichert.
+     */
     private transient BooleanProperty gesperrt;
 
     /**
@@ -56,19 +56,19 @@ public abstract class Konto implements Comparable<Konto>, Serializable
      */
     private Kunde inhaber;
 
-    /**
-     * der aktuelle Kontostand
-
+    /*
+     * der aktuelle Kontostand (dokumentiert an kontostandProperty())
+     *
      * Der Kontostand steckt in einem ReadOnlyObjectWrapper, damit er
      * von außen nur gelesen (kontostandProperty() liefert ReadOnlyObjectProperty),
      * aber nicht verändert werden kann. Ebenfalls transient (siehe writeObject/readObject).
-    */
+     */
     private transient ReadOnlyObjectWrapper<Geldbetrag> kontostand;
 
-    /**
-     * Zeigt an, ob der Kontostand im Plus (>= 0) oder im Minus ist.
-     * Die Property ist über ein Binding an den Kontostand gekoppelt und wird
-     * dadurch immer automatisch aktuell gehalten.
+    /*
+     * Zeigt an, ob der Kontostand im Plus (>= 0) oder im Minus ist (dokumentiert an
+     * imPlusProperty()). Die Property ist über ein Binding an den Kontostand gekoppelt
+     * und wird dadurch immer automatisch aktuell gehalten.
      */
     private transient ReadOnlyBooleanWrapper imPlus;
 
@@ -378,10 +378,10 @@ public abstract class Konto implements Comparable<Konto>, Serializable
     }
 
     /**
-     * Computes the hash code for the account object. The hash code is based on the
-     * account number's value.
+     * Berechnet den Hashcode des Kontos aus der Kontonummer (passend zu
+     * {@link #equals(Object)}).
      *
-     * @return an integer representing the hash code for the account
+     * @return Hashcode des Kontos
      */
 
     @Override
@@ -392,12 +392,11 @@ public abstract class Konto implements Comparable<Konto>, Serializable
 
 
     /**
-     * Compares this Konto object with another Konto object for order. The comparison
-     * is based on the kontonummer of the accounts.
+     * Vergleicht this mit einem anderen Konto anhand der Kontonummer.
      *
-     * @param other the other Konto object to be compared.
-     * @return a negative integer, zero, or a positive integer if this Konto's
-     *         kontonummer is less than, equal to, or greater than the specified Konto's kontonummer, respectively.
+     * @param other das Vergleichskonto
+     * @return eine negative Zahl, 0 oder eine positive Zahl, je nachdem, ob die
+     *         Kontonummer von this kleiner, gleich oder größer als die von other ist
      */
     @Override
     public int  compareTo(Konto other)

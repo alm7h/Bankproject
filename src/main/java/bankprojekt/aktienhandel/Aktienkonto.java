@@ -61,6 +61,10 @@ public class Aktienkonto extends Konto {
 
 
 
+	/**
+	 * Verwaltet die Beobachter des Depots und benachrichtigt sie bei jedem Kauf bzw.
+	 * Verkauf (Property-Name = WKN, alter und neuer Bestand als Werte).
+	 */
 	private final PropertyChangeSupport depotAenderungen = new PropertyChangeSupport(this);
 
 

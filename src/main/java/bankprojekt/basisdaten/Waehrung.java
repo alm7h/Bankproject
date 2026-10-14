@@ -4,29 +4,32 @@ package bankprojekt.basisdaten;
  * Repräsentiert verschiedene Währungen mit festem Wechselkurs zum Euro.
  */
 public enum Waehrung {
+    /** Euro (EUR), die Bezugswährung mit dem Kurs 1 */
     EURO(1.0, "EUR"),
+    /** Mazedonischer Denar (MKD): 61,5 Denar entsprechen 1 Euro */
     DENAR(61.5, "MKD"),
+    /** Komoren-Franc (KMF): 491,96775 Franc entsprechen 1 Euro */
     FRANC(491.96775, "KMF"),
+    /** São-Tomé-Dobra (STN): 24,5 Dobra entsprechen 1 Euro */
     DOBRA(24.5, "STN");
 
     /**
-     * Represents the exchange rate of the currency relative to the Euro.
-     * This value indicates how much of the specific currency corresponds to 1 Euro.
+     * Umrechnungskurs der Währung zum Euro: gibt an, wie viele Einheiten dieser
+     * Währung 1 Euro entsprechen.
      */
     private final double umrechnungskursZuEuro;
 
     /**
-     * Represents the abbreviation or symbol of the currency.
-     * This is a standard code or shorthand used to identify the currency,
-     * such as "EUR" for Euro or "USD" for US Dollar.
+     * Kürzel der Währung, also der übliche Code, an dem man die Währung erkennt,
+     * z. B. "EUR" für den Euro.
      */
     private final String kuerzel;
 
     /**
-     * Constructs a Waehrung instance with a specific exchange rate to Euro and a currency abbreviation.
+     * Legt eine Währung mit ihrem Umrechnungskurs zum Euro und ihrem Kürzel an.
      *
-     * @param kurs    the exchange rate of the currency relative to the Euro
-     * @param kuerzel the abbreviation or symbol of the currency
+     * @param kurs    Umrechnungskurs der Währung zum Euro
+     * @param kuerzel Kürzel der Währung
      */
      Waehrung(double kurs, String kuerzel) {
         this.umrechnungskursZuEuro = kurs;
@@ -34,27 +37,27 @@ public enum Waehrung {
     }
 
     /**
-     * Retrieves the exchange rate of the currency relative to the Euro.
+     * Liefert den Umrechnungskurs der Währung zum Euro.
      *
-     * @return the value representing how much of this currency corresponds to 1 Euro
+     * @return wie viele Einheiten dieser Währung 1 Euro entsprechen
      */
     public double getUmrechnungskursZuEuro() {
         return umrechnungskursZuEuro;
     }
 
     /**
-     * Retrieves the abbreviation or symbol of the currency.
+     * Liefert das Kürzel der Währung.
      *
-     * @return the abbreviation or shorthand used to identify the currency, such as "EUR" for Euro
+     * @return das Kürzel der Währung, z. B. "EUR" für den Euro
      */
     public String getKuerzel() {
         return kuerzel;
     }
 
     /**
-     * Returns the abbreviation or symbol of the currency.
+     * Liefert das Kürzel der Währung als Textdarstellung.
      *
-     * @return the abbreviation or shorthand used to identify the currency
+     * @return das Kürzel der Währung
      */
     @Override
     public String toString() {

@@ -8,6 +8,12 @@ import java.util.Scanner;
  */
 public class EinAusgabe {
 	/**
+	 * Nicht instanziierbar: Die Klasse enthält nur statische Hilfsmethoden.
+	 */
+	private EinAusgabe() {
+	}
+
+	/**
 	 * fordert den Benutzer zur Eingabe einer double-Zahl auf
 	 * @param aufforderung Aufforderungstext, der auf der Konsole erscheint
 	 * @return die eingegebenen Zahl

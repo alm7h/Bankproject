@@ -16,6 +16,12 @@ import bankprojekt.nuetzliches.EinAusgabe;
  * @author Doro
  */
 public class    KontenSpielereien {
+    /**
+     * Nicht instanziierbar: Die Klasse enthält nur das Demo-Programm.
+     */
+    private KontenSpielereien() {
+    }
+
 
     /**
      * Gibt das angegebene Konto auf der Konsole aus.

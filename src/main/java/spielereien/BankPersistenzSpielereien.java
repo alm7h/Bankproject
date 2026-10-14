@@ -23,6 +23,12 @@ import bankprojekt.verwaltung.Bank;
  * @author m.alharethi
  */
 public class BankPersistenzSpielereien {
+    /**
+     * Nicht instanziierbar: Die Klasse enthält nur das Demo-Programm.
+     */
+    private BankPersistenzSpielereien() {
+    }
+
 
     /**
      * Dateiname der zip-Datei, in der die beiden Banken gespeichert werden.

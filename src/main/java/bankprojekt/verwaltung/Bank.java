@@ -32,7 +32,14 @@ public class Bank implements Serializable {
      */
     private static final long serialVersionUID = 1L;
 
+    /**
+     * Bankleitzahl der Bank.
+     */
     private final long bankleitzahl;
+    /**
+     * Standard-Dispo (500 €) für Girokonten dieser Bank, z. B. für eine
+     * {@code GirokontoFabrik}.
+     */
     Geldbetrag dispo_default;
     /**
      * Speichert Konten mit der Kontonummer als Schlüssel.
@@ -246,6 +253,7 @@ public class Bank implements Serializable {
      * @param betrag Der Geldbetrag, der abgehoben werden soll.
      * @return true, wenn die Abhebung erfolgreich war, false, wenn die Kontonummer
      *         nicht existiert oder die Abhebung nicht ausgeführt werden konnte.
+     * @throws GesperrtException wenn das Konto gesperrt ist
      */
     public boolean geldAbheben(long von, Geldbetrag betrag) throws GesperrtException {
         Konto k = konten.get(von);

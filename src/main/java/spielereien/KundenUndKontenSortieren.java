@@ -15,6 +15,12 @@ import java.util.Arrays;
  */
 public class KundenUndKontenSortieren {
 	/**
+	 * Nicht instanziierbar: Die Klasse enthält nur das Demo-Programm.
+	 */
+	private KundenUndKontenSortieren() {
+	}
+
+	/**
 	 * sortiert ein paar Kunden und Konten
 	 * @param args wird nicht verwendet
 	 */

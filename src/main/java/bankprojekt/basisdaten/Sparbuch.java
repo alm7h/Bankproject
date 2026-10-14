@@ -130,10 +130,10 @@ public class Sparbuch extends Konto {
     }
 
     /**
-     * Returns a string representation of the savings account. The string includes the account details
-     * from the superclass and additional information specific to the savings account, such as the interest rate.
+     * Liefert die Textdarstellung des Sparbuchs: die Kontoart, die allgemeinen
+     * Kontodaten aus {@link Konto#toString()} und den Zinssatz.
      *
-     * @return a string containing details about the savings account, including superclass details and the interest rate
+     * @return Kontoart, Kontodaten und Zinssatz als Text
      */
 
     @Override
