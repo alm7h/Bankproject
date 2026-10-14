@@ -2,7 +2,9 @@ package bankprojekt.oberflaeche;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URL;
 import java.util.Optional;
+import java.util.function.Function;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
@@ -29,9 +31,25 @@ final class Dialoge {
     static final String STIL = "verwaltung.css";
 
     /**
+     * Zeigt einen modalen Dialog und wartet auf seine Antwort. Normalerweise
+     * {@link Dialog#showAndWait()}; Tests ersetzen das über {@link #setAnzeige(Function)},
+     * damit sie Dialoge beantworten können, ohne dass Fenster aufgehen.
+     */
+    private static Function<Dialog<ButtonType>, Optional<ButtonType>> anzeige = Dialog::showAndWait;
+
+    /**
      * Nicht instanziierbar: Die Klasse enthält nur statische Methoden.
      */
     private Dialoge() {
+    }
+
+    /**
+     * Legt fest, wie modale Dialoge angezeigt werden (für Tests).
+     * @param neueAnzeige zeigt einen Dialog und liefert seine Antwort; null stellt
+     *                    {@link Dialog#showAndWait()} wieder her
+     */
+    static void setAnzeige(Function<Dialog<ButtonType>, Optional<ButtonType>> neueAnzeige) {
+        anzeige = neueAnzeige == null ? Dialog::showAndWait : neueAnzeige;
     }
 
     /**
@@ -48,10 +66,14 @@ final class Dialoge {
      * @param fxml Dateiname, z. B. "kunden.fxml"
      * @param <C> Typ des Controllers
      * @return Wurzelknoten und Controller
+     * @throws IllegalArgumentException wenn es die Datei nicht gibt
      * @throws UncheckedIOException wenn die Datei nicht geladen werden kann
      */
     static <C> Geladen<C> laden(String fxml) {
-        FXMLLoader lader = new FXMLLoader(Dialoge.class.getResource(fxml));
+        URL ort = Dialoge.class.getResource(fxml);
+        if (ort == null)
+            throw new IllegalArgumentException("Die Oberfläche " + fxml + " gibt es nicht.");
+        FXMLLoader lader = new FXMLLoader(ort);
         try {
             Parent wurzel = lader.load();
             return new Geladen<>(wurzel, lader.getController());
@@ -88,21 +110,31 @@ final class Dialoge {
         gestalten(alert.getDialogPane());
         ((Button) alert.getDialogPane().lookupButton(ja)).setDefaultButton(false);
         ((Button) alert.getDialogPane().lookupButton(abbrechen)).setDefaultButton(true);
-        return alert.showAndWait().filter(ja::equals).isPresent();
+        return anzeige.apply(alert).filter(ja::equals).isPresent();
     }
 
     /**
-     * Zeigt eine Fehlermeldung.
+     * Zeigt eine Fehlermeldung zu einer gescheiterten Aktion.
      * @param besitzer Fenster, über dem die Meldung erscheint
      * @param text die Meldung
      */
     static void fehler(Window besitzer, String text) {
+        fehler(besitzer, "Die Aktion konnte nicht ausgeführt werden", text);
+    }
+
+    /**
+     * Zeigt eine Fehlermeldung mit eigener Überschrift.
+     * @param besitzer Fenster, über dem die Meldung erscheint, darf null sein
+     * @param ueberschrift die Überschrift, z. B. "Start nicht möglich"
+     * @param text die Meldung
+     */
+    static void fehler(Window besitzer, String ueberschrift, String text) {
         Alert alert = new Alert(Alert.AlertType.ERROR, text, ButtonType.OK);
         alert.initOwner(besitzer);
         alert.setTitle("Fehler");
-        alert.setHeaderText("Die Aktion konnte nicht ausgeführt werden");
+        alert.setHeaderText(ueberschrift);
         gestalten(alert.getDialogPane());
-        alert.showAndWait();
+        anzeige.apply(alert);
     }
 
     /**
@@ -143,8 +175,7 @@ final class Dialoge {
                 fehler(besitzer, e.getMessage());
             }
         });
-        Optional<ButtonType> ergebnis = dialog.showAndWait();
-        return ergebnis.filter(speichernTyp::equals).isPresent();
+        return anzeige.apply(dialog).filter(speichernTyp::equals).isPresent();
     }
 
     /**

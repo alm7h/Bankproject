@@ -66,8 +66,9 @@ public class HauptfensterController {
      */
     @FXML
     private void initialize() {
+        // Wechselt die Auswahl auf null, war vorher zwangsläufig ein Knopf gewählt
         navigation.selectedToggleProperty().addListener((beobachtet, alt, neu) -> {
-            if (neu == null && alt != null)
+            if (neu == null)
                 alt.setSelected(true);
         });
     }

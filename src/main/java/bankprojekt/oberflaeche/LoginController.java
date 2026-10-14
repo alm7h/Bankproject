@@ -128,8 +128,9 @@ public class LoginController {
 
     /**
      * Aktualisiert die Anzeige der Sperre und gibt die Eingabe nach Ablauf wieder frei.
+     * Wird vom Countdown jede Sekunde aufgerufen (paketweit sichtbar für Tests).
      */
-    private void sperreAktualisieren() {
+    void sperreAktualisieren() {
         Duration rest = anmeldung.getRestsperre();
         if (rest.isZero()) {
             countdown.stop();
