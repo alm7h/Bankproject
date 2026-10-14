@@ -1,6 +1,7 @@
 package bankprojekt.oberflaeche;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import bankprojekt.verwaltung.Kundenakte;
 import bankprojekt.verwaltung.Kundenstatus;
@@ -37,6 +38,9 @@ public class KundenController implements Ansicht {
     /** Knopf „Bearbeiten" */
     @FXML
     private Button bearbeitenKnopf;
+    /** Knopf „Konten anzeigen" */
+    @FXML
+    private Button kontenAnzeigenKnopf;
     /** Knopf „Deaktivieren" bzw. „Aktivieren" */
     @FXML
     private Button statusKnopf;
@@ -72,6 +76,10 @@ public class KundenController implements Ansicht {
      * die Sitzung des angemeldeten Benutzers
      */
     private Sitzung sitzung;
+    /**
+     * zeigt die Konten eines Kunden in der Kontenansicht; null, solange nicht gesetzt
+     */
+    private Consumer<Kundenakte> kontenAnzeigen;
 
     /**
      * Richtet Spalten, Filter und Reaktionen auf Auswahl und Doppelklick ein.
@@ -106,6 +114,15 @@ public class KundenController implements Ansicht {
         this.sitzung = sitzung;
     }
 
+    /**
+     * Setzt die Aktion für „Konten anzeigen" (Wechsel in die Kontenansicht).
+     * @param kontenAnzeigen bekommt den ausgewählten Kunden
+     */
+    public void setKontenAnzeigen(Consumer<Kundenakte> kontenAnzeigen) {
+        this.kontenAnzeigen = kontenAnzeigen;
+        knoepfeAnpassen();
+    }
+
     @Override
     public void aktualisieren() {
         if (sitzung == null)
@@ -129,6 +146,7 @@ public class KundenController implements Ansicht {
     private void knoepfeAnpassen() {
         Kundenakte kunde = tabelle.getSelectionModel().getSelectedItem();
         bearbeitenKnopf.setDisable(kunde == null);
+        kontenAnzeigenKnopf.setDisable(kunde == null || kontenAnzeigen == null);
         statusKnopf.setDisable(kunde == null);
         boolean aktivieren = kunde != null && !kunde.isAktiv();
         statusKnopf.setText(aktivieren ? "Aktivieren" : "Deaktivieren");
@@ -172,6 +190,16 @@ public class KundenController implements Ansicht {
                         formular.controller().auslesen()));
         if (gespeichert)
             aktualisieren();
+    }
+
+    /**
+     * Reaktion auf „Konten anzeigen": wechselt zu den Konten des ausgewählten Kunden.
+     */
+    @FXML
+    private void kontenAnzeigen() {
+        Kundenakte kunde = tabelle.getSelectionModel().getSelectedItem();
+        if (kunde != null && kontenAnzeigen != null)
+            kontenAnzeigen.accept(kunde);
     }
 
     /**

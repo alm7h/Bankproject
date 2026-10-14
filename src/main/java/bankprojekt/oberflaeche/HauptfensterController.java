@@ -31,6 +31,9 @@ public class HauptfensterController {
     /** Navigationsknopf „Kunden" */
     @FXML
     private ToggleButton kundenKnopf;
+    /** Navigationsknopf „Konten" */
+    @FXML
+    private ToggleButton kontenKnopf;
     /** Arbeitsbereich für die aktuelle Ansicht */
     @FXML
     private StackPane inhalt;
@@ -81,7 +84,24 @@ public class HauptfensterController {
      */
     @FXML
     private void kundenZeigen() {
-        zeigen("kunden.fxml", kundenKnopf);
+        KundenController kunden = zeigen("kunden.fxml", kundenKnopf);
+        kunden.setKontenAnzeigen(kunde -> kontenAnsicht().kontenVonKundeZeigen(kunde));
+    }
+
+    /**
+     * Zeigt die Kontenansicht.
+     */
+    @FXML
+    private void kontenZeigen() {
+        kontenAnsicht();
+    }
+
+    /**
+     * Zeigt die Kontenansicht und liefert ihren Controller.
+     * @return der Controller der Kontenansicht
+     */
+    private KontenController kontenAnsicht() {
+        return zeigen("konten.fxml", kontenKnopf);
     }
 
     /**

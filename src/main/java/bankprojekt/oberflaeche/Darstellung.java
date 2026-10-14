@@ -8,6 +8,7 @@ import java.time.format.ResolverStyle;
 import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -35,6 +36,10 @@ final class Darstellung {
      */
     private static final DateTimeFormatter EINGABE_DATUM =
             DateTimeFormatter.ofPattern("d.M.uuuu").withResolverStyle(ResolverStyle.STRICT);
+    /**
+     * Eingegebener Betrag: bis zu 12 Ziffern, optional Komma oder Punkt mit 1–2 Nachkommastellen
+     */
+    private static final Pattern BETRAG = Pattern.compile("^\\d{1,12}([.,]\\d{1,2})?$");
 
     /**
      * Nicht instanziierbar: Die Klasse enthält nur statische Methoden.
@@ -76,6 +81,25 @@ final class Darstellung {
             throw new IllegalArgumentException("Das Datum \"" + text.strip()
                     + "\" ist ungültig. Bitte im Format TT.MM.JJJJ eingeben.", e);
         }
+    }
+
+    /**
+     * Liest einen eingegebenen Betrag: Ziffern, optional mit Komma oder Punkt und
+     * höchstens zwei Nachkommastellen (z. B. "500", "500,00", "99.5"). Tausenderpunkte
+     * werden bewusst nicht akzeptiert, weil "1.000" sonst mehrdeutig wäre.
+     * @param text der eingegebene Text
+     * @param feldname Name des Feldes für die Fehlermeldung
+     * @return der Betrag
+     * @throws IllegalArgumentException wenn nichts oder kein gültiger Betrag eingegeben wurde
+     */
+    static double betragLesen(String text, String feldname) {
+        if (text == null || text.isBlank())
+            throw new IllegalArgumentException(feldname + " ist ein Pflichtfeld.");
+        String betrag = text.strip();
+        if (!BETRAG.matcher(betrag).matches())
+            throw new IllegalArgumentException(feldname + " \"" + betrag
+                    + "\" ist ungültig. Bitte einen Betrag wie 500 oder 500,00 eingeben.");
+        return Double.parseDouble(betrag.replace(',', '.'));
     }
 
     /**

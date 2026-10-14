@@ -27,6 +27,7 @@
         <Region HBox.hgrow="ALWAYS"/>
         <Button text="Neuer Kunde" styleClass="primaer" onAction="#neuerKunde"/>
         <Button fx:id="bearbeitenKnopf" text="Bearbeiten" onAction="#bearbeiten"/>
+        <Button fx:id="kontenAnzeigenKnopf" text="Konten anzeigen" onAction="#kontenAnzeigen"/>
         <Button fx:id="statusKnopf" text="Deaktivieren" onAction="#statusWechseln"/>
     </HBox>
 

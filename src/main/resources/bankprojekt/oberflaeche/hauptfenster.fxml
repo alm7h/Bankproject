@@ -27,6 +27,8 @@
             <Label text="Bankverwaltung" styleClass="marke"/>
             <ToggleButton fx:id="kundenKnopf" text="Kunden" styleClass="navigation"
                           toggleGroup="$navigation" onAction="#kundenZeigen"/>
+            <ToggleButton fx:id="kontenKnopf" text="Konten" styleClass="navigation"
+                          toggleGroup="$navigation" onAction="#kontenZeigen"/>
 
             <Region VBox.vgrow="ALWAYS"/>
 
