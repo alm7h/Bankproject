@@ -85,11 +85,16 @@ public class Aktie {
 	 * 		                            oder es eine Aktie mit dieser WKN bereits gibt
 	 */
 	public Aktie(String wkn, Geldbetrag k) {
-		if(wkn == null || k == null || k.isNegativ() || alleAktien.containsKey(wkn))
-			throw new IllegalArgumentException();	
+		if(wkn == null || k == null || k.isNegativ())
+			throw new IllegalArgumentException();
 		this.wkn = wkn;
 		this.kurs = k;
-		alleAktien.put(wkn, this);
+		// Bemerkung: Prüfen und Eintragen in EINEM atomaren Schritt (putIfAbsent).
+		// Bisher wurde erst mit containsKey geprüft und danach mit put eingetragen;
+		// erzeugten zwei Threads gleichzeitig eine Aktie mit derselben WKN, konnten
+		// beide die Prüfung bestehen und die zweite Aktie überschrieb die erste.
+		if (alleAktien.putIfAbsent(wkn, this) != null)
+			throw new IllegalArgumentException();
 
 
 		// Bemerkung: Zufällige Zeitspanne zeit zwischen 1 und 5 Sekunden (beide
