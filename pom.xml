@@ -12,6 +12,9 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Standard-Hauptklasse für mvn exec:java; als Property (statt <mainClass> in der
+             Plugin-Konfiguration), damit -Dexec.mainClass=... sie überschreiben kann -->
+        <exec.mainClass>spielereien.KontenSpielereien</exec.mainClass>
     </properties>
     <dependencies>
         <dependency>
@@ -140,9 +143,6 @@
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <mainClass>spielereien.KontenSpielereien</mainClass>
-                </configuration>
             </plugin>
 
             <plugin>
