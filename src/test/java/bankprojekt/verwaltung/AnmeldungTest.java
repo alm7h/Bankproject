@@ -3,11 +3,7 @@ package bankprojekt.verwaltung;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,32 +15,6 @@ class AnmeldungTest {
 
     /** schneller Passwort-Hash für den Testbenutzer (Passwort "geheim") */
     private static final String HASH = Passwortschutz.hashen("geheim".toCharArray(), 1_000);
-
-    /**
-     * Uhr, die sich im Test vorstellen lässt.
-     */
-    private static final class VerstellbareUhr extends Clock {
-        private Instant jetzt = Instant.parse("2026-10-14T10:00:00Z");
-
-        void vorstellen(Duration dauer) {
-            jetzt = jetzt.plus(dauer);
-        }
-
-        @Override
-        public ZoneId getZone() {
-            return ZoneOffset.UTC;
-        }
-
-        @Override
-        public Clock withZone(ZoneId zone) {
-            return this;
-        }
-
-        @Override
-        public Instant instant() {
-            return jetzt;
-        }
-    }
 
     private VerstellbareUhr uhr;
     private Bankverwaltung verwaltung;
