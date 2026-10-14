@@ -28,12 +28,12 @@ This repository is intended for teaching/learning purposes but is structured lik
 Core domain packages live under `bankprojekt.*`:
 - `bankprojekt.basisdaten` — Core banking entities such as `Konto` (account), `Girokonto`, `Sparbuch`, `Festgeldkonto`, `Kinderkonto`, `Geldbetrag` (money), `Waehrung` (currency), and `Kunde` (customer).
 - `bankprojekt.verwaltung` — The `Bank` aggregate which manages accounts, transfers, and queries.
-- `bankprojekt.fabriken` — Simple factory types to create accounts.
+- `bankprojekt.fabriken` — Abstract-Factory layer (`Kontofabrik` + one factory per account type) used by `Bank.kontoErstellen`.
 - `bankprojekt.exceptions` — Domain exceptions like `GesperrtException`, `UngueltigeKontonummerException`.
 - `bankprojekt.oberflaeche` — A small JavaFX UI (FXML) connecting view and model via `KontoController`, launched through `Start`.
 - `bankprojekt.aktienhandel` — Optional stock trading examples (`Aktie`, `Aktienkonto`).
 
-Additional packages provide exercises and demos (`spielereien`, `sortiererei`, `automat`, `Nullstellen`, `generisch`).
+The `spielereien` package holds runnable `main` demo programs (the presentation layer) that exercise the domain and print to the console / write files — the business classes themselves never print.
 
 
 ## Features
@@ -173,4 +173,4 @@ Please open an issue or pull request.
 
 
 ## License
-No license has been specified yet. If you plan to publish and accept contributions, consider adding an open-source license (e.g., MIT, Apache-2.0). Until a license is added, all rights are reserved by the repository owner.
+Released under the [MIT License](LICENSE) — © 2026 Mohameed Al-Harethi.

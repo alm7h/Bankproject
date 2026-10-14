@@ -36,3 +36,7 @@ build/
 
 ### Mac OS ###
 .DS_Store
+### Local project instructions (not published) ###
+CLAUDE.md
+.idea/.name
+topics_java.md
