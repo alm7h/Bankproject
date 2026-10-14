@@ -47,7 +47,7 @@ class AktienkontoTest {
     private String wkn;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws GesperrtException {
         konto = new Aktienkonto(new Kunde("Max", "Mustermann", "Weg 1", 1980, 1, 1), 4711);
         konto.einzahlen(new Geldbetrag(10_000));
         wkn = neueAktie(KURS);

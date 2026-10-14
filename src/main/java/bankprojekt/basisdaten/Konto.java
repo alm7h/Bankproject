@@ -252,12 +252,21 @@ public abstract class Konto implements Comparable<Konto>, Serializable
 
     /**
      * Der Betrag wird in bar auf das Konto eingezahlt.
-     * @param betrag double
+     * Auf ein gesperrtes Konto kann – wie beim Abheben und bei Überweisungen – nicht
+     * eingezahlt werden.
+     * @param betrag der einzuzahlende Betrag
      * @throws IllegalArgumentException Wenn der Betrag negativ oder null ist
+     * @throws GesperrtException Wenn das Konto gesperrt ist
      */
-    public void einzahlen(Geldbetrag betrag) {
+    public void einzahlen(Geldbetrag betrag) throws GesperrtException {
         if (betrag == null || betrag.isNegativ()) {
             throw new IllegalArgumentException("Falscher Betrag");
+        }
+        // Bisher war die Einzahlung auch auf ein gesperrtes Konto möglich, obwohl ein
+        // gesperrtes Konto sonst keine Buchungen (Abheben, Überweisungen) mehr zulässt.
+        // Die Reihenfolge (erst Betrag, dann Sperre) entspricht der von abheben.
+        if (isGesperrt()) {
+            throw new GesperrtException(getKontonummer());
         }
         setKontostand(getKontostand().plus(betrag));
     }

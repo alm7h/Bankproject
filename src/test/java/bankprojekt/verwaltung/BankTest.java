@@ -1,5 +1,7 @@
 package bankprojekt.verwaltung;
 
+import bankprojekt.exceptions.GesperrtException;
+
 import bankprojekt.basisdaten.Geldbetrag;
 import bankprojekt.basisdaten.Girokonto;
 import bankprojekt.basisdaten.Konto;
@@ -188,7 +190,7 @@ class BankTest {
         }
 
         @Test
-        void getAlleKonten_listetSaemtlicheKonten_mitNummerUndKontostand_jeZeile() {
+        void getAlleKonten_listetSaemtlicheKonten_mitNummerUndKontostand_jeZeile() throws GesperrtException {
             Bank bank = new Bank(11112222L);
             long nr1 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
             long nr2 = bank.kontoErstellen(new SparbuchFabrik(),new Kunde("Eva","Erd","Eichenweg 5",1991,1,2));
@@ -391,7 +393,7 @@ class GetKontostandTests {
     }
 
     @Test
-    void getKontostand_spiegeltEinUndAuszahlungen() {
+    void getKontostand_spiegeltEinUndAuszahlungen() throws GesperrtException {
         Bank bank = new Bank(71717171L);
         long nr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),new Kunde("Tom", "Tester", "Testweg 1", 1990, 1, 1));
         Konto konto = bank.getKonten().get(nr);
@@ -510,7 +512,7 @@ class GeldAbhebenTests {
 @Nested
 class GeldEinzahlenTests {
     @Test
-    void geldEinzahlen_hatKeineWirkung_wennKontoNichtExistiert() {
+    void geldEinzahlen_hatKeineWirkung_wennKontoNichtExistiert() throws GesperrtException {
         Bank bank = new Bank(60606060L);
         // Kein Konto vorhanden, Einzahlung auf unbekannte Nummer darf nichts bewirken und keine Exception werfen
         bank.geldEinzahlen(42L, new Geldbetrag(10));
@@ -518,7 +520,7 @@ class GeldEinzahlenTests {
     }
 
     @Test
-    void geldEinzahlen_erhoehtKontostand_beiGirokonto() {
+    void geldEinzahlen_erhoehtKontostand_beiGirokonto() throws GesperrtException {
         Bank bank = new Bank(70707070L);
         long nr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
         assertEquals(Geldbetrag.NULL_EURO, bank.getKontostand(nr));
@@ -533,7 +535,7 @@ class GeldEinzahlenTests {
     }
 
     @Test
-    void geldEinzahlen_erhoehtKontostand_beiSparbuch() {
+    void geldEinzahlen_erhoehtKontostand_beiSparbuch() throws GesperrtException {
         Bank bank = new Bank(80808080L);
         long nr = bank.kontoErstellen(new SparbuchFabrik(),new Kunde("Susi", "Sparsam", "Sparallee 1", 1990, 1, 1));
         assertEquals(Geldbetrag.NULL_EURO, bank.getKontostand(nr));
@@ -684,7 +686,7 @@ class GesamtkontostaendeTests {
     }
 
     @Test
-    void getGesamtkontostaende_enthaeltJedenKundenGenauEinmal() {
+    void getGesamtkontostaende_enthaeltJedenKundenGenauEinmal() throws GesperrtException {
         Bank bank = new Bank(12120002L);
         Kunde clara = new Kunde("Clara", "Clever", "City 3", 1992, 3, 14);
         long c1 = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),clara);

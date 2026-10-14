@@ -261,8 +261,9 @@ public class Bank implements Serializable {
      *
      * @param auf   Die Kontonummer des Kontos, auf das der Betrag eingezahlt werden soll.
      * @param betrag Der einzuzahlende Geldbetrag.
+     * @throws GesperrtException wenn das Konto gesperrt ist
      */
-    public void geldEinzahlen(long auf, Geldbetrag betrag) {
+    public void geldEinzahlen(long auf, Geldbetrag betrag) throws GesperrtException {
 
         Konto k = konten.get(auf);
 
@@ -337,9 +338,11 @@ public class Bank implements Serializable {
             // GesperrtException: Das Empfaengerkonto wurde zwischen Pruefung und Gutschrift gesperrt.
             try {
                 sender.einzahlen(betrag);
-            } catch (RuntimeException rollbackFehler) {
-                // Sollte praktisch nicht auftreten (Einzahlung validiert nur Betrag != null/negativ),
-                // aber falls doch, bleibt als Schutz zumindest ein definierter Rueckgabewert.
+            } catch (RuntimeException | GesperrtException rollbackFehler) {
+                // Sollte praktisch nicht auftreten: Der Betrag ist gueltig und der Sender war
+                // beim Abbuchen nicht gesperrt. Nur wenn er genau zwischen Abbuchung und Rollback
+                // gesperrt wurde, scheitert die Einzahlung; dann bleibt als Schutz zumindest ein
+                // definierter Rueckgabewert.
             }
             return false;
         }
@@ -444,7 +447,9 @@ public class Bank implements Serializable {
     /**
      * Zahlt auf EIN Konto jedes Kunden, der in diesem Kalenderjahr 18 wird, den
      * übergebenen Betrag ein. Hat ein solcher Kunde mehrere Konten, wird genau
-     * eines davon (das erste gefundene) ausgewählt.
+     * eines davon (das erste gefundene) ausgewählt. Gesperrte Konten werden dabei
+     * übergangen, da auf sie nicht eingezahlt werden kann; hat ein Kunde nur gesperrte
+     * Konten, erhält er keine Schenkung.
      * @param betrag der einzuzahlende Geldbetrag
      */
     public void schenkungAnNeuerwachsene(Geldbetrag betrag) {
@@ -453,6 +458,8 @@ public class Bank implements Serializable {
         konten.values().stream()
                 // Nur Konten von Kunden, die dieses Jahr 18 werden
                 .filter(k -> k.getInhaber().getGeburtstag().getYear() == aktuellesJahr - 18)
+                // Gesperrte Konten können nichts empfangen -> ein freies Konto des Kunden wählen
+                .filter(k -> !k.isGesperrt())
                 // Pro Kunde nur ein Konto: nach Inhaber gruppieren, jeweils erstes Konto nehmen
                 .collect(Collectors.toMap(
                         Konto::getInhaber,          // Schlüssel: Kunde
@@ -460,6 +467,12 @@ public class Bank implements Serializable {
                         (k1, k2) -> k1))            // bei Kollision: erstes behalten
                 .values()
                 // Einzahlung vornehmen
-                .forEach(k -> k.einzahlen(betrag));
+                .forEach(k -> {
+                    try {
+                        k.einzahlen(betrag);
+                    } catch (GesperrtException e) {
+                        // Konto wurde zwischen Auswahl und Einzahlung gesperrt -> keine Schenkung
+                    }
+                });
     }
 }

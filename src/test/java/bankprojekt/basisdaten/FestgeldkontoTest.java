@@ -23,7 +23,7 @@ class FestgeldkontoTest {
     private Kunde inhaber;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws GesperrtException {
         inhaber = new Kunde("Max", "Mustermann", "Musterstraße 1", 1980, 5, 5);
         konto = new Festgeldkonto(inhaber, 12345678);
         konto.einzahlen(new Geldbetrag(1000));

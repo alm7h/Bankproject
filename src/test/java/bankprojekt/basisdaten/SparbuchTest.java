@@ -18,7 +18,7 @@ class SparbuchTest {
     private Kunde inhaber;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws GesperrtException {
         inhaber = new Kunde("Max", "Mustermann", "Musterstraße 1", "01.01.90");
         sparbuch = new Sparbuch(inhaber, 12345678);
         sparbuch.einzahlen(new Geldbetrag(1000, Waehrung.EURO));

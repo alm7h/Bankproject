@@ -23,7 +23,7 @@ class GirokontoTest {
     }
 
     @Test
-    void einzahlen() {
+    void einzahlen() throws GesperrtException {
         // 1. Test: Normale Einzahlung in Euro
         Geldbetrag einzahlungEuro = new Geldbetrag(100, Waehrung.EURO);
         konto.einzahlen(einzahlungEuro);
@@ -239,7 +239,7 @@ class GirokontoTest {
     @Nested
     class WaehrungswechselTests {
         @Test
-        void waehrungswechsel_rechnetKontostandUndDispoUm() {
+        void waehrungswechsel_rechnetKontostandUndDispoUm() throws GesperrtException {
             konto.einzahlen(new Geldbetrag(10));
             konto.waehrungswechsel(Waehrung.DENAR);
 

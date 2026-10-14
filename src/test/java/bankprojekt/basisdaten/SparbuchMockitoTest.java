@@ -29,7 +29,7 @@ class SparbuchMockitoTest {
     private Kalender kalenderMock;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws GesperrtException {
         Kunde inhaber = new Kunde("Max", "Mustermann", "Weg 1", 2000, 1, 1);
         // Startdatum: 1. Januar 2026
         when(kalenderMock.getHeutigesDatum()).thenReturn(LocalDate.of(2026, 1, 1));

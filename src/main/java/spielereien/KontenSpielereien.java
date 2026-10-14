@@ -34,8 +34,9 @@ public class    KontenSpielereien {
      * @param args wird nicht benutzt
      * @throws java.util.InputMismatchException wenn der Benutzer keine Zahl eingibt
      * @throws NullPointerException wenn der Benutzer eine Zahl außer 1 und 2 eingibt
+     * @throws GesperrtException wenn auf ein gesperrtes Konto eingezahlt wird (kommt hier nicht vor)
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws GesperrtException {
         Kunde.MUSTERMANN.setAdresse("ganz woanders");
         System.out.println(Kunde.MUSTERMANN);
 

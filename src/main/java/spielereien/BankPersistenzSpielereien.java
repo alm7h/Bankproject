@@ -9,6 +9,7 @@ import java.util.zip.ZipOutputStream;
 
 import bankprojekt.basisdaten.Geldbetrag;
 import bankprojekt.basisdaten.Kunde;
+import bankprojekt.exceptions.GesperrtException;
 import bankprojekt.fabriken.GirokontoFabrik;
 import bankprojekt.fabriken.SparbuchFabrik;
 import bankprojekt.verwaltung.Bank;
@@ -32,8 +33,9 @@ public class BankPersistenzSpielereien {
      * Startet das Programm.
      * @param args werden nicht verwendet
      * @throws IOException wenn beim Schreiben oder Lesen der zip-Datei etwas schiefgeht
+     * @throws GesperrtException wenn auf ein gesperrtes Konto eingezahlt wird (kommt hier nicht vor)
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, GesperrtException {
         // 1. Zwei Banken mit ein paar Konten anlegen
         Bank ersteBank = ersteBankAnlegen();
         Bank zweiteBank = zweiteBankAnlegen();
@@ -73,8 +75,9 @@ public class BankPersistenzSpielereien {
     /**
      * Legt die erste Bank mit ein paar Konten an.
      * @return die erste Bank
+     * @throws GesperrtException wenn auf ein gesperrtes Konto eingezahlt wird (kommt hier nicht vor)
      */
-    private static Bank ersteBankAnlegen() {
+    private static Bank ersteBankAnlegen() throws GesperrtException {
         Bank bank = new Bank(10010010);
         Kunde anna = new Kunde("Anna", "Schmidt", "Berlin", 1990, 5, 1);
         Kunde bert = new Kunde("Bert", "Müller", "Bonn", 1985, 3, 3);
@@ -91,8 +94,9 @@ public class BankPersistenzSpielereien {
     /**
      * Legt die zweite Bank mit ein paar Konten an.
      * @return die zweite Bank
+     * @throws GesperrtException wenn auf ein gesperrtes Konto eingezahlt wird (kommt hier nicht vor)
      */
-    private static Bank zweiteBankAnlegen() {
+    private static Bank zweiteBankAnlegen() throws GesperrtException {
         Bank bank = new Bank(20020020);
         Kunde clara = new Kunde("Clara", "Weber", "Köln", 2000, 7, 7);
 

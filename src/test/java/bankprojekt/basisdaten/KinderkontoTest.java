@@ -22,7 +22,7 @@ class KinderkontoTest {
     private Kunde inhaber;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws GesperrtException {
         inhaber = new Kunde("Mia", "Klein", "Spielweg 3", 2015, 6, 1);
         konto = new Kinderkonto(inhaber, 12345678);
         konto.einzahlen(new Geldbetrag(200));

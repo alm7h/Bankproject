@@ -1,5 +1,7 @@
 package bankprojekt.verwaltung;
 
+import bankprojekt.exceptions.GesperrtException;
+
 import bankprojekt.aktienhandel.Aktienkonto;
 import bankprojekt.basisdaten.Festgeldkonto;
 import bankprojekt.basisdaten.Geldbetrag;
@@ -214,7 +216,7 @@ class BankPersistenzTest {
         }
 
         @Test
-        void zweiBanken_inEinerZipDatei_speichernUndEinlesen() throws IOException {
+        void zweiBanken_inEinerZipDatei_speichernUndEinlesen() throws IOException, GesperrtException {
             Bank zweite = new Bank(20020020L);
             long clara = zweite.kontoErstellen(new SparbuchFabrik(), new Kunde("Clara", "Weber", "Köln", 2000, 7, 7));
             zweite.geldEinzahlen(clara, new Geldbetrag(42));

@@ -101,9 +101,10 @@ public class Aktienkonto extends Konto {
 	 * Zahlt den angegebenen Betrag ein. Ueberschrieben nur, um die Einzahlung mit
 	 * den Kauf-/Verkaufaufträgen über denselben Lock zu synchronisieren.
 	 * @param betrag einzuzahlender Betrag
+	 * @throws GesperrtException wenn das Konto gesperrt ist
 	 */
 	@Override
-	public synchronized void einzahlen(Geldbetrag betrag) {
+	public synchronized void einzahlen(Geldbetrag betrag) throws GesperrtException {
 		super.einzahlen(betrag);
 	}
 
@@ -202,12 +203,19 @@ public class Aktienkonto extends Konto {
 				if (bestand <= 0 || isGesperrt())
 					return Geldbetrag.NULL_EURO;
 				Geldbetrag erloes = kurs.mal(bestand);
+				// Bemerkung: Erst den Erlös gutschreiben, dann die Aktien aus dem Depot
+				// nehmen. Wird das Konto genau jetzt gesperrt (sperren() ist nicht
+				// synchronisiert), scheitert die Einzahlung - dann bleibt alles unverändert.
+				try {
+					einzahlen(erloes);   // Erlös dem Kontostand gutschreiben
+				} catch (GesperrtException e) {
+					return Geldbetrag.NULL_EURO;
+				}
 				depot.remove(wkn);   // kompletten Bestand dieser Aktie verkaufen
 
 				// Beobachter über das Entfernen der Aktien aus dem Depot
 				// benachrichtigen (alter Bestand -> 0 für diese WKN).
 				depotAenderungen.firePropertyChange(wkn, bestand, 0);
-				einzahlen(erloes);   // Erlös dem Kontostand gutschreiben
 				return erloes;
 			}
 		});

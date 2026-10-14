@@ -121,20 +121,20 @@ class KontoTest {
     @Nested
     class EinzahlenTests {
         @Test
-        void einzahlen_erhoehtKontostand() {
+        void einzahlen_erhoehtKontostand() throws GesperrtException {
             konto.einzahlen(new Geldbetrag(100));
             konto.einzahlen(new Geldbetrag(23.5));
             assertEquals(123.5, konto.getKontostand().getBetrag(), 0.0001);
         }
 
         @Test
-        void einzahlen_vonNullEuro_istErlaubt() {
+        void einzahlen_vonNullEuro_istErlaubt() throws GesperrtException {
             konto.einzahlen(Geldbetrag.NULL_EURO);
             assertEquals(Geldbetrag.NULL_EURO, konto.getKontostand());
         }
 
         @Test
-        void einzahlen_inFremdwaehrung_wirdInKontowaehrungUmgerechnet() {
+        void einzahlen_inFremdwaehrung_wirdInKontowaehrungUmgerechnet() throws GesperrtException {
             konto.einzahlen(new Geldbetrag(61.5, Waehrung.DENAR));
             assertEquals(1.0, konto.getKontostand().getBetrag(), 0.0001);
             assertEquals(Waehrung.EURO, konto.getKontostand().getWaehrung());
@@ -148,11 +148,11 @@ class KontoTest {
         }
 
         @Test
-        void einzahlen_istAuchBeiGesperrtemKontoMoeglich() {
-            // Einzahlen schadet dem Inhaber nicht und ist deshalb trotz Sperre erlaubt
+        void einzahlen_wirftGesperrtException_wennKontoGesperrt_undKontostandBleibt() {
+            // Ein gesperrtes Konto lässt keine Buchungen zu - auch keine Einzahlung
             konto.sperren();
-            konto.einzahlen(new Geldbetrag(10));
-            assertEquals(new Geldbetrag(10), konto.getKontostand());
+            assertThrows(GesperrtException.class, () -> konto.einzahlen(new Geldbetrag(10)));
+            assertEquals(Geldbetrag.NULL_EURO, konto.getKontostand());
         }
     }
 
@@ -163,7 +163,7 @@ class KontoTest {
     @Nested
     class AbhebenTemplateMethodeTests {
         @BeforeEach
-        void guthaben() {
+        void guthaben() throws GesperrtException {
             konto.einzahlen(new Geldbetrag(100));
         }
 
@@ -343,7 +343,7 @@ class KontoTest {
     @Nested
     class WaehrungswechselTests {
         @Test
-        void waehrungswechsel_rechnetKontostandUm() {
+        void waehrungswechsel_rechnetKontostandUm() throws GesperrtException {
             konto.einzahlen(new Geldbetrag(10));
             konto.waehrungswechsel(Waehrung.DENAR);
             assertEquals(615.0, konto.getKontostand().getBetrag(), 0.0001);
@@ -359,7 +359,7 @@ class KontoTest {
     @Nested
     class KontostandSetzenTests {
         @Test
-        void setKontostand_ignoriertNull() {
+        void setKontostand_ignoriertNull() throws GesperrtException {
             konto.einzahlen(new Geldbetrag(5));
             konto.setKontostand(null);
             assertEquals(new Geldbetrag(5), konto.getKontostand());
@@ -372,7 +372,7 @@ class KontoTest {
     @Nested
     class PropertyTests {
         @Test
-        void kontostandProperty_meldetAenderungen() {
+        void kontostandProperty_meldetAenderungen() throws GesperrtException {
             List<Geldbetrag> neueWerte = new ArrayList<>();
             konto.kontostandProperty().addListener((obs, alt, neu) -> neueWerte.add(neu));
 
