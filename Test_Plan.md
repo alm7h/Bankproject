@@ -13,10 +13,11 @@ Goal: work through the domain bottom-up, one class at a time, so each layer is t
 | 2 `WaehrungTest` | ✅ done | 13 | `test: add unit tests for Waehrung` |
 | 3 `KundeTest` | ✅ done | 22 | `fix(Kunde)`, `test: add unit tests for Kunde` |
 | 4 `KontoTest` | ✅ done | 48 | `test: add unit tests for Konto`, `test: call equals directly…` |
-| 5 `GirokontoTest` | ⏭ next | | |
-| 6–16 | open | | |
+| 5 `GirokontoTest` | ✅ done | 23 (was 3, duplicate removed) | `test: extend Girokonto tests for dispo, transfers and currency switch` |
+| 6 `SparbuchTest` / `SparbuchMockitoTest` | ⏭ next | | |
+| 7–16 | open | | |
 
-**Suite total: 205 tests, all green** — on the default locale and with `-Duser.language=de -Duser.country=DE`.
+**Suite total: 225 tests, all green** — on the default locale and with `-Duser.language=de -Duser.country=DE`.
 
 ## Bugs found and fixed
 | # | Class | Bug | Fix |
