@@ -62,25 +62,25 @@ class FestgeldkontoTest {
     @Nested
     class KuendigenTests {
         @Test
-        void kuendigen_merktSichDenBetrag() {
+        void kuendigen_merktSichDenBetrag() throws GesperrtException {
             konto.kuendigen(new Geldbetrag(300));
             assertEquals(new Geldbetrag(300), konto.getGekuendigterBetrag());
         }
 
         @Test
-        void kuendigen_erlaubtGenauDenKontostand() {
+        void kuendigen_erlaubtGenauDenKontostand() throws GesperrtException {
             konto.kuendigen(new Geldbetrag(1000));
             assertEquals(new Geldbetrag(1000), konto.getGekuendigterBetrag());
         }
 
         @Test
-        void kuendigen_begrenztAufDenKontostand() {
+        void kuendigen_begrenztAufDenKontostand() throws GesperrtException {
             konto.kuendigen(new Geldbetrag(1000.01));
             assertEquals(new Geldbetrag(1000), konto.getGekuendigterBetrag());
         }
 
         @Test
-        void kuendigen_vergleichtFremdwaehrungInEuro() {
+        void kuendigen_vergleichtFremdwaehrungInEuro() throws GesperrtException {
             // 61.500,01 MKD sind etwas mehr als 1000 € -> Begrenzung auf den Kontostand
             konto.kuendigen(new Geldbetrag(61500.01, Waehrung.DENAR));
             assertEquals(new Geldbetrag(1000), konto.getGekuendigterBetrag());
@@ -89,7 +89,7 @@ class FestgeldkontoTest {
         }
 
         @Test
-        void kuendigen_wirftIllegalArgumentException_beiNullOderNegativ_undLaesstBetragUnveraendert() {
+        void kuendigen_wirftIllegalArgumentException_beiNullOderNegativ_undLaesstBetragUnveraendert() throws GesperrtException {
             konto.kuendigen(new Geldbetrag(300));
             assertThrows(IllegalArgumentException.class, () -> konto.kuendigen(null));
             assertThrows(IllegalArgumentException.class, () -> konto.kuendigen(new Geldbetrag(-0.01)));
@@ -168,7 +168,7 @@ class FestgeldkontoTest {
         }
 
         @Test
-        void abheben_wirftGesperrtException_wennGesperrt_undGekuendigterBetragBleibt() {
+        void abheben_wirftGesperrtException_wennGesperrt_undGekuendigterBetragBleibt() throws GesperrtException {
             konto.kuendigen(new Geldbetrag(300));
             konto.sperren();
             assertThrows(GesperrtException.class, () -> konto.abheben(new Geldbetrag(100)));

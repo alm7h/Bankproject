@@ -1,5 +1,6 @@
 package bankprojekt.basisdaten;
 
+import bankprojekt.exceptions.GesperrtException;
 import bankprojekt.exceptions.UngueltigeKontonummerException;
 
 /**
@@ -46,11 +47,17 @@ public class Festgeldkonto extends Konto {
      * Markiert den angegebenen Betrag als gekündigt, sodass er anschließend abgehoben
      * werden darf. Es kann höchstens der aktuelle Kontostand gekündigt werden; ein
      * größerer Wunschbetrag wird auf den Kontostand begrenzt.
+     * Ein gesperrtes Konto kann nicht gekündigt werden; die Sperre wird – wie beim
+     * Überweisen – vor dem Betrag geprüft.
      *
      * @param betrag der zu kündigende Betrag, darf nicht null oder negativ sein
+     * @throws GesperrtException wenn das Konto gesperrt ist
      * @throws IllegalArgumentException wenn der Betrag null oder negativ ist
      */
-    public void kuendigen(Geldbetrag betrag) {
+    public void kuendigen(Geldbetrag betrag) throws GesperrtException {
+        // Bisher konnte auch ein gesperrtes Konto gekündigt werden
+        if (isGesperrt())
+            throw new GesperrtException(getKontonummer());
         if (betrag == null || betrag.isNegativ())
             throw new IllegalArgumentException("Betrag ungültig");
         if (betrag.compareTo(getKontostand()) > 0)
