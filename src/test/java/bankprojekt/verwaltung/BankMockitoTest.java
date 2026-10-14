@@ -227,4 +227,90 @@ class BankMockitoTest {
         verify(empfaengerMock, never()).ueberweisungEmpfangen(
                 any(), anyString(), anyLong(), anyLong(), anyString());
     }
+
+    /**
+     * Prüft, dass an ein gesperrtes Empfängerkonto nicht überwiesen wird und
+     * beim Sender gar nicht erst abgebucht wird.
+     */
+    @Test
+    void testGeldUeberweisen_EmpfaengerGesperrt() throws GesperrtException {
+        // Vorbereiten
+        Girokonto senderMock = mock(Girokonto.class);
+        Girokonto empfaengerMock = mock(Girokonto.class);
+        when(empfaengerMock.isGesperrt()).thenReturn(true);
+
+        long senderNr = mockEinfuegen(senderMock);
+        long empfaengerNr = mockEinfuegen(empfaengerMock);
+
+        // Ausführen
+        boolean result = bank.geldUeberweisen(senderNr, empfaengerNr, new Geldbetrag(100), "Test");
+
+        // Prüfen
+        assertFalse(result, "Überweisung an ein gesperrtes Konto muss false liefern");
+        verify(senderMock, never()).ueberweisungAbsenden(any(), anyString(), anyLong(), anyLong(), anyString());
+        verify(empfaengerMock, never()).ueberweisungEmpfangen(
+                any(), anyString(), anyLong(), anyLong(), anyString());
+    }
+
+    /**
+     * Prüft das Rollback: Scheitert die Gutschrift beim Empfänger mit einer
+     * GesperrtException (Konto zwischen Prüfung und Gutschrift gesperrt) oder einer
+     * RuntimeException, erhält der Sender den Betrag zurück und das Ergebnis ist false.
+     */
+    @Test
+    void testGeldUeberweisen_Rollback_wennGutschriftGesperrtException() throws GesperrtException {
+        pruefeRollback(new GesperrtException(2L));
+    }
+
+    @Test
+    void testGeldUeberweisen_Rollback_wennGutschriftRuntimeException() throws GesperrtException {
+        pruefeRollback(new IllegalStateException("Gutschrift fehlgeschlagen"));
+    }
+
+    private void pruefeRollback(Exception fehler) throws GesperrtException {
+        // Vorbereiten
+        Girokonto senderMock = mock(Girokonto.class);
+        Girokonto empfaengerMock = mock(Girokonto.class);
+        when(senderMock.getInhaber()).thenReturn(dummyKunde1);
+        when(empfaengerMock.getInhaber()).thenReturn(dummyKunde2);
+        when(senderMock.ueberweisungAbsenden(any(), anyString(), anyLong(), anyLong(), anyString()))
+                .thenReturn(true);
+        doThrow(fehler).when(empfaengerMock)
+                .ueberweisungEmpfangen(any(), anyString(), anyLong(), anyLong(), anyString());
+
+        long senderNr = mockEinfuegen(senderMock);
+        long empfaengerNr = mockEinfuegen(empfaengerMock);
+        Geldbetrag betrag = new Geldbetrag(100);
+
+        // Ausführen
+        boolean result = bank.geldUeberweisen(senderNr, empfaengerNr, betrag, "Test");
+
+        // Prüfen
+        assertFalse(result, "Gescheiterte Gutschrift muss false liefern");
+        verify(senderMock).einzahlen(betrag);
+    }
+
+    /**
+     * Prüft, dass auch ein (eigentlich unerwarteter) Fehler beim Rollback selbst
+     * nicht nach außen dringt, sondern die Methode definiert false liefert.
+     */
+    @Test
+    void testGeldUeberweisen_gibtFalse_wennAuchRollbackScheitert() throws GesperrtException {
+        // Vorbereiten
+        Girokonto senderMock = mock(Girokonto.class);
+        Girokonto empfaengerMock = mock(Girokonto.class);
+        when(senderMock.getInhaber()).thenReturn(dummyKunde1);
+        when(empfaengerMock.getInhaber()).thenReturn(dummyKunde2);
+        when(senderMock.ueberweisungAbsenden(any(), anyString(), anyLong(), anyLong(), anyString()))
+                .thenReturn(true);
+        doThrow(new GesperrtException(2L)).when(empfaengerMock)
+                .ueberweisungEmpfangen(any(), anyString(), anyLong(), anyLong(), anyString());
+        doThrow(new IllegalStateException("Rollback fehlgeschlagen")).when(senderMock).einzahlen(any());
+
+        long senderNr = mockEinfuegen(senderMock);
+        long empfaengerNr = mockEinfuegen(empfaengerMock);
+
+        // Ausführen & Prüfen
+        assertFalse(bank.geldUeberweisen(senderNr, empfaengerNr, new Geldbetrag(100), "Test"));
+    }
 }

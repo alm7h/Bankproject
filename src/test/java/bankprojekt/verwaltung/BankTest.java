@@ -597,6 +597,21 @@ class GeldUeberweisenTests {
     }
 
     @Test
+    void geldUeberweisen_gibtFalse_wennEmpfaengerGesperrt_undBeideKontostaendeBleiben() throws Exception {
+        Bank bank = new Bank(11110003L);
+        long senderNr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);
+        long empfaengerNr = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),new Kunde("Eva", "Empf", "Ecke 5", 1993, 4, 4));
+        bank.geldEinzahlen(senderNr, new Geldbetrag(100));
+        // Sperren des Empfaengerkontos
+        bank.getKonten().get(empfaengerNr).sperren();
+
+        assertFalse(bank.geldUeberweisen(senderNr, empfaengerNr, new Geldbetrag(50), "Test"));
+        // Beim Sender wurde nichts abgebucht, beim Empfaenger nichts gutgeschrieben
+        assertEquals(new Geldbetrag(100), bank.getKontostand(senderNr));
+        assertEquals(Geldbetrag.NULL_EURO, bank.getKontostand(empfaengerNr));
+    }
+
+    @Test
     void geldUeberweisen_wirftIllegalArgumentException_beiUngueltigenParametern() {
         Bank bank = new Bank(11110004L);
         long a = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),Kunde.MUSTERMANN);

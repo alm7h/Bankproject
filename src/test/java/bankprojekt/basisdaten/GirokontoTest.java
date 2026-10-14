@@ -191,6 +191,25 @@ class GirokontoTest {
         }
 
         @Test
+        void ueberweisungEmpfangen_wirftGesperrtException_wennGesperrt_auchVorDerParameterpruefung() {
+            konto.sperren();
+            assertThrows(GesperrtException.class,
+                    () -> konto.ueberweisungEmpfangen(new Geldbetrag(100), "Erika", 1, 2, "Geschenk"));
+            // Die Sperre wird zuerst geprüft, daher keine IllegalArgumentException
+            assertThrows(GesperrtException.class,
+                    () -> konto.ueberweisungEmpfangen(null, null, 1, 2, null));
+            assertEquals(Geldbetrag.NULL_EURO, konto.getKontostand());
+        }
+
+        @Test
+        void ueberweisungEmpfangen_buchtWieder_nachEntsperren() throws GesperrtException {
+            konto.sperren();
+            konto.entsperren();
+            konto.ueberweisungEmpfangen(new Geldbetrag(100), "Erika", 1, 2, "Geschenk");
+            assertEquals(new Geldbetrag(100), konto.getKontostand());
+        }
+
+        @Test
         void ueberweisungEmpfangen_rechnetFremdwaehrungUm() throws GesperrtException {
             konto.ueberweisungEmpfangen(new Geldbetrag(61.5, Waehrung.DENAR), "Erika", 1, 2, "Geschenk");
             assertEquals(new Geldbetrag(1), konto.getKontostand());
