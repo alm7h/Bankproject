@@ -185,13 +185,13 @@ class GirokontoTest {
     @Nested
     class UeberweisungEmpfangenTests {
         @Test
-        void ueberweisungEmpfangen_erhoehtKontostand() {
+        void ueberweisungEmpfangen_erhoehtKontostand() throws GesperrtException {
             konto.ueberweisungEmpfangen(new Geldbetrag(100), "Erika", 1, 2, "Geschenk");
             assertEquals(new Geldbetrag(100), konto.getKontostand());
         }
 
         @Test
-        void ueberweisungEmpfangen_rechnetFremdwaehrungUm() {
+        void ueberweisungEmpfangen_rechnetFremdwaehrungUm() throws GesperrtException {
             konto.ueberweisungEmpfangen(new Geldbetrag(61.5, Waehrung.DENAR), "Erika", 1, 2, "Geschenk");
             assertEquals(new Geldbetrag(1), konto.getKontostand());
             assertEquals(Waehrung.EURO, konto.getKontostand().getWaehrung());

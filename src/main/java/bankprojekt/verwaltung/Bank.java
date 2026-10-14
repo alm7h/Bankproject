@@ -266,8 +266,9 @@ public class Bank implements Serializable {
      * @param betrag Der zu überweisende Geldbetrag. Muss positiv und nicht null sein.
      * @param verwendungszweck Der Verwendungszweck der Überweisung. Darf nicht null sein.
      * @return true, wenn die Überweisung erfolgreich war, false, wenn sie aufgrund
-     *         von Bedingungen (z.B. fehlende Konten, nicht transferfähige Konten)
-     *         nicht durchgeführt werden konnte.
+     *         von Bedingungen (z.B. fehlende Konten, nicht transferfähige Konten,
+     *         gesperrtes Empfängerkonto) nicht durchgeführt werden konnte.
+     *         In diesem Fall bleiben beide Kontostände unverändert.
      * @throws GesperrtException Wenn das sendende Konto gesperrt ist.
      * @throws IllegalArgumentException Wenn einer der Parameter ungültig ist,
      *         z.B. bei identischen Kontonummern, einem negativen Betrag oder
@@ -296,6 +297,11 @@ public class Bank implements Serializable {
             // Mindestens eines der Konten ist nicht ueberweisungsfaehig
             return false;
         }
+        if (empfaenger.isGesperrt()) {
+            // Ein gesperrtes Konto empfaengt keine Ueberweisungen. Die Pruefung erfolgt vor der
+            // Abbuchung, damit beim Sender gar nicht erst etwas abgebucht wird.
+            return false;
+        }
 
         String empfaengerName = empfaenger.getInhaber().getName();
         String senderName = sender.getInhaber().getName();
@@ -311,8 +317,9 @@ public class Bank implements Serializable {
         try {
             empfaenger.ueberweisungEmpfangen(betrag, senderName, vonKontonr, this.bankleitzahl, verwendungszweck);
             return true;
-        } catch (RuntimeException e) {
-            // Rollback: Gutschrift fehlgeschlagen -> Betrag dem Sender wieder gutschreiben
+        } catch (RuntimeException | GesperrtException e) {
+            // Rollback: Gutschrift fehlgeschlagen -> Betrag dem Sender wieder gutschreiben.
+            // GesperrtException: Das Empfaengerkonto wurde zwischen Pruefung und Gutschrift gesperrt.
             try {
                 sender.einzahlen(betrag);
             } catch (RuntimeException rollbackFehler) {

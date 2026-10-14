@@ -111,19 +111,25 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
     }
 
     /**
-     * Processes the receipt of a bank transfer into the account. The method validates the input parameters,
-     * and if valid, adds the transferred amount to the account balance.
+     * Bucht eine eingehende Überweisung auf this. Ein gesperrtes Konto darf keine
+     * Überweisungen empfangen; die Sperre wird – wie beim Absenden – vor den Parametern geprüft.
+     * Sind alle Parameter gültig, wird der Betrag dem Kontostand gutgeschrieben.
      *
-     * @param betrag the amount of money received. Must not be null or negative.
-     * @param vonName the name of the sender. Must not be null.
-     * @param vonKontonr the account number of the sender.
-     * @param vonBlz the bank code (BLZ) of the sender's bank.
-     * @param verwendungszweck the purpose or reason for the transfer. Must not be null.
-     * @throws IllegalArgumentException if any of the provided parameters are null, invalid, or negative.
+     * @param betrag der empfangene Betrag, darf nicht null oder negativ sein
+     * @param vonName Name des Senders, darf nicht null sein
+     * @param vonKontonr Kontonummer des Senders
+     * @param vonBlz Bankleitzahl des Senderkontos
+     * @param verwendungszweck Verwendungszweck, darf nicht null sein
+     * @throws GesperrtException wenn this gesperrt ist
+     * @throws IllegalArgumentException wenn einer der Parameter null, ungültig oder negativ ist
      */
     @Override
     public void ueberweisungEmpfangen(Geldbetrag betrag, String vonName, long vonKontonr, long vonBlz, String verwendungszweck)
+            throws GesperrtException
     {
+        // Bisher wurde auch auf einem gesperrten Konto gutgeschrieben
+        if (this.isGesperrt())
+            throw new GesperrtException(this.getKontonummer());
         if (betrag == null || betrag.isNegativ()|| vonName == null || verwendungszweck == null)
             throw new IllegalArgumentException("Parameter fehlerhaft");
         setKontostand(getKontostand().plus(betrag));

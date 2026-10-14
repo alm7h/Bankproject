@@ -54,14 +54,18 @@ public abstract class UeberweisungsfaehigesKonto extends Konto {
             throws GesperrtException, NullPointerException;
 
     /**
-     * this empfängt den angegebenen betrag per Überweisung
+     * this empfängt den angegebenen betrag per Überweisung,
+     * falls es nicht gesperrt ist
      * @param betrag der empfangene Betrag
      * @param vonName Name des Senders der Überweisung
      * @param vonKontonr Kontonummer des Senders
      * @param vonBlz Bankleitzahl des Senderkontos
      * @param verwendungszweck Verwendungszweck
+     * @throws GesperrtException wenn das Konto gesperrt ist (ein gesperrtes Konto
+     * 									empfängt keine Überweisungen)
      * @throws IllegalArgumentException wenn der Betrag negativ bzw. NaN bzw. unendlich ist oder
      * 									vonName oder verwendungszweck null ist
      */
-    public abstract void ueberweisungEmpfangen(Geldbetrag betrag, String vonName, long vonKontonr, long vonBlz, String verwendungszweck);
+    public abstract void ueberweisungEmpfangen(Geldbetrag betrag, String vonName, long vonKontonr, long vonBlz, String verwendungszweck)
+            throws GesperrtException;
 }
