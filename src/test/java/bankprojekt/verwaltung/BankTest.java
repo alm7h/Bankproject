@@ -990,4 +990,48 @@ class GetKontenSichtTests {
         assertTrue(sicht.isEmpty());
     }
 }
+
+/**
+ * Ein gesperrtes Konto nimmt keine Einzahlungen an.
+ */
+@Nested
+class GesperrteKontenEinzahlungTests {
+    private final java.time.LocalDate heute = java.time.LocalDate.now();
+
+    @Test
+    void geldEinzahlen_wirftGesperrtException_wennKontoGesperrt_undKontostandBleibt() {
+        Bank bank = new Bank(12345150L);
+        long nr = bank.kontoErstellen(new SparbuchFabrik(), Kunde.MUSTERMANN);
+        bank.getKonten().get(nr).sperren();
+        assertThrows(bankprojekt.exceptions.GesperrtException.class,
+                () -> bank.geldEinzahlen(nr, new Geldbetrag(10)));
+        assertEquals(Geldbetrag.NULL_EURO, bank.getKontostand(nr));
+    }
+
+    @Test
+    void schenkungAnNeuerwachsene_zahltAufEinFreiesKonto_wennEinKontoGesperrtIst() {
+        Bank bank = new Bank(12345151L);
+        Kunde neu18 = new Kunde("Volljaehrig", "Test", "x", java.time.LocalDate.of(heute.getYear() - 18, 1, 1));
+        long gesperrt = bank.kontoErstellen(new SparbuchFabrik(), neu18);
+        long frei = bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default), neu18);
+        bank.getKonten().get(gesperrt).sperren();
+
+        bank.schenkungAnNeuerwachsene(new Geldbetrag(100));
+
+        assertEquals(Geldbetrag.NULL_EURO, bank.getKontostand(gesperrt));
+        assertEquals(new Geldbetrag(100), bank.getKontostand(frei));
+    }
+
+    @Test
+    void schenkungAnNeuerwachsene_zahltNichts_wennAlleKontenDesKundenGesperrtSind() {
+        Bank bank = new Bank(12345152L);
+        Kunde neu18 = new Kunde("Gesperrt", "Test", "x", java.time.LocalDate.of(heute.getYear() - 18, 6, 1));
+        long nr = bank.kontoErstellen(new SparbuchFabrik(), neu18);
+        bank.getKonten().get(nr).sperren();
+
+        bank.schenkungAnNeuerwachsene(new Geldbetrag(100));
+
+        assertEquals(Geldbetrag.NULL_EURO, bank.getKontostand(nr));
+    }
+}
 }
