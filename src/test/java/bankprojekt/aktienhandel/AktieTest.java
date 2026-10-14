@@ -6,8 +6,15 @@ import org.junit.jupiter.api.Test;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -75,6 +82,37 @@ class AktieTest {
             assertThrows(IllegalArgumentException.class, () -> new Aktie(wkn, new Geldbetrag(5)));
             assertSame(erste, Aktie.getAktie(wkn));
         }
+
+        @Test
+        void gleichzeitigeKonstruktion_mitGleicherWkn_registriertGenauEineAktie() throws Exception {
+            // Viele Threads versuchen gleichzeitig, dieselbe WKN anzulegen. Durch das atomare
+            // putIfAbsent darf genau einer erfolgreich sein; alle anderen erhalten eine
+            // IllegalArgumentException, und registriert ist genau die erfolgreiche Aktie.
+            String wkn = neueWkn();
+            int anzahl = 16;
+            ExecutorService pool = Executors.newFixedThreadPool(anzahl);
+            try {
+                List<Callable<Aktie>> versuche = new ArrayList<>();
+                for (int i = 0; i < anzahl; i++) {
+                    versuche.add(() -> new Aktie(wkn, KURS));
+                }
+                List<Aktie> erfolgreich = new ArrayList<>();
+                int abgelehnt = 0;
+                for (Future<Aktie> f : pool.invokeAll(versuche, WARTEZEIT_SEKUNDEN, TimeUnit.SECONDS)) {
+                    try {
+                        erfolgreich.add(f.get());
+                    } catch (ExecutionException e) {
+                        assertInstanceOf(IllegalArgumentException.class, e.getCause());
+                        abgelehnt++;
+                    }
+                }
+                assertEquals(1, erfolgreich.size(), "Genau eine Aktie darf angelegt werden");
+                assertEquals(anzahl - 1, abgelehnt);
+                assertSame(erfolgreich.get(0), Aktie.getAktie(wkn));
+            } finally {
+                pool.shutdownNow();
+            }
+        }
     }
 
     @Nested
@@ -138,6 +176,22 @@ class AktieTest {
             Geldbetrag[] ergebnis = kurse.get(WARTEZEIT_SEKUNDEN, TimeUnit.SECONDS);
 
             assertEquals(ergebnis[0], ergebnis[1]);
+        }
+
+        @Test
+        void kursAendertSich_auchBeiSehrNiedrigemKurs() throws Exception {
+            // Bei 0,10 € ist eine Änderung um höchstens 3 % kleiner als ein halber Cent.
+            // Würde der Kurs auf Cent gerundet, bliebe er für immer bei 0,10 €.
+            Geldbetrag startkurs = new Geldbetrag(0.10);
+            Aktie aktie = new Aktie(neueWkn(), startkurs);
+            CompletableFuture<Geldbetrag> neuerKurs = new CompletableFuture<>();
+            aktie.addPropertyChangeListener(e -> neuerKurs.complete((Geldbetrag) e.getNewValue()));
+
+            Geldbetrag neu = neuerKurs.get(WARTEZEIT_SEKUNDEN, TimeUnit.SECONDS);
+
+            assertNotEquals(startkurs, neu);
+            assertTrue(neu.compareTo(new Geldbetrag(0.097)) >= 0 && neu.compareTo(new Geldbetrag(0.103)) <= 0,
+                    "Kurs außerhalb von ±3 %: " + neu.getBetrag());
         }
 
         @Test
