@@ -15,10 +15,11 @@ Goal: work through the domain bottom-up, one class at a time, so each layer is t
 | 4 `KontoTest` | ✅ done | 48 | `test: add unit tests for Konto`, `test: call equals directly…` |
 | 5 `GirokontoTest` | ✅ done | 26 (was 3, duplicate removed) | `test: extend Girokonto tests…`, 2× `fix(Girokonto)`, `test: cover transfers to locked accounts…` (+5 `BankMockitoTest`, +1 `BankTest`) |
 | 6 `SparbuchTest` / `SparbuchMockitoTest` | ✅ done | 16 + 10 (were 6 + 2; one weak limit test fixed) | `test: extend Sparbuch tests for limits, month changes and currency` |
-| 7 `KinderkontoTest` | ⏭ next | | |
-| 8–16 | open | | |
+| 7 `KinderkontoTest` | ✅ done | 16 | `test: add unit tests for Kinderkonto` |
+| 8 `FestgeldkontoTest` | ⏭ next | | |
+| 9–16 | open | | |
 
-**Suite total: 252 tests, all green** — on the default locale and with `-Duser.language=de -Duser.country=DE`.
+**Suite total: 268 tests, all green** — on the default locale and with `-Duser.language=de -Duser.country=DE`.
 
 ## Bugs found and fixed
 | # | Class | Bug | Fix |
@@ -30,7 +31,7 @@ Goal: work through the domain bottom-up, one class at a time, so each layer is t
 | 5 | `Girokonto` / `Bank` | a locked account still received transfers (`ueberweisungEmpfangen`) | `ueberweisungEmpfangen` throws `GesperrtException` (declared in `UeberweisungsfaehigesKonto`); `Bank.geldUeberweisen` checks the receiver's lock before debiting and returns false, rollback also catches `GesperrtException` |
 | 6 | `Sparbuch` / `Girokonto` (JavaDoc) | constructors documented `IllegalArgumentException` for a null owner, code throws `NullPointerException` (from `Konto`) | JavaDoc corrected to `NullPointerException`, no code change |
 
-**Coverage (JaCoCo, branches):** `Geldbetrag` 30/30, `Konto` 40/40, `Kunde` 16/18 (the 2 missing are the locale branch in the static initializer, which can't be reached without reloading the class), `Girokonto` 31/32 (the `dispo != null` check in `waehrungswechsel` is unreachable), `Bank.geldUeberweisen` fully covered, `Sparbuch` 10/10.
+**Coverage (JaCoCo, branches):** `Geldbetrag` 30/30, `Konto` 40/40, `Kunde` 16/18 (the 2 missing are the locale branch in the static initializer, which can't be reached without reloading the class), `Girokonto` 31/32 (the `dispo != null` check in `waehrungswechsel` is unreachable), `Bank.geldUeberweisen` fully covered, `Sparbuch` 10/10, `Kinderkonto` 4/4.
 
 **Lessons for the remaining tests:**
 - Check `equals` against `null` and foreign types by calling it directly (`assertFalse(x.equals(null))`). `assertNotEquals(null, x)` never calls `x.equals`.
@@ -43,7 +44,7 @@ Goal: work through the domain bottom-up, one class at a time, so each layer is t
 - **Out of scope:** `bankprojekt.oberflaeche` (JavaFX UI), `spielereien.*`, `aktienhandel.Aktienspielereien`, and `EinAusgabe` (interactive console input). These are presentation layer.
 - **Existing tests:** extend them, and fix clear defects. Each change gets reported.
 - **Conventions:** German comments and test names (match the existing style, e.g. `geldAbheben_gibtFalse_wennUeberDispo`). No `@author` tags in new files. No `Thread.sleep` in tests. Locale-dependent assertions run under `Locale.GERMANY`, which is saved and restored around each test.
-- **AI attribution:** nothing in the code or comments says the work was AI-generated. Commit messages from `a53f2e9` on carry no attribution trailer; the earlier branch commits keep theirs (the branch is pushed, so its history is not rewritten).
+- **AI attribution:** nothing in the code or comments says the work was AI-generated. Commit messages end with the trailer `Assisted-by: Claude Code (Claude Opus 5.5)`; only the commits `a53f2e9`…`4ff6807` were made without it (the branch is pushed, so its history is not rewritten).
 - **Commits:** on branch `test/testsuite`. One commit per test class or fix. Conventional-commit subjects (`test:`, `fix(Klasse):`, `docs:`, `build:`) with an explanatory body. Never commit a red build.
 
 ## Prioritized order (one class at a time, run the tests after each one)
