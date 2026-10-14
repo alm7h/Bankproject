@@ -205,6 +205,66 @@ class AktienkontoTest {
     }
 
     @Nested
+    class GesperrtTests {
+        @Test
+        void kaufauftrag_wirftGesperrtException_wennKontoGesperrt() throws Exception {
+            konto.sperren();
+            assertThrows(GesperrtException.class, () -> konto.kaufauftrag(wkn, 1, SOFORT_KAUFEN));
+            assertEquals(0, konto.getDepotbestand(wkn));
+            assertEquals(new Geldbetrag(10_000), konto.getKontostand());
+        }
+
+        @Test
+        void verkaufauftrag_wirftGesperrtException_wennKontoGesperrt() throws Exception {
+            ergebnis(konto.kaufauftrag(wkn, 2, SOFORT_KAUFEN));
+            Geldbetrag stand = konto.getKontostand();
+            konto.sperren();
+            assertThrows(GesperrtException.class, () -> konto.verkaufauftrag(wkn, SOFORT_VERKAUFEN));
+            assertEquals(2, konto.getDepotbestand(wkn));
+            assertEquals(stand, konto.getKontostand());
+        }
+
+        @Test
+        void auftraege_sindNachEntsperrenWiederMoeglich() throws Exception {
+            konto.sperren();
+            konto.entsperren();
+            ergebnis(konto.kaufauftrag(wkn, 1, SOFORT_KAUFEN));
+            assertNotEquals(Geldbetrag.NULL_EURO, ergebnis(konto.verkaufauftrag(wkn, SOFORT_VERKAUFEN)));
+        }
+
+        /*
+         * Für "während des Wartens gesperrt" hält der Test den Monitor des Kontos: Der
+         * Auftrag (Bedingung sofort erfüllt) kann seinen synchronized-Handelsschritt erst
+         * nach dem Freigeben ausführen - und bis dahin ist das Konto bereits gesperrt.
+         */
+        @Test
+        void kaufauftrag_kauftNichts_wennKontoWaehrendDesWartensGesperrtWird() throws Exception {
+            Future<Geldbetrag> auftrag;
+            synchronized (konto) {
+                auftrag = konto.kaufauftrag(wkn, 1, SOFORT_KAUFEN);
+                konto.sperren();
+            }
+            assertEquals(Geldbetrag.NULL_EURO, ergebnis(auftrag), "kein Kauf und keine Exception im Future");
+            assertEquals(0, konto.getDepotbestand(wkn));
+            assertEquals(new Geldbetrag(10_000), konto.getKontostand());
+        }
+
+        @Test
+        void verkaufauftrag_verkauftNichts_wennKontoWaehrendDesWartensGesperrtWird() throws Exception {
+            ergebnis(konto.kaufauftrag(wkn, 2, SOFORT_KAUFEN));
+            Geldbetrag stand = konto.getKontostand();
+            Future<Geldbetrag> auftrag;
+            synchronized (konto) {
+                auftrag = konto.verkaufauftrag(wkn, SOFORT_VERKAUFEN);
+                konto.sperren();
+            }
+            assertEquals(Geldbetrag.NULL_EURO, ergebnis(auftrag));
+            assertEquals(2, konto.getDepotbestand(wkn), "Die Aktien bleiben im Depot");
+            assertEquals(stand, konto.getKontostand());
+        }
+    }
+
+    @Nested
     class NebenlaeufigkeitTests {
         @Test
         void gleichzeitigeKaeufe_haltenDepotUndKontostandKonsistent() throws Exception {
