@@ -108,11 +108,18 @@ public class Bank implements Serializable {
 
     /**
      * Liefert eine Map aller gespeicherten Konten, wobei die Kontonummern als Schlüssel fungieren.
+     * <p>
+     * Die Map ist eine nur lesbare Sicht auf die Konten der Bank: Konten können über sie
+     * gelesen (und z. B. gesperrt), aber nicht hinzugefügt oder entfernt werden. Bisher wurde
+     * die interne Map selbst geliefert, sodass Aufrufer Konten an der Nummernvergabe und den
+     * Fabriken vorbei einfügen oder löschen konnten. Neue Konten entstehen nur über
+     * {@link #kontoErstellen(Kontofabrik, Kunde)}, gelöscht wird über {@link #kontoLoeschen(long)}.
      *
-     * @return eine Map mit Kontonummern als Schlüsseln und den zugehörigen Konto-Objekten als Werten.
+     * @return eine nicht veränderbare Map mit Kontonummern als Schlüsseln und den zugehörigen
+     *         Konto-Objekten als Werten
      */
     public Map<Long, Konto> getKonten() {
-        return konten;
+        return Collections.unmodifiableMap(konten);
     }
 
     /**
