@@ -57,16 +57,16 @@ class BankMockitoTest {
      */
     @Test
     void testGetKontostandMitMock() {
-        // Arrange
+        // Vorbereiten
         Konto mockKonto = mock(Konto.class);
         Geldbetrag erwarteterStand = new Geldbetrag(150);
         when(mockKonto.getKontostand()).thenReturn(erwarteterStand);
         long kontoNr = mockEinfuegen(mockKonto);
 
-        // Act
+        // Ausführen
         Geldbetrag tatsaechlicherStand = bank.getKontostand(kontoNr);
 
-        // Assert
+        // Prüfen
         assertEquals(erwarteterStand, tatsaechlicherStand,
                 "Der Kontostand sollte vom Mock durchgereicht werden");
         verify(mockKonto).getKontostand();
@@ -77,10 +77,10 @@ class BankMockitoTest {
      */
     @Test
     void testGetKontostandUnbekannteKontonummer() {
-        // Act
+        // Ausführen
         Geldbetrag stand = bank.getKontostand(99999L);
 
-        // Assert
+        // Prüfen
         assertNull(stand, "Bei unbekannter Kontonummer muss null zurückgegeben werden");
     }
 
@@ -93,7 +93,7 @@ class BankMockitoTest {
      */
     @Test
     void testGeldUeberweisen_Erfolgreich() throws GesperrtException {
-        // Arrange
+        // Vorbereiten
         Girokonto senderMock = mock(Girokonto.class);
         Girokonto empfaengerMock = mock(Girokonto.class);
 
@@ -106,10 +106,10 @@ class BankMockitoTest {
         long empfaengerNr = mockEinfuegen(empfaengerMock);
         Geldbetrag ueberweisungsBetrag = new Geldbetrag(50);
 
-        // Act
+        // Ausführen
         boolean result = bank.geldUeberweisen(senderNr, empfaengerNr, ueberweisungsBetrag, "Miete");
 
-        // Assert
+        // Prüfen
         assertTrue(result, "Die Überweisung sollte erfolgreich sein");
         verify(senderMock).ueberweisungAbsenden(eq(ueberweisungsBetrag), eq("Schmidt, Lisa"),
                 eq(empfaengerNr), eq(bank.getBankleitzahl()), eq("Miete"));
@@ -123,7 +123,7 @@ class BankMockitoTest {
      */
     @Test
     void testGeldUeberweisen_AbbuchungSchlaegtFehl() throws GesperrtException {
-        // Arrange
+        // Vorbereiten
         Girokonto senderMock = mock(Girokonto.class);
         Girokonto empfaengerMock = mock(Girokonto.class);
 
@@ -135,10 +135,10 @@ class BankMockitoTest {
         long senderNr = mockEinfuegen(senderMock);
         long empfaengerNr = mockEinfuegen(empfaengerMock);
 
-        // Act
+        // Ausführen
         boolean result = bank.geldUeberweisen(senderNr, empfaengerNr, new Geldbetrag(50), "Miete");
 
-        // Assert
+        // Prüfen
         assertFalse(result, "Die Überweisung sollte abgebrochen werden");
         verify(empfaengerMock, never()).ueberweisungEmpfangen(
                 any(), anyString(), anyLong(), anyLong(), anyString());
@@ -150,14 +150,14 @@ class BankMockitoTest {
      */
     @Test
     void testGeldUeberweisen_EmpfaengerExistiertNicht() throws GesperrtException {
-        // Arrange
+        // Vorbereiten
         Girokonto senderMock = mock(Girokonto.class);
         long senderNr = mockEinfuegen(senderMock);
 
-        // Act — Empfänger-Kontonummer ist unbekannt
+        // Ausführen — Empfänger-Kontonummer ist unbekannt
         boolean result = bank.geldUeberweisen(senderNr, 99999L, new Geldbetrag(50), "Test");
 
-        // Assert
+        // Prüfen
         assertFalse(result, "Überweisung an nicht existierende Kontonummer muss false liefern");
     }
 
@@ -167,17 +167,17 @@ class BankMockitoTest {
      */
     @Test
     void testGeldUeberweisen_KeinUeberweisungsfaehigesKonto() throws GesperrtException {
-        // Arrange — Konto (abstrakte Klasse) implementiert UeberweisungsfaehigesKonto NICHT
+        // Vorbereiten — Konto (abstrakte Klasse) implementiert UeberweisungsfaehigesKonto NICHT
         Konto nichtUeberweisbarMock = mock(Konto.class);
         Girokonto empfaengerMock = mock(Girokonto.class);
 
         long senderNr = mockEinfuegen(nichtUeberweisbarMock);
         long empfaengerNr = mockEinfuegen(empfaengerMock);
 
-        // Act
+        // Ausführen
         boolean result = bank.geldUeberweisen(senderNr, empfaengerNr, new Geldbetrag(100), "Test");
 
-        // Assert
+        // Prüfen
         assertFalse(result, "Überweisung von nicht-überweisungsfähigem Konto muss false liefern");
         // Empfänger darf kein Geld erhalten haben
         verify(empfaengerMock, never()).ueberweisungEmpfangen(
@@ -202,7 +202,7 @@ class BankMockitoTest {
      */
     @Test
     void testGeldUeberweisen_GesperrtException() throws GesperrtException {
-        // Arrange
+        // Vorbereiten
         Girokonto senderMock = mock(Girokonto.class);
         Girokonto empfaengerMock = mock(Girokonto.class);
 
@@ -215,7 +215,7 @@ class BankMockitoTest {
         long senderNr = mockEinfuegen(senderMock);
         long empfaengerNr = mockEinfuegen(empfaengerMock);
 
-        // Act & Assert
+        // Ausführen & Prüfen
         assertThrows(GesperrtException.class,
                 () -> bank.geldUeberweisen(senderNr, empfaengerNr, new Geldbetrag(100), "Test"),
                 "GesperrtException des Senders muss weitergeleitet werden");

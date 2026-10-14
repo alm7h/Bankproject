@@ -15,34 +15,33 @@ import bankprojekt.aktienhandel.Aktienkonto;
 import bankprojekt.basisdaten.Geldbetrag;
 
 /**
- * Kleines Hauptprogramm (Praesentationsschicht) fuer den Aktienhandel.
+ * Kleines Hauptprogramm (Präsentationsschicht) für den Aktienhandel.
  * <p>
- * Es legt drei Aktien an, erteilt mehrere Kauf- und Verkaufauftraege gleichzeitig
- * und gibt die jeweiligen Kaufpreise bzw. Erloese aus. Nebenlaeufig werden die
+ * Es legt drei Aktien an, erteilt mehrere Kauf- und Verkaufaufträge gleichzeitig
+ * und gibt die jeweiligen Kaufpreise bzw. Erlöse aus. Nebenläufig werden die
  * aktuellen Kurse alle paar Sekunden angezeigt, damit man die Bearbeitung der
- * Auftraege verfolgen kann.
+ * Aufträge verfolgen kann.
  * <p>
- * Threadsteuerung ausschliesslich ueber ExecutorServices:
+ * Threadsteuerung ausschließlich über ExecutorServices:
  * <ul>
- *   <li>die nebenlaeufige Kursanzeige laeuft ueber einen ScheduledExecutorService,</li>
- *   <li>die Auftraege laufen ueber den ExecutorService des Aktienkontos,</li>
- *   <li>das Einsammeln der Ergebnisse erfolgt ueber {@link Future#get}.</li>
+ *   <li>die nebenläufige Kursanzeige läuft über einen ScheduledExecutorService,</li>
+ *   <li>die Aufträge laufen über den ExecutorService des Aktienkontos,</li>
+ *   <li>das Einsammeln der Ergebnisse erfolgt über {@link Future#get}.</li>
  * </ul>
  * KEIN sleep(), KEIN new Thread(), KEIN wait/notify.
  * <p>
- * Hinweis: Nur dieses Programm der Praesentationsschicht gibt etwas auf der
+ * Hinweis: Nur dieses Programm der Präsentationsschicht gibt etwas auf der
  * Konsole aus; die Verarbeitungsschicht (Aktie, Aktienkonto, Konto) bleibt
- * vollstaendig ausgabefrei.
- * Claude changed it: komplette Klasse neu erstellt.
+ * vollständig ausgabefrei.
  */
 public class Aktienspielereien {
 
 	// Übung 9
 	/**
-	 * Verknuepft die Beschreibung eines Auftrags mit seinem Future, damit das
-	 * Ergebnis spaeter passend beschriftet ausgegeben werden kann.
+	 * Verknüpft die Beschreibung eines Auftrags mit seinem Future, damit das
+	 * Ergebnis später passend beschriftet ausgegeben werden kann.
 	 * @param beschreibung Klartext-Beschreibung des Auftrags
-	 * @param future das vom Aktienkonto gelieferte Future auf Kaufpreis/Erloes
+	 * @param future das vom Aktienkonto gelieferte Future auf Kaufpreis/Erlös
 	 */
 	private record Auftrag(String beschreibung, Future<Geldbetrag> future) {}
 
@@ -66,8 +65,8 @@ public class Aktienspielereien {
 		System.out.println("Startkurse   : " + kurseAlsText(bmw, sap, tui));
 		System.out.println();
 
-		// 3) Grundbestand aufbauen, damit es spaeter etwas zu verkaufen gibt.
-		//    Hoechstpreis grosszuegig -> diese Kaeufe werden sofort ausgefuehrt.
+		// 3) Grundbestand aufbauen, damit es später etwas zu verkaufen gibt.
+		//    Höchstpreis großzügig -> diese Kaeufe werden sofort ausgeführt.
 		System.out.println("-- Grundbestand aufbauen (sofortige Kaeufe) --");
 		drucke("GRUNDKAUF 100x SAP222",
 				warteAufErgebnis(konto.kaufauftrag("SAP222", 100, new Geldbetrag(100_000))));
@@ -76,7 +75,7 @@ public class Aktienspielereien {
 		System.out.println("Kontostand nach Grundkaeufen: " + konto.getKontostand());
 		System.out.println();
 
-		// 4) Nebenlaeufige Kursanzeige alle 2 Sekunden ueber einen ScheduledExecutorService.
+		// 4) Nebenläufige Kursanzeige alle 2 Sekunden über einen ScheduledExecutorService.
 		ScheduledExecutorService kursanzeige =
 				Executors.newSingleThreadScheduledExecutor(runnable -> {
 					Thread t = Executors.defaultThreadFactory().newThread(runnable);
@@ -88,9 +87,9 @@ public class Aktienspielereien {
 				() -> System.out.println("   [Kurse] " + kurseAlsText(bmw, sap, tui)),
 				2, 2, TimeUnit.SECONDS);
 
-		// 5) Mehrere Kauf- UND Verkaufauftraege GLEICHZEITIG erteilen. Jeder Aufruf
-		//    startet sofort einen nebenlaeufigen Auftrag (im ExecutorService des
-		//    Aktienkontos) und liefert ein Future zurueck.
+		// 5) Mehrere Kauf- UND Verkaufaufträge GLEICHZEITIG erteilen. Jeder Aufruf
+		//    startet sofort einen nebenläufigen Auftrag (im ExecutorService des
+		//    Aktienkontos) und liefert ein Future zurück.
 		System.out.println("-- Mehrere Auftraege gleichzeitig (warten auf passende Kurse) --");
 		List<Auftrag> auftraege = new ArrayList<>();
 		auftraege.add(new Auftrag("KAUF    50x BMW111 @<= 99,50 €",
@@ -102,14 +101,14 @@ public class Aktienspielereien {
 		auftraege.add(new Auftrag("VERKAUF    TUI333 @>= 60,30 €",
 				konto.verkaufauftrag("TUI333", new Geldbetrag(60.30))));
 
-		// 6) Ergebnisse einsammeln und ausgeben. Die Auftraege laufen bereits alle
+		// 6) Ergebnisse einsammeln und ausgeben. Die Aufträge laufen bereits alle
 		//    parallel; hier wird nur auf ihr jeweiliges Ergebnis gewartet.
 		for (Auftrag a : auftraege) {
 			try {
 				Geldbetrag ergebnis = a.future().get(90, TimeUnit.SECONDS);
 				drucke("FERTIG  " + a.beschreibung(), ergebnis);
 			} catch (TimeoutException e) {
-				a.future().cancel(true); // Auftrag wurde in der Zeit nicht ausgeloest
+				a.future().cancel(true); // Auftrag wurde in der Zeit nicht ausgelöst
 				System.out.println("TIMEOUT " + a.beschreibung() + "  -> storniert");
 			} catch (ExecutionException e) {
 				System.out.println("FEHLER  " + a.beschreibung() + "  -> " + e.getCause());
@@ -128,7 +127,7 @@ public class Aktienspielereien {
 
 	// Übung 9
 	/**
-	 * Hilfsmethode: holt das Ergebnis eines Auftrags-Futures (sofortige Auftraege).
+	 * Hilfsmethode: holt das Ergebnis eines Auftrags-Futures (sofortige Aufträge).
 	 * @param future das Future
 	 * @return der enthaltene Geldbetrag, oder 0 € bei Problemen
 	 */
@@ -142,7 +141,7 @@ public class Aktienspielereien {
 
 	// Übung 9
 	/**
-	 * Hilfsmethode fuer die einheitliche Ergebnisausgabe.
+	 * Hilfsmethode für die einheitliche Ergebnisausgabe.
 	 */
 	private static void drucke(String beschreibung, Geldbetrag betrag) {
 		System.out.println(beschreibung + "  ->  " + betrag);

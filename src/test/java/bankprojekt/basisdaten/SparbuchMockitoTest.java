@@ -75,7 +75,7 @@ class SparbuchMockitoTest {
         assertTrue(ersteAbhebung, "Erste Abhebung nach Monatswechsel muss möglich sein");
 
         // Zweite Abhebung in Februar: weitere 1500€ → Gesamtbetrag wäre 3000€ > 2000€ Limit
-        // BUG: Ohne korrektes zeitpunkt-Update würde bereitsAbgehoben erneut auf 0 gesetzt
+        // FEHLER: Ohne korrektes zeitpunkt-Update würde bereitsAbgehoben erneut auf 0 gesetzt
         //      und diese Abhebung fälschlicherweise genehmigt.
         boolean zweiteAbhebung = sparbuch.abheben(new Geldbetrag(1500, Waehrung.EURO));
         assertFalse(zweiteAbhebung,

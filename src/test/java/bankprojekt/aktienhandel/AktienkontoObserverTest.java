@@ -1,8 +1,8 @@
 package bankprojekt.aktienhandel;
 
-// Übung 12: Neuer Test fuer das Observer-Muster des Aktienkontos (Aufgabe 12 a).
-// Geprueft wird mit Mockito, dass ein angemeldeter Beobachter bei jeder
-// Depotaenderung (Kauf bzw. Verkauf von Aktien) korrekt benachrichtigt wird.
+// Übung 12: Neuer Test für das Observer-Muster des Aktienkontos (Aufgabe 12 a).
+// Geprüft wird mit Mockito, dass ein angemeldeter Beobachter bei jeder
+// Depotänderung (Kauf bzw. Verkauf von Aktien) korrekt benachrichtigt wird.
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.concurrent.Future;
@@ -22,8 +22,8 @@ import static org.mockito.Mockito.*;
  * <p>
  * Wichtiger Hinweis aus der Aufgabenstellung: Die statischen Methoden von
  * {@link Aktie} lassen sich nicht mocken, deshalb wird mit einem "echten"
- * Aktie-Objekt gearbeitet. Hoechstkaufpreis und Mindestverkaufpreis werden so
- * gewaehlt, dass Kauf bzw. Verkauf sofort (beim aktuellen Kurs) stattfinden.
+ * Aktie-Objekt gearbeitet. Höchstkaufpreis und Mindestverkaufpreis werden so
+ * gewählt, dass Kauf bzw. Verkauf sofort (beim aktuellen Kurs) stattfinden.
  * Der Beobachter selbst ist ein Mockito-Mock, dessen Aufruf verifiziert wird.
  */
 class AktienkontoObserverTest {
@@ -34,7 +34,7 @@ class AktienkontoObserverTest {
 
 	private Aktienkonto neuesKontoMitGuthaben() {
 		Aktienkonto konto = new Aktienkonto(new Kunde(), 1234);
-		konto.einzahlen(new Geldbetrag(1_000_000.0)); // reichlich Guthaben fuer den Kauf
+		konto.einzahlen(new Geldbetrag(1_000_000.0)); // reichlich Guthaben für den Kauf
 		return konto;
 	}
 
@@ -48,12 +48,12 @@ class AktienkontoObserverTest {
 		PropertyChangeListener beobachter = mock(PropertyChangeListener.class);
 		konto.addPropertyChangeListener(beobachter);
 
-		// Hoechstkaufpreis extrem hoch -> Bedingung sofort erfuellt -> Kauf sofort.
+		// Höchstkaufpreis extrem hoch -> Bedingung sofort erfüllt -> Kauf sofort.
 		Future<Geldbetrag> auftrag =
 				konto.kaufauftrag("TESTKAUF", 5, new Geldbetrag(1_000_000.0));
 		auftrag.get(5, TimeUnit.SECONDS); // auf Abschluss des Kaufs warten
 
-		// Der Beobachter muss genau einmal ueber die Depotaenderung informiert worden sein.
+		// Der Beobachter muss genau einmal über die Depotänderung informiert worden sein.
 		ArgumentCaptor<PropertyChangeEvent> captor =
 				ArgumentCaptor.forClass(PropertyChangeEvent.class);
 		verify(beobachter, times(1)).propertyChange(captor.capture());
@@ -61,7 +61,7 @@ class AktienkontoObserverTest {
 		PropertyChangeEvent evt = captor.getValue();
 		assertEquals("TESTKAUF", evt.getPropertyName()); // WKN als Property-Name
 		assertEquals(0, evt.getOldValue());              // vorher kein Bestand
-		assertEquals(5, evt.getNewValue());              // nachher 5 Stueck
+		assertEquals(5, evt.getNewValue());              // nachher 5 Stück
 	}
 
 
@@ -72,14 +72,14 @@ class AktienkontoObserverTest {
 		new Aktie("TESTVERKAUF", KURS);
 		Aktienkonto konto = neuesKontoMitGuthaben();
 
-		// Zuerst Aktien ins Depot legen (ohne Beobachter, damit nur der Verkauf zaehlt).
+		// Zuerst Aktien ins Depot legen (ohne Beobachter, damit nur der Verkauf zählt).
 		konto.kaufauftrag("TESTVERKAUF", 3, new Geldbetrag(1_000_000.0))
 				.get(5, TimeUnit.SECONDS);
 
 		PropertyChangeListener beobachter = mock(PropertyChangeListener.class);
 		konto.addPropertyChangeListener(beobachter);
 
-		// Mindestverkaufpreis 0 € -> Bedingung sofort erfuellt -> Verkauf sofort.
+		// Mindestverkaufpreis 0 € -> Bedingung sofort erfüllt -> Verkauf sofort.
 		konto.verkaufauftrag("TESTVERKAUF", Geldbetrag.NULL_EURO)
 				.get(5, TimeUnit.SECONDS);
 
@@ -89,7 +89,7 @@ class AktienkontoObserverTest {
 
 		PropertyChangeEvent evt = captor.getValue();
 		assertEquals("TESTVERKAUF", evt.getPropertyName());
-		assertEquals(3, evt.getOldValue()); // vorher 3 Stueck
+		assertEquals(3, evt.getOldValue()); // vorher 3 Stück
 		assertEquals(0, evt.getNewValue()); // komplett verkauft
 	}
 

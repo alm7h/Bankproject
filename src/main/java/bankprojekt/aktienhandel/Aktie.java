@@ -2,15 +2,13 @@ package bankprojekt.aktienhandel;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
-// Übung 9
-// Bemerkung: Imports fuer die Thread-Steuerung ueber ExecutorServices
+// Bemerkung: Imports für die Thread-Steuerung über ExecutorServices
 // (bewusst KEIN sleep(), KEIN new Thread(), KEIN wait/notify).
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-// Übung 9
-// Bemerkung: PropertyChangeSupport fuer die Beobachtung der Kursaenderungen
+// Bemerkung: PropertyChangeSupport für die Beobachtung der Kursänderungen
 // (Observer-Pattern). Dadurch kann ein Aktienkonto ereignisgesteuert auf den
 // passenden Kurs warten - ohne Polling, ohne sleep()/wait()/notify().
 import java.beans.PropertyChangeListener;
@@ -28,8 +26,8 @@ public class Aktie {
 
 	// Übung 9
 	/**
-	 * Gemeinsam genutzter ScheduledExecutorService, der die regelmaessigen
-	 * Kursaenderungen ALLER Aktien steuert. Es werden Daemon-Threads verwendet,
+	 * Gemeinsam genutzter ScheduledExecutorService, der die regelmäßigen
+	 * Kursänderungen ALLER Aktien steuert. Es werden Daemon-Threads verwendet,
 	 * damit die JVM beim Beenden des Hauptprogramms nicht durch die laufenden
 	 * Hintergrundaufgaben blockiert wird.
 	 * Bemerkung: Bewusst ein zentraler ExecutorService statt eigener Threads -
@@ -55,16 +53,16 @@ public class Aktie {
 	/**
 	 * aktueller Kurs der Aktie.
 	 * Bemerkung: volatile, da der Kurs vom Scheduler-Thread geschrieben und
-	 * gleichzeitig von anderen Threads (z. B. ueber getKurs()) gelesen wird.
-	 * Da Geldbetrag unveraenderlich ist, genuegt volatile fuer die sichere
-	 * Veroeffentlichung des jeweils neuen Kurses.
+	 * gleichzeitig von anderen Threads (z. B. über getKurs()) gelesen wird.
+	 * Da Geldbetrag unveränderlich ist, genügt volatile für die sichere
+	 * Veröffentlichung des jeweils neuen Kurses.
 	 */
 	private volatile Geldbetrag kurs;
 
 	// Übung 9
 	/**
 	 * Verwaltet die angemeldeten Beobachter und benachrichtigt sie bei jeder
-	 * Kursaenderung. PropertyChangeSupport ist thread-sicher; das Feuern erfolgt
+	 * Kursänderung. PropertyChangeSupport ist thread-sicher; das Feuern erfolgt
 	 * aus dem Scheduler-Thread heraus.
 	 */
 	private final PropertyChangeSupport kursAenderungen = new PropertyChangeSupport(this);
@@ -95,21 +93,21 @@ public class Aktie {
 		alleAktien.put(wkn, this);
 
 		// Übung 9
-		// Bemerkung: Zufaellige Zeitspanne zeit zwischen 1 und 5 Sekunden (beide
+		// Bemerkung: Zufällige Zeitspanne zeit zwischen 1 und 5 Sekunden (beide
 		// inklusive). nextInt(1, 6) liefert Werte aus {1, 2, 3, 4, 5}.
 		int zeit = ThreadLocalRandom.current().nextInt(1, 6);
 
-		// Bemerkung: Sorgt dafuer, dass alle zeit Sekunden der Kurs veraendert
-		// wird. scheduleAtFixedRate uebernimmt die periodische Ausfuehrung
-		// vollstaendig - dadurch kein sleep(), kein new Thread(), kein wait/notify.
+		// Bemerkung: Sorgt dafür, dass alle zeit Sekunden der Kurs verändert
+		// wird. scheduleAtFixedRate übernimmt die periodische Ausführung
+		// vollständig - dadurch kein sleep(), kein new Thread(), kein wait/notify.
 		// Erste Aenderung nach zeit Sekunden, danach wieder alle zeit Sekunden.
 		KURS_SCHEDULER.scheduleAtFixedRate(this::kursAendern, zeit, zeit, TimeUnit.SECONDS);
 	}
 
 
 	/**
-	 * Veraendert den aktuellen Kurs der Aktie um einen zufaelligen Prozentsatz.
-	 * Diese Methode wird regelmaessig vom {@link #KURS_SCHEDULER} aufgerufen.
+	 * Verändert den aktuellen Kurs der Aktie um einen zufälligen Prozentsatz.
+	 * Diese Methode wird regelmäßig vom {@link #KURS_SCHEDULER} aufgerufen.
 	 * Bemerkung: Der Prozentsatz liegt zwischen -3 % und +3 % (mit
 	 * Nachkommastellen). Der Multiplikationsfaktor ist damit mindestens 0,97,
 	 * ein positiver Kurs bleibt also stets positiv.
@@ -119,16 +117,16 @@ public class Aktie {
 		double prozent = ThreadLocalRandom.current().nextDouble(-3.0, 3.0);
 		// Übung 9: alten Kurs merken, um die Beobachter zu informieren
 		Geldbetrag alterKurs = this.kurs;
-		// Kurs um diese Prozentzahl veraendern: neuer Kurs = alter Kurs * (1 + p/100)
+		// Kurs um diese Prozentzahl verändern: neuer Kurs = alter Kurs * (1 + p/100)
 		this.kurs = this.kurs.mal(1.0 + prozent / 100.0);
-		// Übung 9: alle angemeldeten Beobachter ueber die Kursaenderung
-		// informieren (Grundlage fuer die Kauf-/Verkaufauftraege im Aktienkonto).
+		// Übung 9: alle angemeldeten Beobachter über die Kursänderung
+		// informieren (Grundlage für die Kauf-/Verkaufaufträge im Aktienkonto).
 		kursAenderungen.firePropertyChange("kurs", alterKurs, this.kurs);
 	}
 
 	// Übung 9
 	/**
-	 * Meldet einen Beobachter an, der bei jeder Kursaenderung benachrichtigt wird.
+	 * Meldet einen Beobachter an, der bei jeder Kursänderung benachrichtigt wird.
 	 * @param beobachter der zu benachrichtigende Listener
 	 */
 	public void addPropertyChangeListener(PropertyChangeListener beobachter) {
@@ -162,13 +160,13 @@ public class Aktie {
 
 	// =========================================================================
 	// Übung 9:
-	// - Importe fuer ExecutorService/ScheduledExecutorService ergaenzt
+	// - Importe für ExecutorService/ScheduledExecutorService ergänzt
 	// - statischen, gemeinsamen ScheduledExecutorService mit Daemon-Threads
-	//   hinzugefuegt (KURS_SCHEDULER)
+	//   hinzugefügt (KURS_SCHEDULER)
 	// - Feld kurs auf volatile umgestellt (Thread-Sichtbarkeit)
-	// - Konstruktor startet die periodische Kursaenderung alle 'zeit' (1-5) Sekunden
-	// - private Methode kursAendern() fuer die zufaellige Kursaenderung (-3% .. +3%)
-	// Die Thread-Steuerung erfolgt ausschliesslich ueber den ExecutorService:
+	// - Konstruktor startet die periodische Kursänderung alle 'zeit' (1-5) Sekunden
+	// - private Methode kursAendern() für die zufällige Kursänderung (-3% .. +3%)
+	// Die Thread-Steuerung erfolgt ausschließlich über den ExecutorService:
 	// kein sleep(), kein new Thread(), kein wait/notify.
 	// =========================================================================
 }

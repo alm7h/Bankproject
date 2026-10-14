@@ -21,8 +21,6 @@ import bankprojekt.verwaltung.Bank;
  * Demonstriert die in {@link Bank#speichern(java.io.OutputStream)} und
  * {@link Bank#einlesen(java.io.InputStream)} ergänzte Persistenz zusammen mit
  * {@link ZipOutputStream}/{@link ZipInputStream}.
- *
- * @author Claude
  */
 public class BankPersistenzSpielereien {
 

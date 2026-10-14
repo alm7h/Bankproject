@@ -23,10 +23,10 @@ class BankTest {
     class KonstruktorTests {
         @Test
         void konstruktorInitialisiertFelderKorrekt() {
-            // Arrange & Act
+            // Vorbereiten & Ausführen
             Bank bank = new Bank(12345678L);
 
-            // Assert
+            // Prüfen
             assertEquals(12345678L, bank.getBankleitzahl(), "Bankleitzahl sollte korrekt gesetzt werden");
             assertNotNull(bank.getKonten(), "Konten-Map darf nicht null sein");
             assertTrue(bank.getKonten().isEmpty(), "Konten-Map sollte initial leer sein");
@@ -106,7 +106,7 @@ class BankTest {
         void girokontoErstellen_wirftNullPointerException_wennInhaberNull_undZaehlerBleibtUnveraendert() {
             Bank bank = new Bank(55555555L);
 
-            // Act & Assert: Null-Inhaber -> NullPointerException
+            // Ausführen & Prüfen: Null-Inhaber -> NullPointerException
             assertThrows(NullPointerException.class, () -> bank.kontoErstellen(new GirokontoFabrik(bank.dispo_default),null),
                     "Null-Inhaber sollte NullPointerException werfen");
 
@@ -739,7 +739,7 @@ class KontenEinesKundenLoeschenTests {
         assertFalse(bank.getKonten().containsKey(a2));
         assertTrue(bank.getKonten().containsKey(b1));
 
-        // Neues Konto fuer Bob bekommt die naechste freie Nummer (4), keine Wiederverwendung von 1/3
+        // Neues Konto für Bob bekommt die nächste freie Nummer (4), keine Wiederverwendung von 1/3
         long b2 = bank.kontoErstellen(new SparbuchFabrik(),bob);
         assertEquals(4L, b2, "Kontonummernzaehler darf durch Massenloeschung nicht zurueckgesetzt werden");
     }
