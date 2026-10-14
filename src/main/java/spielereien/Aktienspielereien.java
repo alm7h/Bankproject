@@ -12,6 +12,7 @@ import java.util.concurrent.TimeoutException;
 import bankprojekt.aktienhandel.Aktie;
 import bankprojekt.aktienhandel.Aktienkonto;
 import bankprojekt.basisdaten.Geldbetrag;
+import bankprojekt.exceptions.GesperrtException;
 
 /**
  * Kleines Hauptprogramm (Präsentationsschicht) für den Aktienhandel.
@@ -48,8 +49,9 @@ public class Aktienspielereien {
 	 * Hauptprogramm.
 	 * @param args wird nicht benutzt
 	 * @throws InterruptedException wenn das Warten auf ein Ergebnis unterbrochen wird
+	 * @throws GesperrtException wenn das Aktienkonto gesperrt ist (kommt hier nicht vor)
 	 */
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) throws InterruptedException, GesperrtException {
 		// 1) Drei Aktien anlegen.
 		Aktie bmw = new Aktie("BMW111", new Geldbetrag(100));
 		Aktie sap = new Aktie("SAP222", new Geldbetrag(150));

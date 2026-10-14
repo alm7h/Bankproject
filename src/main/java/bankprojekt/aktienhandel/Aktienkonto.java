@@ -15,6 +15,7 @@ import java.util.function.Predicate;
 import bankprojekt.basisdaten.Geldbetrag;
 import bankprojekt.basisdaten.Konto;
 import bankprojekt.basisdaten.Kunde;
+import bankprojekt.exceptions.GesperrtException;
 
 /**
  * Ein Konto, das zusätzlich ein Aktiendepot verwaltet. Über {@link #kaufauftrag}
@@ -116,9 +117,17 @@ public class Aktienkonto extends Konto {
 	 * @param wkn Wertpapierkennnummer der gewünschten Aktie
 	 * @param anzahl gewünschte Stückzahl
 	 * @param hoechstpreis Kurs, unter den der Aktienkurs fallen muss, bevor gekauft wird
+	 * Ein gesperrtes Konto kann keinen Kaufauftrag erteilen. Wird das Konto gesperrt,
+	 * während der Auftrag noch auf den passenden Kurs wartet, wird nichts gekauft.
+	 *
 	 * @return Future auf den tatsächlich bezahlten Gesamtkaufpreis (0 €, wenn nicht gekauft wurde)
+	 * @throws GesperrtException wenn das Konto beim Erteilen des Auftrags gesperrt ist
 	 */
-	public Future<Geldbetrag> kaufauftrag(String wkn, int anzahl, Geldbetrag hoechstpreis) {
+	public Future<Geldbetrag> kaufauftrag(String wkn, int anzahl, Geldbetrag hoechstpreis)
+			throws GesperrtException {
+		// Ein gesperrtes Konto darf keine Aufträge erteilen (wie beim Überweisen)
+		if (isGesperrt())
+			throw new GesperrtException(getKontonummer());
 		// Threadsteuerung über den ExecutorService: submit liefert direkt das Future.
 		return HANDEL.submit(() -> {
 			Aktie aktie = Aktie.getAktie(wkn);
@@ -129,6 +138,10 @@ public class Aktienkonto extends Konto {
 			Geldbetrag kurs = warteAufKurs(aktie, k -> k.compareTo(hoechstpreis) <= 0);
 
 			synchronized (this) {
+				// Während des Wartens gesperrt -> nichts kaufen (abheben würde sonst eine
+				// GesperrtException werfen, die erst beim Future.get() auftauchen würde).
+				if (isGesperrt())
+					return Geldbetrag.NULL_EURO;
 				Geldbetrag gesamtpreis = kurs.mal(anzahl);
 				if (abheben(gesamtpreis)) {
 
@@ -158,9 +171,18 @@ public class Aktienkonto extends Konto {
 	 *
 	 * @param wkn Wertpapierkennnummer der zu verkaufenden Aktie
 	 * @param minimalpreis Kurs, den die Aktie mindestens erreichen muss, bevor verkauft wird
-	 * @return Future auf den Gesamterlös (0 €, wenn die Aktie nicht im Depot ist)
+	 * Ein gesperrtes Konto kann keinen Verkaufauftrag erteilen. Wird das Konto gesperrt,
+	 * während der Auftrag noch auf den passenden Kurs wartet, wird nichts verkauft und
+	 * die Aktien bleiben im Depot.
+	 *
+	 * @return Future auf den Gesamterlös (0 €, wenn nicht verkauft wurde)
+	 * @throws GesperrtException wenn das Konto beim Erteilen des Auftrags gesperrt ist
 	 */
-	public Future<Geldbetrag> verkaufauftrag(String wkn, Geldbetrag minimalpreis) {
+	public Future<Geldbetrag> verkaufauftrag(String wkn, Geldbetrag minimalpreis)
+			throws GesperrtException {
+		// Ein gesperrtes Konto darf keine Aufträge erteilen (wie beim Überweisen)
+		if (isGesperrt())
+			throw new GesperrtException(getKontonummer());
 		// Threadsteuerung über den ExecutorService: submit liefert direkt das Future.
 		return HANDEL.submit(() -> {
 			Aktie aktie = Aktie.getAktie(wkn);
@@ -176,7 +198,8 @@ public class Aktienkonto extends Konto {
 
 			synchronized (this) {
 				int bestand = depot.getOrDefault(wkn, 0);
-				if (bestand <= 0)
+				// Während des Wartens gesperrt oder Bestand inzwischen verkauft -> nichts verkaufen
+				if (bestand <= 0 || isGesperrt())
 					return Geldbetrag.NULL_EURO;
 				Geldbetrag erloes = kurs.mal(bestand);
 				depot.remove(wkn);   // kompletten Bestand dieser Aktie verkaufen
