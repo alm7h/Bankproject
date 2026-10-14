@@ -1,7 +1,6 @@
 package bankprojekt.basisdaten;
 
 import java.io.Serializable;
-import java.util.Objects;
 import org.decimal4j.util.DoubleRounder;
 
 /**
@@ -158,9 +157,7 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     public int compareTo(Geldbetrag o) throws NullPointerException {
         if(o == null) throw new NullPointerException();
         if(this ==  o) return 0;
-        double dieseInEuro = this.betrag / this.waehrung.getUmrechnungskursZuEuro();
-        double andereInEuro = o.betrag / o.waehrung.getUmrechnungskursZuEuro();
-        return Double.compare(dieseInEuro, andereInEuro);
+        return Double.compare(this.inEuro(), o.inEuro());
     }
 
     /**
@@ -180,13 +177,30 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     }
 
     /**
-     * Generates a hash code for this instance based on its `betrag` value.
+     * Berechnet den Hashcode aus dem Wert des Geldbetrags in Euro.
+     * <p>
+     * {@link #equals(Object)} vergleicht über den Eurowert, d. h. z. B. 1 EUR und
+     * 61,5 MKD sind gleich. Damit der Vertrag von {@link Object#hashCode()} erfüllt ist
+     * (gleiche Objekte liefern den gleichen Hashcode), muss deshalb auch der Hashcode
+     * aus genau demselben Eurowert berechnet werden – und nicht aus dem reinen Betrag
+     * in der jeweiligen Währung.
      *
-     * @return an integer hash code derived from the `betrag` property
+     * @return Hashcode des Eurowerts
      */
     @Override
     public int hashCode() {
-        return Objects.hash(this.getBetrag());
+        return Double.hashCode(inEuro());
+    }
+
+    /**
+     * Rechnet den Betrag von this in Euro um (ohne Rundung). Wird von
+     * {@link #compareTo(Geldbetrag)} und {@link #hashCode()} gemeinsam genutzt, damit
+     * Vergleich und Hashcode garantiert auf demselben Wert beruhen.
+     *
+     * @return der Betrag von this in Euro
+     */
+    private double inEuro() {
+        return this.betrag / this.waehrung.getUmrechnungskursZuEuro();
     }
 
     /**
