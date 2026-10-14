@@ -374,8 +374,6 @@ public class Bank implements Serializable {
         return geloescht;
     }
 
-    // =====================================================================
-// =====================================================================
 
     /**
      * Liefert eine Liste aller Kunden, die mindestens ein Konto mit negativem

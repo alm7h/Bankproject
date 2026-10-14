@@ -26,17 +26,12 @@
             <version>1.0.3</version>
         </dependency>
 
-        <!-- Übung 13: JavaFX für die Oberfläche (bankprojekt.oberflaeche) und die
-             Properties im Model (Kunde, Konto). javafx-controls zieht javafx-graphics
-             und javafx-base (Properties/Bindings) transitiv mit. -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
             <version>22.0.1</version>
         </dependency>
 
-        <!-- Übung 14: FXML-Oberfläche (FXMLLoader, @FXML). Ersetzt die von Hand
-             programmierte KontoOberflaeche aus Übung 13 durch eine FXML-Datei. -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>

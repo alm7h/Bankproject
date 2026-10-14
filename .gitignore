@@ -39,3 +39,7 @@ build/
 ### Local project instructions (not published) ###
 CLAUDE.md
 .idea/.name
+
+### Local planning doc (not versioned) ###
+ToDoList.md
+ToDoList

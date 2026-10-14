@@ -57,11 +57,11 @@ public class Kunde implements Comparable<Kunde>, Serializable {
     private String nachname;
     /**
      * Die Adresse
-     */
-    // Die Adresse ist jetzt als JavaFX-Property verfügbar, damit die
-    // Oberfläche sie direkt an ein Steuerelement binden kann. Das Feld ist
-    // transient, weil JavaFX-Properties nicht serialisierbar sind; der reine
-    // String-Wert wird in writeObject/readObject von Hand gesichert.
+    * Die Adresse ist jetzt als JavaFX-Property verfügbar, damit die
+    * Oberfläche sie direkt an ein Steuerelement binden kann. Das Feld ist
+    * transient, weil JavaFX-Properties nicht serialisierbar sind; der reine
+    * String-Wert wird in writeObject/readObject von Hand gesichert.
+    */
     private transient StringProperty adresse = new SimpleStringProperty();
     /**
      * Geburtstag

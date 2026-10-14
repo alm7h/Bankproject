@@ -23,11 +23,12 @@ import javafx.beans.property.SimpleBooleanProperty;
 /**
  * Stellt ein allgemeines Bank-Konto dar
  * @author m.alharethi
- */
-// Serializable an der Oberklasse ergänzt. Dadurch sind alle
-// Kontotypen (Girokonto, Sparbuch und künftige wie Aktienkonto) automatisch
-// serialisierbar, und die Bank kann beliebige Kontotypen speichern, ohne dass
-// die Speicher-/Lese-Methoden die konkreten Typen kennen müssen.
+ *
+ * Serializable an der Oberklasse ergänzt. Dadurch sind alle
+ * Kontotypen (Girokonto, Sparbuch und künftige wie Aktienkonto) automatisch
+ * serialisierbar, und die Bank kann beliebige Kontotypen speichern, ohne dass
+ * die Speicher-/Lese-Methoden die konkreten Typen kennen müssen.
+    */
 public abstract class Konto implements Comparable<Konto>, Serializable
 {
     /**
@@ -43,10 +44,11 @@ public abstract class Konto implements Comparable<Konto>, Serializable
     /**
      * Wenn das Konto gesperrt ist (gesperrt = true), können keine Aktionen daran mehr vorgenommen werden,
      * die zum Schaden des Kontoinhabers wären (abheben, Inhaberwechsel)
-     */
-    // Der Gesperrt-Zustand ist jetzt eine JavaFX-Property.
-    // transient, weil Properties nicht serialisierbar sind; der boolesche Wert
-    // wird in writeObject/readObject von Hand gesichert.
+     *
+    * Der Gesperrt-Zustand ist jetzt eine JavaFX-Property.
+    * transient, weil Properties nicht serialisierbar sind; der boolesche Wert
+    * wird in writeObject/readObject von Hand gesichert.
+      */
     private transient BooleanProperty gesperrt;
 
     /**
@@ -56,10 +58,11 @@ public abstract class Konto implements Comparable<Konto>, Serializable
 
     /**
      * der aktuelle Kontostand
-     */
-    // Der Kontostand steckt in einem ReadOnlyObjectWrapper, damit er
-    // von außen nur gelesen (kontostandProperty() liefert ReadOnlyObjectProperty),
-    // aber nicht verändert werden kann. Ebenfalls transient (siehe writeObject/readObject).
+
+     * Der Kontostand steckt in einem ReadOnlyObjectWrapper, damit er
+     * von außen nur gelesen (kontostandProperty() liefert ReadOnlyObjectProperty),
+     * aber nicht verändert werden kann. Ebenfalls transient (siehe writeObject/readObject).
+    */
     private transient ReadOnlyObjectWrapper<Geldbetrag> kontostand;
 
     /**

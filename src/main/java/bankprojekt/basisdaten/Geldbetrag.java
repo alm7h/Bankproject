@@ -7,9 +7,10 @@ import org.decimal4j.util.DoubleRounder;
 /**
  * Ein Geldbetrag mit Währung
  * @author m.alharethi
+ *Serializable ergänzt, damit ein Geldbetrag als Teil der
+ *Bank (Kontostände, Dispo usw.) über die Java-Serialisierung gespeichert werden kann.
+ *
  */
-// Serializable ergänzt, damit ein Geldbetrag als Teil der
-// Bank (Kontostände, Dispo usw.) über die Java-Serialisierung gespeichert werden kann.
 public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     /**
      * Versionsnummer für die Serialisierung.
