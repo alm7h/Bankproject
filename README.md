@@ -72,7 +72,8 @@ A few rules the code enforces (and the tests check):
 
 ## Tech stack
 - Language: Java 21
-- Build: Apache Maven
+- Build: Apache Maven (Maven wrapper included)
+- CI: GitHub Actions
 - UI: JavaFX (OpenJFX `javafx-controls`, `javafx-fxml`)
 - Money rounding: decimal4j
 - Testing: JUnit 5 (Jupiter) + Mockito
@@ -84,6 +85,8 @@ See `pom.xml` for exact versions and plugins.
 ## Project layout
 ```
 / (project root)
+├─ .github/workflows/build.yml   # CI: build and test on every push and pull request
+├─ mvnw, mvnw.cmd, .mvn/         # Maven wrapper
 ├─ pom.xml
 ├─ src
 │  ├─ main
@@ -101,6 +104,7 @@ See `pom.xml` for exact versions and plugins.
 │  │     └─ bankprojekt/oberflaeche/  # FXML + CSS + images
 │  └─ test
 │     └─ java/bankprojekt/        # Unit tests, same packages as the classes they test
+├─ LICENSE
 └─ README.md
 ```
 
@@ -108,8 +112,8 @@ See `pom.xml` for exact versions and plugins.
 ## Getting started
 
 ### Prerequisites
-- Java Development Kit (JDK) 21
-- Maven is optional: the repository contains the Maven wrapper (`mvnw` / `mvnw.cmd`), which downloads the right Maven version on first use. All `mvn` commands below also work as `./mvnw …` (Windows: `mvnw.cmd …`).
+- Java Development Kit (JDK) 21 or newer
+- No Maven installation needed: the repository contains the Maven wrapper (`mvnw` / `mvnw.cmd`), which downloads the right Maven version (3.9.9) on first use. The commands below use `./mvnw` (Windows: `mvnw.cmd`); with Maven 3.9+ installed you can write `mvn` instead.
 
 Verify your environment:
 ```
@@ -121,7 +125,7 @@ java -version
 ```
 ./mvnw -q -DskipTests package
 ```
-This compiles sources and packages the project. Use `mvn package` (without `-DskipTests`) to include running tests.
+This compiles sources and packages the project. Use `./mvnw package` (without `-DskipTests`) to include running tests.
 
 ### Run (JavaFX UI)
 The easiest way is the JavaFX Maven plugin:
@@ -130,7 +134,7 @@ The easiest way is the JavaFX Maven plugin:
 ```
 Alternatively, launch the non-`Application` bootstrap class `Start` from the classpath:
 ```
-mvn -q -Dexec.mainClass=bankprojekt.oberflaeche.Start exec:java
+./mvnw -q -Dexec.mainClass=bankprojekt.oberflaeche.Start exec:java
 ```
 Notes:
 - Run `Start` (not `KontoAnwendung`) to avoid the classic "JavaFX runtime components are missing" error when JavaFX is resolved via Maven on the classpath.
@@ -140,11 +144,11 @@ Notes:
 ### Run demo programs
 The demo programs live in `spielereien`. The default main class for `exec:java` is `spielereien.KontenSpielereien` (set as the `exec.mainClass` property in `pom.xml`). To run it:
 ```
-mvn -q exec:java
+./mvnw -q exec:java
 ```
 Or run any other main class, e.g.:
 ```
-mvn -q -Dexec.mainClass=spielereien.Bankspielereien exec:java
+./mvnw -q -Dexec.mainClass=spielereien.Bankspielereien exec:java
 ```
 Available demos:
 - `spielereien.KontenSpielereien` — interactive: creates an account and asks how much to withdraw
@@ -155,37 +159,37 @@ Available demos:
 
 ### Run tests and coverage
 ```
-mvn -q test
+./mvnw -q test
 ```
-Every push and pull request is built and tested by GitHub Actions (`.github/workflows/build.yml`) with JDK 21, once with the default and once with a German locale; the JaCoCo coverage report of each run can be downloaded from the run's page (artifact `jacoco-report`).
 A JaCoCo coverage report is generated during tests. It covers all of `bankprojekt` except the JavaFX UI (`bankprojekt.oberflaeche`). Find the HTML report in:
 ```
 ./target/site/jacoco/index.html
 ```
+Every push and pull request is also built and tested by GitHub Actions (`.github/workflows/build.yml`) with JDK 21, once with the default and once with a German locale. The JaCoCo report of each run can be downloaded from the run's page (artifact `jacoco-report`).
 Run a single test class or method:
 ```
-mvn -q test -Dtest=BankTest
-mvn -q test -Dtest=BankTest#methodName
+./mvnw -q test -Dtest=BankTest
+./mvnw -q test -Dtest=BankTest#methodName
 ```
 
 ### Generate static analysis and docs
 - SpotBugs HTML report:
   ```
-  mvn -q compile
+  ./mvnw -q compile
   open target/site/spotbugs.html   # or view the file in your browser
   ```
 - Javadoc (package-level visibility and above):
   ```
-  mvn -q package
+  ./mvnw -q package
   open target/site/apidocs/index.html
   ```
 
 ### Package an archive (assembly)
 A simple assembly is configured for submissions/packaging and runs as part of `package`:
 ```
-mvn -q package
+./mvnw -q package
 ```
-The archive `target/Bankproject-1.0-SNAPSHOT-submission.zip` contains the sources, `pom.xml` and the SpotBugs report.
+The archive `target/Bankproject-1.0-SNAPSHOT-submission.zip` contains the sources, `pom.xml` and the generated reports (SpotBugs, JaCoCo and Javadoc).
 
 
 ## Tests
@@ -196,7 +200,7 @@ The test suite lives in `src/test/java/bankprojekt`, in the same packages as the
 - Test names and comments are in German, e.g. `geldAbheben_gibtFalse_wennUeberDispo`.
 - The suite does not depend on the computer's language settings: locale-dependent output is tested with `Locale.GERMANY`, set and restored around each test. To double-check:
   ```
-  mvn -q test -DargLine="-Duser.language=de -Duser.country=DE"
+  ./mvnw -q test -DargLine="-Duser.language=de -Duser.country=DE"
   ```
 - The stock trading tests contain no `sleep()`: they wait for results with `Future.get(timeout)` and use price limits that are met immediately, so they don't depend on random price changes.
 
@@ -210,12 +214,12 @@ The test suite lives in `src/test/java/bankprojekt`, in the same packages as the
 ## Troubleshooting
 - JavaFX runtime components are missing
   - Symptom: JVM exits before your code runs.
-  - Fix: Launch `bankprojekt.oberflaeche.Start` instead of `KontoAnwendung`:
+  - Fix: Start the UI with `./mvnw javafx:run`, or launch `bankprojekt.oberflaeche.Start` instead of `KontoAnwendung`:
     ```
-    mvn -q -Dexec.mainClass=bankprojekt.oberflaeche.Start exec:java
+    ./mvnw -q -Dexec.mainClass=bankprojekt.oberflaeche.Start exec:java
     ```
 - Java not found or wrong version
-  - Ensure JDK 21 is installed and active: `java -version` should show `21`.
+  - Ensure JDK 21 or newer is installed and active: `java -version` should show `21` or higher.
 - Number and date formats look different
   - Amounts and dates are printed in the format of your computer's language settings (e.g. `1,234.50 EUR` or `1.234,50 EUR`). This is intended; the tests pass with any setting.
 - An interactive demo stops at the second question when input is piped in
