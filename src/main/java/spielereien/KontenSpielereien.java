@@ -33,7 +33,6 @@ public class    KontenSpielereien {
      * Testprogramm für Konten
      * @param args wird nicht benutzt
      * @throws java.util.InputMismatchException wenn der Benutzer keine Zahl eingibt
-     * @throws NullPointerException wenn der Benutzer eine Zahl außer 1 und 2 eingibt
      * @throws GesperrtException wenn auf ein gesperrtes Konto eingezahlt wird (kommt hier nicht vor)
      */
     public static void main(String[] args) throws GesperrtException {
@@ -71,6 +70,12 @@ public class    KontenSpielereien {
             }
             case 2 -> {
                 k = new Sparbuch(ich, 9876);
+            }
+            default -> {
+                // Bisher blieb k bei jeder anderen Eingabe null und das Programm stürzte
+                // mit einer NullPointerException ab
+                System.out.println("Ungültige Auswahl " + nr + " - bitte 1 oder 2 eingeben.");
+                return;
             }
         }
 
