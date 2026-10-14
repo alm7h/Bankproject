@@ -133,6 +133,10 @@ public class Bank implements Serializable {
      * Methoden {@code girokontoErstellen}, {@code sparbuchErstellen} und
      * {@code mockEinfuegen}: Welcher Kontotyp entsteht, bestimmt allein die Fabrik;
      * die Bank ist nur noch für Nummernvergabe und Speicherung zuständig.
+     * <p>
+     * Scheitert das Erzeugen in der Fabrik (z. B. mit einer IllegalArgumentException),
+     * wird die Exception weitergegeben, kein Konto gespeichert und keine Kontonummer
+     * verbraucht.
      *
      * @param fabrik die Fabrik, die das gewünschte Konto erzeugt
      * @param inhaber der Kontoinhaber
@@ -142,8 +146,12 @@ public class Bank implements Serializable {
     public long kontoErstellen(Kontofabrik fabrik, Kunde inhaber) throws NullPointerException {
         if (fabrik == null) throw new NullPointerException("Fabrik ist null");
         if (inhaber == null) throw new NullPointerException("Kunde ist null");
-        long kontonummer = naechsteFreieKontonummer++;
+        long kontonummer = naechsteFreieKontonummer;
         Konto konto = fabrik.erstellen(inhaber, kontonummer);
+        // Der Zähler wird erst nach erfolgreichem Erzeugen erhöht. Bisher wurde er schon
+        // vorher erhöht, sodass eine in der Fabrik gescheiterte Kontoanlage eine
+        // Kontonummer verbrauchte, ohne dass ein Konto gespeichert wurde.
+        naechsteFreieKontonummer++;
         konten.put(kontonummer, konto);
         return kontonummer;
     }
