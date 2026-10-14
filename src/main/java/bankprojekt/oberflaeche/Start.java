@@ -3,7 +3,7 @@ package bankprojekt.oberflaeche;
 import javafx.application.Application;
 
 /**
- * Übung 13/14: Startklasse für die Konto-Anwendung.
+ * Startklasse für die Konto-Anwendung.
  * <p>
  * Diese Klasse erweitert bewusst <b>nicht</b> {@link Application}. Dadurch lässt
  * sich die JavaFX-Anwendung auch dann per „Run" starten, wenn JavaFX nur über
@@ -15,6 +15,7 @@ import javafx.application.Application;
  * Also: <b>diese Klasse ausführen</b>, nicht {@link KontoAnwendung}.
  *
  * @see KontoAnwendung
+ * @author m.alharethi
  */
 public class Start {
 
@@ -24,7 +25,7 @@ public class Start {
      * @param args Kommandozeilenargumente (werden nicht ausgewertet)
      */
     public static void main(String[] args) {
-        // Übung 14: startet jetzt die FXML-basierte KontoAnwendung
+        // Startet jetzt die FXML-basierte KontoAnwendung
         Application.launch(KontoAnwendung.class, args);
     }
 }

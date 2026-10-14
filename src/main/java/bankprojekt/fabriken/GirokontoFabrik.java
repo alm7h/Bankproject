@@ -6,7 +6,8 @@ import bankprojekt.basisdaten.Konto;
 import bankprojekt.basisdaten.Kunde;
 
 /**
- * Übung 11 b): konkrete Fabrik, die {@link Girokonto}en mit einem festen Dispo erzeugt.
+ * Konkrete Fabrik, die {@link Girokonto}en mit einem festen Dispo erzeugt.
+ * @author m.alharethi
  */
 public class GirokontoFabrik extends Kontofabrik {
 

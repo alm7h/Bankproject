@@ -10,7 +10,7 @@ import java.math.BigInteger;
 import bankprojekt.exceptions.GesperrtException;
 import bankprojekt.exceptions.UngueltigeKontonummerException;
 
-// Übung 13: JavaFX-Properties für Kontostand, Gesperrt-Zustand und die
+// JavaFX-Properties für Kontostand, Gesperrt-Zustand und die
 // Plus/Minus-Anzeige, damit die Oberfläche das Konto beobachten kann.
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
@@ -22,8 +22,9 @@ import javafx.beans.property.SimpleBooleanProperty;
 
 /**
  * Stellt ein allgemeines Bank-Konto dar
+ * @author m.alharethi
  */
-// Übung 10: Serializable an der Oberklasse ergänzt. Dadurch sind alle
+// Serializable an der Oberklasse ergänzt. Dadurch sind alle
 // Kontotypen (Girokonto, Sparbuch und künftige wie Aktienkonto) automatisch
 // serialisierbar, und die Bank kann beliebige Kontotypen speichern, ohne dass
 // die Speicher-/Lese-Methoden die konkreten Typen kennen müssen.
@@ -43,7 +44,7 @@ public abstract class Konto implements Comparable<Konto>, Serializable
      * Wenn das Konto gesperrt ist (gesperrt = true), können keine Aktionen daran mehr vorgenommen werden,
      * die zum Schaden des Kontoinhabers wären (abheben, Inhaberwechsel)
      */
-    // Übung 13 (c): Der Gesperrt-Zustand ist jetzt eine JavaFX-Property.
+    // Der Gesperrt-Zustand ist jetzt eine JavaFX-Property.
     // transient, weil Properties nicht serialisierbar sind; der boolesche Wert
     // wird in writeObject/readObject von Hand gesichert.
     private transient BooleanProperty gesperrt;
@@ -56,13 +57,13 @@ public abstract class Konto implements Comparable<Konto>, Serializable
     /**
      * der aktuelle Kontostand
      */
-    // Übung 13 (b): Der Kontostand steckt in einem ReadOnlyObjectWrapper, damit er
+    // Der Kontostand steckt in einem ReadOnlyObjectWrapper, damit er
     // von außen nur gelesen (kontostandProperty() liefert ReadOnlyObjectProperty),
     // aber nicht verändert werden kann. Ebenfalls transient (siehe writeObject/readObject).
     private transient ReadOnlyObjectWrapper<Geldbetrag> kontostand;
 
     /**
-     * Übung 13 (d): Zeigt an, ob der Kontostand im Plus (>= 0) oder im Minus ist.
+     * Zeigt an, ob der Kontostand im Plus (>= 0) oder im Minus ist.
      * Die Property ist über ein Binding an den Kontostand gekoppelt und wird
      * dadurch immer automatisch aktuell gehalten.
      */
@@ -84,12 +85,12 @@ public abstract class Konto implements Comparable<Konto>, Serializable
             throw new UngueltigeKontonummerException();
         this.inhaber = inhaber;
         this.nummer = kontonummer;
-        // Übung 13: Properties (Kontostand, Gesperrt, Plus/Minus) aufbauen
+        // Properties (Kontostand, Gesperrt, Plus/Minus) aufbauen
         eigenschaftenInitialisieren(Geldbetrag.NULL_EURO, false);
     }
 
     /**
-     * Übung 13: Baut die drei transienten Properties (Kontostand, Gesperrt-Zustand
+     * Baut die drei transienten Properties (Kontostand, Gesperrt-Zustand
      * und die Plus/Minus-Anzeige) auf und verknüpft die Plus/Minus-Property über
      * ein Binding fest mit dem Kontostand, sodass sie immer aktuell bleibt.
      * Wird sowohl vom Konstruktor als auch nach dem Deserialisieren aufgerufen.
@@ -126,11 +127,11 @@ public abstract class Konto implements Comparable<Konto>, Serializable
      * @return true, wenn das Konto gesperrt ist
      */
     public boolean isGesperrt() {
-        return gesperrt.get();   // Übung 13: Wert aus der Property lesen
+        return gesperrt.get();   // Wert aus der Property lesen
     }
 
     /**
-     * Übung 13 (c): Der Gesperrt-Zustand als Property, damit die Oberfläche ihn
+     * Der Gesperrt-Zustand als Property, damit die Oberfläche ihn
      * beobachten und anzeigen kann.
      * @return der Gesperrt-Zustand als BooleanProperty
      */
@@ -166,11 +167,11 @@ public abstract class Konto implements Comparable<Konto>, Serializable
      * @return   Kontostand
      */
     public Geldbetrag getKontostand() {
-        return kontostand.get();   // Übung 13: Wert aus der Property lesen
+        return kontostand.get();   // Wert aus der Property lesen
     }
 
     /**
-     * Übung 13 (b): Der Kontostand als von außen nur lesbare Property. Dadurch kann
+     * Der Kontostand als von außen nur lesbare Property. Dadurch kann
      * die Oberfläche den Kontostand beobachten, ihn aber nicht verändern.
      * @return der Kontostand als ReadOnlyObjectProperty
      */
@@ -179,7 +180,7 @@ public abstract class Konto implements Comparable<Konto>, Serializable
     }
 
     /**
-     * Übung 13 (d): Property, die anzeigt, ob der Kontostand im Plus (>= 0) ist.
+     * Property, die anzeigt, ob der Kontostand im Plus (>= 0) ist.
      * Sie wird automatisch über ein Binding an den Kontostand aktuell gehalten
      * und kann von außen nur gelesen werden.
      * @return true-Property, wenn der Kontostand nicht negativ ist
@@ -189,7 +190,7 @@ public abstract class Konto implements Comparable<Konto>, Serializable
     }
 
     /**
-     * Übung 13 (d): Liefert, ob der Kontostand aktuell im Plus (nicht negativ) ist.
+     * Liefert, ob der Kontostand aktuell im Plus (nicht negativ) ist.
      * @return true, wenn der Kontostand nicht negativ ist
      */
     public boolean isImPlus() {
@@ -202,7 +203,7 @@ public abstract class Konto implements Comparable<Konto>, Serializable
      */
     protected void setKontostand(Geldbetrag kontostand) {
         if(kontostand != null)
-            this.kontostand.set(kontostand);   // Übung 13: Wert in die Property schreiben
+            this.kontostand.set(kontostand);   // Wert in die Property schreiben
     }
 
     /**
@@ -258,11 +259,11 @@ public abstract class Konto implements Comparable<Konto>, Serializable
         setKontostand(getKontostand().plus(betrag));
     }
 
-    /** Übung 11:
+    /**
      * Mit dieser Methode wird der geforderte Betrag vom Konto in bar ausgezahlt, wenn es nicht gesperrt ist
      * und die speziellen Abheberegeln des jeweiligen Kontotyps die Abhebung erlauben.
      * <p>
-     * Übung 11: Diese Methode ist die <b>Template-Methode</b>. Sie legt den für alle
+     * Diese Methode ist die <b>Template-Methode</b>. Sie legt den für alle
      * Kontoarten gleichen Ablauf einer Abhebung ein für alle Mal fest:
      * <ol>
      *   <li>Prüfung der Parameter (nicht null, nicht negativ),</li>
@@ -293,7 +294,7 @@ public abstract class Konto implements Comparable<Konto>, Serializable
         return true;
     }
 
-    /** Übung 11:
+    /**
      * Einschubmethode (primitive Operation) der Template-Methode {@link #abheben(Geldbetrag)}.
      * Eine Unterklasse entscheidet hier nach ihren eigenen Regeln, ob die Abhebung
      * des angegebenen Betrags erlaubt ist. Wenn diese Methode aufgerufen wird, ist
@@ -309,7 +310,7 @@ public abstract class Konto implements Comparable<Konto>, Serializable
      */
     protected abstract boolean pruefeAbhebung(Geldbetrag betrag);
 
-    /** Übung 11:
+    /**
      * Einschubmethode (Haken) der Template-Methode {@link #abheben(Geldbetrag)}.
      * Sie wird nach einer erfolgreichen Abbuchung aufgerufen, damit eine Unterklasse
      * zusätzliche Buchführung erledigen kann (z. B. das Sparbuch die im Monat bereits
@@ -326,14 +327,14 @@ public abstract class Konto implements Comparable<Konto>, Serializable
      * Sperrt das Konto, sind Aktionen zum Schaden des Benutzers nicht mehr möglich.
      */
     public void sperren() {
-        this.gesperrt.set(true);   // Übung 13: Wert in die Property schreiben
+        this.gesperrt.set(true);   // Wert in die Property schreiben
     }
 
     /**
      * Entsperrt das Konto, alle Kontoaktionen sind wieder möglich.
      */
     public void entsperren() {
-        this.gesperrt.set(false);   // Übung 13: Wert in die Property schreiben
+        this.gesperrt.set(false);   // Wert in die Property schreiben
     }
 
     @Override
@@ -407,12 +408,12 @@ public abstract class Konto implements Comparable<Konto>, Serializable
         if (neu == null) {
             throw new NullPointerException("Die neue Währung darf nicht null");
         }
-        // Übung 13: Kontostand über die Property setzen (umgerechneter Wert)
+        // Kontostand über die Property setzen (umgerechneter Wert)
         this.kontostand.set(this.kontostand.get().umrechnen(neu));
     }
 
     /**
-     * Übung 13: Da Kontostand und Gesperrt-Zustand jetzt in transienten
+     * Da Kontostand und Gesperrt-Zustand jetzt in transienten
      * JavaFX-Properties stecken, werden ihre reinen Werte hier von Hand
      * mitserialisiert.
      * @param out der Ausgabestrom
@@ -426,7 +427,7 @@ public abstract class Konto implements Comparable<Konto>, Serializable
     }
 
     /**
-     * Übung 13: Baut nach dem Einlesen die transienten Properties wieder auf.
+     * Baut nach dem Einlesen die transienten Properties wieder auf.
      * @param in der Eingabestrom
      * @throws IOException bei einem Fehler beim Lesen
      * @throws ClassNotFoundException falls eine Klasse nicht gefunden wird

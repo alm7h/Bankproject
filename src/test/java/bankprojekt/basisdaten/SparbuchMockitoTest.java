@@ -13,6 +13,9 @@ import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * @author m.alharethi
+ */
 @ExtendWith(MockitoExtension.class)
 class SparbuchMockitoTest {
 
@@ -56,7 +59,7 @@ class SparbuchMockitoTest {
      * Prüft, dass das Limit nach einem Monatswechsel nur EINMAL zurückgesetzt wird
      * und nicht bei jeder weiteren Abhebung im neuen Monat erneut.
      *
-     * Gefundener Bug (Übung 00): In der ursprünglichen Implementierung wurde
+     * Gefundener Bug: In der ursprünglichen Implementierung wurde
      * 'zeitpunkt' in der abheben()-Methode nie auf das aktuelle Datum aktualisiert.
      * Dadurch wurde 'bereitsAbgehoben' bei JEDER Abhebung in einem anderen Monat
      * als dem Initialmonat erneut auf null zurückgesetzt – das monatliche Limit

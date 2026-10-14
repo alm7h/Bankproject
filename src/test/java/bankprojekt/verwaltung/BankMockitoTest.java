@@ -14,6 +14,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * @author m.alharethi
+ */
 @ExtendWith(MockitoExtension.class)
 class BankMockitoTest {
 
@@ -29,7 +32,7 @@ class BankMockitoTest {
     }
 
     /**
-     * Übung 11 b): Ersatz für die gelöschte Methode {@code Bank.mockEinfuegen}.
+     * Ersatz für die gelöschte Methode {@code Bank.mockEinfuegen}.
      * Statt das Mock-Konto direkt einzufügen, wird es über die neue Methode
      * {@link Bank#kontoErstellen(Kontofabrik, Kunde)} eingebracht – mit einer
      * Wegwerf-{@link Kontofabrik}, die genau dieses Mock-Konto liefert. Genau dafür

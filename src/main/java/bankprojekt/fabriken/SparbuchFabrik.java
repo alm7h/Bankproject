@@ -5,7 +5,8 @@ import bankprojekt.basisdaten.Kunde;
 import bankprojekt.basisdaten.Sparbuch;
 
 /**
- * Übung 11 b): konkrete Fabrik, die {@link Sparbuch}-Konten erzeugt.
+ * Konkrete Fabrik, die {@link Sparbuch}-Konten erzeugt.
+ * @author m.alharethi
  */
 public class SparbuchFabrik extends Kontofabrik {
 

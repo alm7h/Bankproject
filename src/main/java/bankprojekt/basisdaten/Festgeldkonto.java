@@ -3,7 +3,7 @@ package bankprojekt.basisdaten;
 import bankprojekt.exceptions.UngueltigeKontonummerException;
 
 /**
- * Übung 11: Ein Festgeldkonto. Abhebungen sind nur bis zu der Höhe erlaubt, die
+ * Ein Festgeldkonto. Abhebungen sind nur bis zu der Höhe erlaubt, die
  * zuvor über {@link #kuendigen(Geldbetrag)} gekündigt wurde. Ein einmal gekündigter
  * und abgehobener Betrag kann nicht erneut abgehoben werden.
  * <p>
@@ -11,6 +11,7 @@ import bankprojekt.exceptions.UngueltigeKontonummerException;
  * {@link Konto#abheben(Geldbetrag)}; das Festgeldkonto bringt seine Regel über
  * {@link #pruefeAbhebung(Geldbetrag)} ein und verringert in {@link #nachAbhebung(Geldbetrag)}
  * den noch gekündigten Betrag.
+ * @author m.alharethi
  */
 public class Festgeldkonto extends Konto {
     /**
@@ -67,7 +68,7 @@ public class Festgeldkonto extends Konto {
     }
 
     /**
-     * Übung 11: Einschubmethode der Template-Methode {@link Konto#abheben(Geldbetrag)}.
+     * Einschubmethode der Template-Methode {@link Konto#abheben(Geldbetrag)}.
      * Beim Festgeldkonto darf höchstens der zuvor gekündigte Betrag abgehoben werden.
      * (Da nie mehr gekündigt wird, als auf dem Konto liegt, kann der Kontostand dabei
      * nicht überzogen werden.)
@@ -81,7 +82,7 @@ public class Festgeldkonto extends Konto {
     }
 
     /**
-     * Übung 11: Nachbearbeitung der Template-Methode {@link Konto#abheben(Geldbetrag)}.
+     * Nachbearbeitung der Template-Methode {@link Konto#abheben(Geldbetrag)}.
      * Verringert nach einer erfolgreichen Abhebung den noch gekündigten Betrag, damit
      * derselbe gekündigte Betrag nicht erneut abgehoben werden kann.
      *

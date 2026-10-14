@@ -4,7 +4,7 @@ import bankprojekt.basisdaten.Konto;
 import bankprojekt.basisdaten.Kunde;
 
 /**
- * Übung 11 b): abstrakte Fabrik (Abstract-Factory-Muster) zur Erzeugung von Konten.
+ * Abstrakte Fabrik (Abstract-Factory-Muster) zur Erzeugung von Konten.
  * <p>
  * Eine konkrete Unterklasse kennt jeweils genau einen Kontotyp (und dessen
  * Konfiguration, z. B. den Dispo eines Girokontos) und erzeugt in
@@ -13,6 +13,7 @@ import bankprojekt.basisdaten.Kunde;
  * Sie vergibt die Kontonummer und speichert das Konto, überlässt das eigentliche
  * Erzeugen aber der Fabrik. Dadurch sind Erzeugung und Verwaltung der Konten
  * sauber getrennt.
+ * @author m.alharethi
  */
 public abstract class Kontofabrik {
 

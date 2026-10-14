@@ -11,6 +11,7 @@ import java.util.Arrays;
 /**
  * Klasse, um ein paar Konten und Kunden zu sortieren und Arrays.sort
  * zu nutzen
+ * @author m.alharethi
  */
 public class KundenUndKontenSortieren {
 	/**
@@ -39,7 +40,6 @@ public class KundenUndKontenSortieren {
 		Kunde[] kunden = {hans, otto, sabrina, doro, miriam, ernst};
 		Konto[] konten = {eins, zwei, drei, vier, fuenf, sechs};
 
-        //************************** Übung 1 *************************************************
 
         // Sortierung der Kunden nach Nachname, Vorname
         Arrays.sort(kunden);

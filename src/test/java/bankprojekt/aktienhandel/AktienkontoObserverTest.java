@@ -1,6 +1,6 @@
 package bankprojekt.aktienhandel;
 
-// Übung 12: Neuer Test für das Observer-Muster des Aktienkontos (Aufgabe 12 a).
+// Neuer Test für das Observer-Muster des Aktienkontos.
 // Geprüft wird mit Mockito, dass ein angemeldeter Beobachter bei jeder
 // Depotänderung (Kauf bzw. Verkauf von Aktien) korrekt benachrichtigt wird.
 import java.beans.PropertyChangeEvent;
@@ -18,17 +18,18 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Testet das Observer-Muster des {@link Aktienkonto}s (Übung 12 a).
+ * Testet das Observer-Muster des {@link Aktienkonto}s.
  * <p>
- * Wichtiger Hinweis aus der Aufgabenstellung: Die statischen Methoden von
+ * Wichtiger Hinweis: Die statischen Methoden von
  * {@link Aktie} lassen sich nicht mocken, deshalb wird mit einem "echten"
  * Aktie-Objekt gearbeitet. Höchstkaufpreis und Mindestverkaufpreis werden so
  * gewählt, dass Kauf bzw. Verkauf sofort (beim aktuellen Kurs) stattfinden.
  * Der Beobachter selbst ist ein Mockito-Mock, dessen Aufruf verifiziert wird.
+ * @author m.alharethi
  */
 class AktienkontoObserverTest {
 
-	// Übung 12: eindeutige WKN pro Testmethode, da Aktie alle Aktien statisch
+	// Eindeutige WKN pro Testmethode, da Aktie alle Aktien statisch
 	// verwaltet und den Konstruktor bei doppelter WKN abweist.
 	private static final Geldbetrag KURS = new Geldbetrag(100.0);
 
@@ -39,7 +40,7 @@ class AktienkontoObserverTest {
 	}
 
 
-	// Übung 12: Beim Kauf muss der Beobachter genau einmal benachrichtigt werden.
+	// Beim Kauf muss der Beobachter genau einmal benachrichtigt werden.
 	@Test
 	void beobachterWirdBeiKaufBenachrichtigt() throws Exception {
 		new Aktie("TESTKAUF", KURS);
@@ -65,7 +66,7 @@ class AktienkontoObserverTest {
 	}
 
 
-	// Übung 12: Beim Verkauf muss der Beobachter erneut benachrichtigt werden
+	// Beim Verkauf muss der Beobachter erneut benachrichtigt werden
 	// (alter Bestand -> 0).
 	@Test
 	void beobachterWirdBeiVerkaufBenachrichtigt() throws Exception {
@@ -94,7 +95,7 @@ class AktienkontoObserverTest {
 	}
 
 
-	// Übung 12: Ein abgemeldeter Beobachter darf nicht mehr benachrichtigt werden.
+	// Ein abgemeldeter Beobachter darf nicht mehr benachrichtigt werden.
 	@Test
 	void abgemeldeterBeobachterWirdNichtBenachrichtigt() throws Exception {
 		new Aktie("TESTABMELDE", KURS);

@@ -17,9 +17,10 @@ import javafx.beans.property.StringProperty;
 /**
  * Kunde einer Bank
  * @author Dorothea Hubrich
+ * @author m.alharethi
  */
 @SuppressWarnings("unused")
-// Übung 10: Serializable ergänzt, damit der Kontoinhaber mit dem
+// Serializable ergänzt, damit der Kontoinhaber mit dem
 // Bank-Objekt serialisiert werden kann (LocalDate und String sind bereits serialisierbar).
 public class Kunde implements Comparable<Kunde>, Serializable {
 
@@ -57,7 +58,7 @@ public class Kunde implements Comparable<Kunde>, Serializable {
     /**
      * Die Adresse
      */
-    // Übung 13: Die Adresse ist jetzt als JavaFX-Property verfügbar, damit die
+    // Die Adresse ist jetzt als JavaFX-Property verfügbar, damit die
     // Oberfläche sie direkt an ein Steuerelement binden kann. Das Feld ist
     // transient, weil JavaFX-Properties nicht serialisierbar sind; der reine
     // String-Wert wird in writeObject/readObject von Hand gesichert.
@@ -127,7 +128,7 @@ public class Kunde implements Comparable<Kunde>, Serializable {
      * @return Adresse des Kunden
      */
     public String getAdresse() {
-        return adresse.get();   // Übung 13: Wert aus der Property lesen
+        return adresse.get();   // Wert aus der Property lesen
     }
 
     /**
@@ -138,11 +139,11 @@ public class Kunde implements Comparable<Kunde>, Serializable {
     public void setAdresse(String adresse) throws NullPointerException {
         if(adresse == null)
             throw new NullPointerException("Adresse darf nicht null sein");
-        this.adresse.set(adresse);   // Übung 13: Wert in die Property schreiben
+        this.adresse.set(adresse);   // Wert in die Property schreiben
     }
 
     /**
-     * Übung 13: Die Adresse als Property, damit die Oberfläche sie beobachten
+     * Die Adresse als Property, damit die Oberfläche sie beobachten
      * und daran binden kann.
      * @return die Adresse als StringProperty
      */
@@ -279,7 +280,7 @@ public class Kunde implements Comparable<Kunde>, Serializable {
     }
 
     /**
-     * Übung 13: Da die Adresse jetzt in einer transienten JavaFX-Property steckt,
+     * Da die Adresse jetzt in einer transienten JavaFX-Property steckt,
      * wird ihr reiner String-Wert hier von Hand mitserialisiert.
      * @param out der Ausgabestrom
      * @throws IOException bei einem Fehler beim Schreiben
@@ -291,7 +292,7 @@ public class Kunde implements Comparable<Kunde>, Serializable {
     }
 
     /**
-     * Übung 13: Baut nach dem Einlesen die transiente Adress-Property wieder auf.
+     * Baut nach dem Einlesen die transiente Adress-Property wieder auf.
      * @param in der Eingabestrom
      * @throws IOException bei einem Fehler beim Lesen
      * @throws ClassNotFoundException falls eine Klasse nicht gefunden wird

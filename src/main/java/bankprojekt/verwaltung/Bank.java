@@ -1,5 +1,5 @@
 package bankprojekt.verwaltung;
-// Übung 10: Imports für die Serialisierung der Bank (speichern/einlesen).
+// Imports für die Serialisierung der Bank (speichern/einlesen).
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -21,8 +21,9 @@ import bankprojekt.fabriken.Kontofabrik;
 
 /**
  * Verwaltet Konten und Kunden einer Bank unter Verwendung von Java Collections.
+ * @author m.alharethi
  */
-// Übung 10: Serializable ergänzt, damit das gesamte Bank-Objekt über
+// Serializable ergänzt, damit das gesamte Bank-Objekt über
 // die Methoden speichern(...)/einlesen(...) gespeichert und geladen werden kann.
 public class Bank implements Serializable {
 
@@ -54,7 +55,7 @@ public class Bank implements Serializable {
         dispo_default = new Geldbetrag(500);
     }
 
-    // Übung 10: neue Methode zum Speichern der kompletten Bank.
+    // Neue Methode zum Speichern der kompletten Bank.
     /**
      * Speichert das komplette Bank-Objekt mit allen seinen Informationen
      * (Bankleitzahl, sämtliche Konten samt Inhabern und Kontoständen) in den
@@ -69,7 +70,7 @@ public class Bank implements Serializable {
      * @throws IOException wenn beim Schreiben etwas schiefgeht
      */
     public void speichern(OutputStream ziel) throws IOException {
-        // Übung 10: Der ObjectOutputStream wird bewusst NICHT geschlossen,
+        // Der ObjectOutputStream wird bewusst NICHT geschlossen,
         // damit der übergebene Strom offen bleibt und weiterverwendet werden kann
         // (z.B. um mehrere Banken in verschiedene Einträge eines ZipOutputStreams
         // zu schreiben). flush() stellt sicher, dass alle Bytes tatsächlich in den
@@ -79,7 +80,7 @@ public class Bank implements Serializable {
         oos.flush();
     }
 
-    // Übung 10: neue Methode zum Einlesen einer gespeicherten Bank.
+    // Neue Methode zum Einlesen einer gespeicherten Bank.
     /**
      * Liest aus der angegebenen Quelle ein zuvor mit {@link #speichern(OutputStream)}
      * gespeichertes Bank-Objekt ein.
@@ -93,7 +94,7 @@ public class Bank implements Serializable {
      */
     public static Bank einlesen(InputStream quelle) {
         try {
-            // Übung 10: Der ObjectInputStream wird bewusst NICHT geschlossen,
+            // Der ObjectInputStream wird bewusst NICHT geschlossen,
             // damit der übergebene Strom offen bleibt (z.B. ein ZipInputStream, aus dem
             // anschließend per getNextEntry() der nächste Eintrag gelesen werden soll).
             ObjectInputStream ois = new ObjectInputStream(quelle);
@@ -124,7 +125,7 @@ public class Bank implements Serializable {
     }
 
     /**
-     * Übung 11 b): Erstellt mit Hilfe der übergebenen {@link Kontofabrik} ein neues
+     * Erstellt mit Hilfe der übergebenen {@link Kontofabrik} ein neues
      * Konto für den angegebenen Inhaber, vergibt dafür eine neue Kontonummer und
      * speichert das Konto in der Bankverwaltung.
      * <p>
@@ -374,7 +375,6 @@ public class Bank implements Serializable {
     }
 
     // =====================================================================
-//                                 Übung 7a
 // =====================================================================
 
     /**

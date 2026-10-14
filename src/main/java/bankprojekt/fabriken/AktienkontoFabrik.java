@@ -5,9 +5,10 @@ import bankprojekt.basisdaten.Konto;
 import bankprojekt.basisdaten.Kunde;
 
 /**
- * Übung 11 b): konkrete Fabrik, die {@link Aktienkonto}-Konten erzeugt.
+ * Konkrete Fabrik, die {@link Aktienkonto}-Konten erzeugt.
  * Zeigt, dass auch ein in einem anderen Paket liegender Kontotyp ohne Änderung
  * der Bank nutzbar wird.
+ * @author m.alharethi
  */
 public class AktienkontoFabrik extends Kontofabrik {
 

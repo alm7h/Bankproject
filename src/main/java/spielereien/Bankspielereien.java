@@ -11,15 +11,16 @@ import bankprojekt.verwaltung.Bank;
 
 /**
  * probiert die Stream-Methoden der Bank-Klasse aus
+ * @author m.alharethi
  */
 public class Bankspielereien {
 	/**
-	 * Methoden zur Stream-Aufgabe ausprobieren
+	 * Probiert die Stream-Methoden der Bank-Klasse aus.
 	 * @param args wird nicht verwendet
 	 */
 	public static void main(String[] args) throws GesperrtException {
 		Bank bank = new Bank(12345);
-		// Übung 11 b): Konten werden jetzt über eine Kontofabrik erzeugt.
+		// Konten werden jetzt über eine Kontofabrik erzeugt.
 		GirokontoFabrik giroFabrik = new GirokontoFabrik(new Geldbetrag(500));
 		int aktuellesJahr = LocalDate.now().getYear();
 		Kunde opa = new Kunde("Opa", "Otto", "Altersheim", LocalDate.of(aktuellesJahr - 70, 3, 1));

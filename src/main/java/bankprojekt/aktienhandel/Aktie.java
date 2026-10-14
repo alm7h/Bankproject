@@ -19,12 +19,12 @@ import bankprojekt.basisdaten.Geldbetrag;
  * Eine Aktie, die ständig ihren Kurs verändert
  * @author Doro
  *
+ * @author m.alharethi
  */
 public class Aktie {
 	
 	private static Map<String, Aktie> alleAktien = new ConcurrentHashMap<>();
 
-	// Übung 9
 	/**
 	 * Gemeinsam genutzter ScheduledExecutorService, der die regelmäßigen
 	 * Kursänderungen ALLER Aktien steuert. Es werden Daemon-Threads verwendet,
@@ -49,7 +49,6 @@ public class Aktie {
 					});
 
 	private String wkn;
-	// Übung 9
 	/**
 	 * aktueller Kurs der Aktie.
 	 * Bemerkung: volatile, da der Kurs vom Scheduler-Thread geschrieben und
@@ -59,7 +58,7 @@ public class Aktie {
 	 */
 	private volatile Geldbetrag kurs;
 
-	// Übung 9
+
 	/**
 	 * Verwaltet die angemeldeten Beobachter und benachrichtigt sie bei jeder
 	 * Kursänderung. PropertyChangeSupport ist thread-sicher; das Feuern erfolgt
@@ -92,7 +91,7 @@ public class Aktie {
 		this.kurs = k;
 		alleAktien.put(wkn, this);
 
-		// Übung 9
+
 		// Bemerkung: Zufällige Zeitspanne zeit zwischen 1 und 5 Sekunden (beide
 		// inklusive). nextInt(1, 6) liefert Werte aus {1, 2, 3, 4, 5}.
 		int zeit = ThreadLocalRandom.current().nextInt(1, 6);
@@ -115,16 +114,16 @@ public class Aktie {
 	private void kursAendern() {
 		// Zufallszahl zwischen -3 und 3 (gerne mit Nachkommastellen)
 		double prozent = ThreadLocalRandom.current().nextDouble(-3.0, 3.0);
-		// Übung 9: alten Kurs merken, um die Beobachter zu informieren
+		// Alten Kurs merken, um die Beobachter zu informieren
 		Geldbetrag alterKurs = this.kurs;
 		// Kurs um diese Prozentzahl verändern: neuer Kurs = alter Kurs * (1 + p/100)
 		this.kurs = this.kurs.mal(1.0 + prozent / 100.0);
-		// Übung 9: alle angemeldeten Beobachter über die Kursänderung
+		// Alle angemeldeten Beobachter über die Kursänderung
 		// informieren (Grundlage für die Kauf-/Verkaufaufträge im Aktienkonto).
 		kursAenderungen.firePropertyChange("kurs", alterKurs, this.kurs);
 	}
 
-	// Übung 9
+
 	/**
 	 * Meldet einen Beobachter an, der bei jeder Kursänderung benachrichtigt wird.
 	 * @param beobachter der zu benachrichtigende Listener
@@ -133,7 +132,7 @@ public class Aktie {
 		kursAenderungen.addPropertyChangeListener(beobachter);
 	}
 
-	// Übung 9
+
 	/**
 	 * Meldet einen zuvor angemeldeten Beobachter wieder ab.
 	 * @param beobachter der abzumeldende Listener
@@ -157,16 +156,4 @@ public class Aktie {
 	public Geldbetrag getKurs() {
 		return kurs;
 	}
-
-	// =========================================================================
-	// Übung 9:
-	// - Importe für ExecutorService/ScheduledExecutorService ergänzt
-	// - statischen, gemeinsamen ScheduledExecutorService mit Daemon-Threads
-	//   hinzugefügt (KURS_SCHEDULER)
-	// - Feld kurs auf volatile umgestellt (Thread-Sichtbarkeit)
-	// - Konstruktor startet die periodische Kursänderung alle 'zeit' (1-5) Sekunden
-	// - private Methode kursAendern() für die zufällige Kursänderung (-3% .. +3%)
-	// Die Thread-Steuerung erfolgt ausschließlich über den ExecutorService:
-	// kein sleep(), kein new Thread(), kein wait/notify.
-	// =========================================================================
 }

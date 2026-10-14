@@ -1,7 +1,5 @@
 package spielereien;
 
-// Übung 10: neues Hauptprogramm zum Aufgabenteil a)
-// (mehrere Bank-Objekte in einer zip-Datei speichern und wieder einlesen).
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -21,6 +19,7 @@ import bankprojekt.verwaltung.Bank;
  * Demonstriert die in {@link Bank#speichern(java.io.OutputStream)} und
  * {@link Bank#einlesen(java.io.InputStream)} ergänzte Persistenz zusammen mit
  * {@link ZipOutputStream}/{@link ZipInputStream}.
+ * @author m.alharethi
  */
 public class BankPersistenzSpielereien {
 

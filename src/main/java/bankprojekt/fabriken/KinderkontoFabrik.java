@@ -5,8 +5,9 @@ import bankprojekt.basisdaten.Konto;
 import bankprojekt.basisdaten.Kunde;
 
 /**
- * Übung 11 b): konkrete Fabrik, die {@link Kinderkonto}-Konten erzeugt.
+ * Konkrete Fabrik, die {@link Kinderkonto}-Konten erzeugt.
  * Zeigt, dass ein neuer Kontotyp ohne Änderung der Bank nutzbar wird.
+ * @author m.alharethi
  */
 public class KinderkontoFabrik extends Kontofabrik {
 

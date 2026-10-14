@@ -3,12 +3,13 @@ package bankprojekt.basisdaten;
 import bankprojekt.exceptions.UngueltigeKontonummerException;
 
 /**
- * Übung 11: Ein Kinderkonto. Hier darf pro Abhebung höchstens 50,- € abgehoben
+ * Ein Kinderkonto. Hier darf pro Abhebung höchstens 50,- € abgehoben
  * werden, und der Kontostand darf dabei nicht überzogen werden (kein Dispo).
  * <p>
  * Die gemeinsame Ablauflogik der Abhebung (Parameter- und Sperrprüfung, Abbuchung)
  * steckt in der Template-Methode {@link Konto#abheben(Geldbetrag)}; das Kinderkonto
  * steuert nur seine eigene Regel über die Einschubmethode {@link #pruefeAbhebung(Geldbetrag)} bei.
+ * @author m.alharethi
  */
 public class Kinderkonto extends Konto {
     /**
@@ -40,7 +41,7 @@ public class Kinderkonto extends Konto {
     }
 
     /**
-     * Übung 11: Einschubmethode der Template-Methode {@link Konto#abheben(Geldbetrag)}.
+     * Einschubmethode der Template-Methode {@link Konto#abheben(Geldbetrag)}.
      * Beim Kinderkonto sind höchstens {@link #MAX_ABHEBUNG} pro Abhebung erlaubt und
      * der Kontostand darf nicht überzogen werden.
      *

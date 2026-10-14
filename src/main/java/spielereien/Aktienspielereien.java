@@ -1,6 +1,5 @@
 package spielereien;
 
-// Übung 9: komplette Klasse neu erstellt (Aufgabe 3 - Hauptprogramm).
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -33,10 +32,10 @@ import bankprojekt.basisdaten.Geldbetrag;
  * Hinweis: Nur dieses Programm der Präsentationsschicht gibt etwas auf der
  * Konsole aus; die Verarbeitungsschicht (Aktie, Aktienkonto, Konto) bleibt
  * vollständig ausgabefrei.
+ * @author m.alharethi
  */
 public class Aktienspielereien {
 
-	// Übung 9
 	/**
 	 * Verknüpft die Beschreibung eines Auftrags mit seinem Future, damit das
 	 * Ergebnis später passend beschriftet ausgegeben werden kann.
@@ -45,7 +44,6 @@ public class Aktienspielereien {
 	 */
 	private record Auftrag(String beschreibung, Future<Geldbetrag> future) {}
 
-	// Übung 9
 	/**
 	 * Hauptprogramm.
 	 * @param args wird nicht benutzt
@@ -125,7 +123,6 @@ public class Aktienspielereien {
 		kursanzeige.shutdownNow();
 	}
 
-	// Übung 9
 	/**
 	 * Hilfsmethode: holt das Ergebnis eines Auftrags-Futures (sofortige Aufträge).
 	 * @param future das Future
@@ -139,7 +136,6 @@ public class Aktienspielereien {
 		}
 	}
 
-	// Übung 9
 	/**
 	 * Hilfsmethode für die einheitliche Ergebnisausgabe.
 	 */
@@ -147,7 +143,6 @@ public class Aktienspielereien {
 		System.out.println(beschreibung + "  ->  " + betrag);
 	}
 
-	// Übung 9
 	/**
 	 * Hilfsmethode: aktuelle Kurse der drei Aktien als Text.
 	 */

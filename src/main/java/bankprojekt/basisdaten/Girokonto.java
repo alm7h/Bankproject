@@ -10,6 +10,7 @@ import bankprojekt.exceptions.UngueltigeKontonummerException;
  * zu einem Kontostand von -this.dispo
  * @author Doro
  *
+ * @author m.alharethi
  */
 public class Girokonto extends UeberweisungsfaehigesKonto{
     /**
@@ -95,7 +96,7 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
     }
 
     /**
-     * Übung 11: Einschubmethode der Template-Methode {@link Konto#abheben(Geldbetrag)}.
+     * Einschubmethode der Template-Methode {@link Konto#abheben(Geldbetrag)}.
      * Beim Girokonto darf bis zur Höhe des Dispos überzogen werden, d. h. die Abhebung
      * ist erlaubt, solange der Kontostand danach nicht unter {@code -dispo} fällt.
      *

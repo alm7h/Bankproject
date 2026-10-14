@@ -5,8 +5,9 @@ import bankprojekt.basisdaten.Konto;
 import bankprojekt.basisdaten.Kunde;
 
 /**
- * Übung 11 b): konkrete Fabrik, die {@link Festgeldkonto}-Konten erzeugt.
+ * Konkrete Fabrik, die {@link Festgeldkonto}-Konten erzeugt.
  * Zeigt, dass ein neuer Kontotyp ohne Änderung der Bank nutzbar wird.
+ * @author m.alharethi
  */
 public class FestgeldkontoFabrik extends Kontofabrik {
 

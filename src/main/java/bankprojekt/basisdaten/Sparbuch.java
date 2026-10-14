@@ -12,6 +12,7 @@ import bankprojekt.nuetzliches.Kalender;
  * des heutigen Datums (was die Zuordnung zweier Abhebungen zu einem gemeinsamen
  * Monat bestimmt) kann ein Kalender-Objekt angegeben werden. 
  * @author Doro
+ * @author m.alharethi
  */
 public class Sparbuch extends Konto {
     /**
@@ -84,7 +85,7 @@ public class Sparbuch extends Konto {
     }
 
     /**
-     * Übung 11: Einschubmethode der Template-Methode {@link Konto#abheben(Geldbetrag)}.
+     * Einschubmethode der Template-Methode {@link Konto#abheben(Geldbetrag)}.
      * Prüft die Abhebe-Bedingungen des Sparbuchs: Der Kontostand darf nach der Abhebung
      * nicht unter das {@link #MINIMUM} fallen und die im laufenden Monat insgesamt
      * abgehobene Summe darf {@link #ABHEBESUMME} nicht überschreiten. Beim Übergang in
@@ -99,7 +100,7 @@ public class Sparbuch extends Konto {
         if (heute.getMonth() != zeitpunkt.getMonth() || heute.getYear() != zeitpunkt.getYear()) {
             bereitsAbgehoben = Geldbetrag.NULL_EURO;
 
-            // FEHLERKORREKTUR (Übung 06): zeitpunkt MUSS hier sofort auf 'heute' gesetzt werden.
+            // FEHLERKORREKTUR: zeitpunkt MUSS hier sofort auf 'heute' gesetzt werden.
             // Ohne dieses Update blieb zeitpunkt immer auf dem alten Datum (z.B. dem
             // Initialmonat). Dadurch wurde bereitsAbgehoben bei JEDER Abhebung in einem
             // anderen Monat erneut auf null zurückgesetzt – das monatliche Limit von 2000€
@@ -115,7 +116,7 @@ public class Sparbuch extends Konto {
     }
 
     /**
-     * Übung 11: Nachbearbeitung der Template-Methode {@link Konto#abheben(Geldbetrag)}.
+     * Nachbearbeitung der Template-Methode {@link Konto#abheben(Geldbetrag)}.
      * Schreibt nach einer erfolgreichen Abhebung die im laufenden Monat bereits
      * abgehobene Summe fort und merkt sich den Zeitpunkt der Abhebung.
      *

@@ -1,20 +1,16 @@
 package bankprojekt.aktienhandel;
 
-// Übung 9: komplette Klasse neu erstellt (Aufgabe 2) und auf
-// ExecutorService.submit(...) zur Threadsteuerung umgestellt.
+
 import java.beans.PropertyChangeListener;
 
-// Übung 12: PropertyChangeSupport importiert, damit das Aktienkonto als
+// PropertyChangeSupport importiert, damit das Aktienkonto als
 // beobachtetes Subjekt seine Beobachter über Depotänderungen (Kauf/Verkauf)
-// informieren kann (Observer-Muster, Aufgabe 12 a).
+// informieren kann (Observer-Muster).
 import java.beans.PropertyChangeSupport;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
+import java.util.function.Predicate;
 
 import bankprojekt.basisdaten.Geldbetrag;
 import bankprojekt.basisdaten.Konto;
@@ -26,7 +22,7 @@ import bankprojekt.basisdaten.Kunde;
  * der Kurs einen gewünschten Grenzpreis erreicht.
  * <p>
  * Threadsteuerung (Vorgabe): Beide Auftragsmethoden reichen ihre Arbeit über
- * {@link ExecutorService#submit(java.util.concurrent.Callable)} an einen
+ * {@link ExecutorService#submit(Callable)} an einen
  * ExecutorService und liefern dessen {@link Future} zurück. Das "asynchrone
  * Warten" auf den passenden Kurs erfolgt OHNE sleep()/wait()/notify(): Der
  * ausgeführte Callable blockiert auf einer {@link BlockingQueue}, die vom
@@ -34,11 +30,11 @@ import bankprojekt.basisdaten.Kunde;
  * Es werden also ausschließlich die neueren ExecutorServices verwendet,
  * KEIN sleep(), KEIN new Thread(), KEIN wait/notify.
  *
- * Übung 9: komplette Klasse neu erstellt.
+ * @author m.alharethi
  */
 public class Aktienkonto extends Konto {
 
-	// Übung 9
+
 	/**
 	 * Gemeinsam genutzter ExecutorService, der die Kauf-/Verkaufaufträge aller
 	 * Aktienkonten ausführt. Es werden Daemon-Threads verwendet, damit die JVM
@@ -53,7 +49,7 @@ public class Aktienkonto extends Konto {
 				return t;
 			});
 
-	// Übung 9
+
 	/**
 	 * Das Aktiendepot: ordnet jeder im Depot enthaltenen Wertpapierkennnummer (WKN)
 	 * die aktuell gehaltene Stückzahl zu. Alle Zugriffe erfolgen unter
@@ -63,14 +59,10 @@ public class Aktienkonto extends Konto {
 	private final Map<String, Integer> depot = new HashMap<>();
 
 
-	// Übung 12: Das Aktienkonto ist das beobachtete Subjekt des Observer-Musters.
-	// Über diesen PropertyChangeSupport werden die angemeldeten Beobachter bei
-	// jeder Aenderung des Depotbestands (Aktien kommen hinzu oder werden entfernt)
-	// benachrichtigt - NICHT bei bloßen Kursänderungen. PropertyChangeSupport ist
-	// thread-sicher, das Feuern erfolgt aus den Worker-Threads der Aufträge heraus.
+
 	private final PropertyChangeSupport depotAenderungen = new PropertyChangeSupport(this);
 
-	// Übung 9
+
 	/**
 	 * erstellt ein Aktienkonto für den angegebenen Inhaber mit der angegebenen
 	 * Kontonummer und einem anfänglichen Kontostand von 0.
@@ -81,7 +73,7 @@ public class Aktienkonto extends Konto {
 		super(inhaber, kontonummer);
 	}
 
-	// Übung 9
+
 	/**
 	 * erstellt ein Standard-Aktienkonto (Max Mustermann).
 	 */
@@ -90,12 +82,6 @@ public class Aktienkonto extends Konto {
 	}
 
 
-	// Übung 11 (Bemerkung): Die frühere überschriebene abheben()-Methode wurde durch
-	// die Einschubmethode pruefeAbhebung() ersetzt, da abheben() jetzt die finale
-	// Template-Methode in Konto ist. Die Prüfregel bleibt identisch (Abheben nur, bis
-	// der Kontostand 0 erreicht). Die Synchronisation übernimmt nun die synchronized
-	// Template-Methode Konto.abheben(); deshalb braucht pruefeAbhebung() selbst kein
-	// synchronized (sie läuft stets unter dem Lock von abheben()).
 	/**
 	 * Einschubmethode der Template-Methode {@link Konto#abheben(Geldbetrag)}.
 	 * Beim Aktienkonto ist Abheben nur möglich, bis der Kontostand auf 0 sinkt;
@@ -109,7 +95,7 @@ public class Aktienkonto extends Konto {
 		return !getKontostand().minus(betrag).isNegativ();
 	}
 
-	// Übung 9
+
 	/**
 	 * Zahlt den angegebenen Betrag ein. Ueberschrieben nur, um die Einzahlung mit
 	 * den Kauf-/Verkaufaufträgen über denselben Lock zu synchronisieren.
@@ -120,7 +106,7 @@ public class Aktienkonto extends Konto {
 		super.einzahlen(betrag);
 	}
 
-	// Übung 9
+
 	/**
 	 * Wartet asynchron, bis der Kurs der Aktie mit der angegebenen WKN unter den
 	 * Höchstpreis gefallen ist, und kauft dann anzahl Stück davon (vermindert den
@@ -129,7 +115,7 @@ public class Aktienkonto extends Konto {
 	 *
 	 * @param wkn Wertpapierkennnummer der gewünschten Aktie
 	 * @param anzahl gewünschte Stückzahl
-	 * @param höchstpreis Kurs, unter den der Aktienkurs fallen muss, bevor gekauft wird
+	 * @param hoechstpreis Kurs, unter den der Aktienkurs fallen muss, bevor gekauft wird
 	 * @return Future auf den tatsächlich bezahlten Gesamtkaufpreis (0 €, wenn nicht gekauft wurde)
 	 */
 	public Future<Geldbetrag> kaufauftrag(String wkn, int anzahl, Geldbetrag hoechstpreis) {
@@ -146,13 +132,13 @@ public class Aktienkonto extends Konto {
 				Geldbetrag gesamtpreis = kurs.mal(anzahl);
 				if (abheben(gesamtpreis)) {
 
-					// Übung 12: alten Bestand merken, damit die Beobachter über die
+					// Alten Bestand merken, damit die Beobachter über die
 					// konkrete Aenderung (alter -> neuer Bestand dieser WKN) informiert
 					// werden können.
 					int alterBestand = depot.getOrDefault(wkn, 0);
 					depot.merge(wkn, anzahl, Integer::sum);
 					int neuerBestand = depot.get(wkn);
-					// Übung 12: Beobachter über den Zuwachs im Depot benachrichtigen
+					// Beobachter über den Zuwachs im Depot benachrichtigen
 					// (Property-Name = WKN, alter/neuer Bestand als Werte).
 					depotAenderungen.firePropertyChange(wkn, alterBestand, neuerBestand);
 					return gesamtpreis;
@@ -163,7 +149,7 @@ public class Aktienkonto extends Konto {
 		});
 	}
 
-	// Übung 9
+
 	/**
 	 * Gibt es keine Aktie mit der gewünschten WKN im Depot, findet kein Verkauf
 	 * statt (Ergebnis 0 €). Andernfalls wird asynchron gewartet, bis der Kurs den
@@ -195,7 +181,7 @@ public class Aktienkonto extends Konto {
 				Geldbetrag erloes = kurs.mal(bestand);
 				depot.remove(wkn);   // kompletten Bestand dieser Aktie verkaufen
 
-				// Übung 12: Beobachter über das Entfernen der Aktien aus dem Depot
+				// Beobachter über das Entfernen der Aktien aus dem Depot
 				// benachrichtigen (alter Bestand -> 0 für diese WKN).
 				depotAenderungen.firePropertyChange(wkn, bestand, 0);
 				einzahlen(erloes);   // Erlös dem Kontostand gutschreiben
@@ -204,7 +190,7 @@ public class Aktienkonto extends Konto {
 		});
 	}
 
-	// Übung 9
+
 	/**
 	 * Blockiert den aufrufenden (Worker-)Thread, bis der Kurs der Aktie die
 	 * angegebene Bedingung erfüllt, und liefert diesen Kurs zurück.
@@ -220,7 +206,7 @@ public class Aktienkonto extends Konto {
 	 * @throws InterruptedException wenn der Worker-Thread unterbrochen wird
 	 */
 	private static Geldbetrag warteAufKurs(Aktie aktie,
-	                                       java.util.function.Predicate<Geldbetrag> bedingung)
+	                                       Predicate<Geldbetrag> bedingung)
 			throws InterruptedException {
 		BlockingQueue<Geldbetrag> kursupdates = new LinkedBlockingQueue<>();
 		PropertyChangeListener beobachter =
@@ -237,7 +223,7 @@ public class Aktienkonto extends Konto {
 		}
 	}
 
-	// Übung 9
+
 	/**
 	 * Liefert die aktuell im Depot gehaltene Stückzahl der angegebenen WKN.
 	 * (Hilfsmethode, z. B. für Tests.)
@@ -249,7 +235,7 @@ public class Aktienkonto extends Konto {
 	}
 
 
-	// Übung 12: An-/Abmeldung der Beobachter (Observer-Muster). Das Aktienkonto ist
+	// An-/Abmeldung der Beobachter (Observer-Muster). Das Aktienkonto ist
 	// das beobachtete Subjekt; ein angemeldeter Beobachter wird bei jeder
 	// Depotänderung (Kauf/Verkauf) über propertyChange(...) benachrichtigt.
 	/**
@@ -262,7 +248,7 @@ public class Aktienkonto extends Konto {
 	}
 
 
-	// Übung 12: Gegenstück zur Anmeldung eines Depot-Beobachters.
+	// Gegenstück zur Anmeldung eines Depot-Beobachters.
 	/**
 	 * Meldet einen zuvor angemeldeten Depot-Beobachter wieder ab.
 	 * @param beobachter der abzumeldende Listener

@@ -5,8 +5,9 @@ import java.time.LocalDate;
 
 /**
  * Bereitstellung des heutigen Datums
+ * @author m.alharethi
  */
-// Übung 10: Serializable ergänzt, da ein Sparbuch ein Kalender-Objekt hält
+// Serializable ergänzt, da ein Sparbuch ein Kalender-Objekt hält
 // und damit beim Speichern der Bank mit serialisiert werden muss.
 public class Kalender implements Serializable {
 	/**
