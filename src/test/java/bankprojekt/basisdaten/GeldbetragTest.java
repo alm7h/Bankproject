@@ -297,9 +297,11 @@ class GeldbetragTest {
 
         @Test
         void equals_falseBeiNullUndFremdemTyp() {
+            // equals direkt aufrufen: assertNotEquals(null, x) bzw. assertNotEquals("…", x)
+            // würde nicht Geldbetrag.equals, sondern nur die Nullprüfung bzw. String.equals ausführen
             Geldbetrag g = new Geldbetrag(1);
-            assertNotEquals(null, g);
-            assertNotEquals("1,00 EUR", g);
+            assertFalse(g.equals(null));
+            assertFalse(g.equals("1,00 EUR"));
         }
 
         @Test

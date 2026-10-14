@@ -185,10 +185,18 @@ class KundeTest {
         }
 
         @Test
-        void equals_falseBeiNullUndFremdemTyp() {
+        void equals_trueFuerDasselbeObjekt() {
             Kunde k = neuerKunde();
-            assertNotEquals(null, k);
-            assertNotEquals("Müller, Max", k);
+            assertTrue(k.equals(k));
+        }
+
+        @Test
+        void equals_falseBeiNullUndFremdemTyp() {
+            // equals direkt aufrufen: assertNotEquals(null, x) bzw. assertNotEquals("…", x)
+            // würde nicht Kunde.equals, sondern nur die Nullprüfung bzw. String.equals ausführen
+            Kunde k = neuerKunde();
+            assertFalse(k.equals(null));
+            assertFalse(k.equals("Müller, Max"));
         }
 
         @Test
