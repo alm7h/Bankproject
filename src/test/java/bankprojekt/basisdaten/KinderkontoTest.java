@@ -118,6 +118,17 @@ class KinderkontoTest {
         }
 
         @Test
+        void restguthaben_kannCentgenauAbgehobenWerden() throws GesperrtException {
+            // vor der Cent-Rundung in Geldbetrag blieben 0,09999999999999998 € übrig,
+            // und die Abhebung der restlichen 0,10 € wurde als Überziehung abgelehnt
+            Kinderkonto knapp = new Kinderkonto(inhaber, 4711);
+            knapp.einzahlen(new Geldbetrag(1));
+            assertTrue(knapp.abheben(new Geldbetrag(0.9)));
+            assertTrue(knapp.abheben(new Geldbetrag(0.1)));
+            assertEquals(Geldbetrag.NULL_EURO, knapp.getKontostand());
+        }
+
+        @Test
         void abheben_gibtFalse_beiLeeremKonto() throws GesperrtException {
             Kinderkonto leer = new Kinderkonto(inhaber, 4711);
             assertFalse(leer.abheben(new Geldbetrag(0.01)), "Kein Dispo beim Kinderkonto");

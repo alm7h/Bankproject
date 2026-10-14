@@ -203,6 +203,43 @@ class GeldbetragTest {
         }
     }
 
+    /**
+     * Ergebnisse von plus, minus und mal werden auf Cent gerundet, damit sich keine
+     * double-Rundungsfehler über mehrere Buchungen aufsummieren. Hier wird bewusst
+     * exakt (ohne DELTA) verglichen.
+     */
+    @Nested
+    class CentRundungTests {
+        @Test
+        void plus_liefertExaktenCentbetrag() {
+            // ohne Rundung: 0.30000000000000004
+            assertEquals(0.3, new Geldbetrag(0.1).plus(new Geldbetrag(0.2)).getBetrag());
+            assertEquals(new Geldbetrag(0.3), new Geldbetrag(0.1).plus(new Geldbetrag(0.2)));
+        }
+
+        @Test
+        void minus_liefertExaktenCentbetrag() {
+            // ohne Rundung: 0.09999999999999998
+            assertEquals(0.1, new Geldbetrag(1).minus(new Geldbetrag(0.9)).getBetrag());
+        }
+
+        @Test
+        void mehrereBuchungen_summierenKeinenFehlerAuf() {
+            Geldbetrag rest = new Geldbetrag(100);
+            for (int i = 0; i < 3; i++) {
+                rest = rest.minus(new Geldbetrag(33.33));
+            }
+            assertEquals(0.01, rest.getBetrag());
+        }
+
+        @Test
+        void mal_rundetAufCent() {
+            assertEquals(3.33, new Geldbetrag(10).mal(1.0 / 3).getBetrag());
+            assertEquals(0.67, new Geldbetrag(2).mal(1.0 / 3).getBetrag());
+            assertEquals(-3.33, new Geldbetrag(10).mal(-1.0 / 3).getBetrag());
+        }
+    }
+
     @Nested
     class UmrechnenTests {
         @Test
