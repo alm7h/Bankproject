@@ -279,13 +279,19 @@ class KundenportalTest {
 
         @Test
         void ueberweisen_nurVomGirokonto_undNurAnAktiveGirokonten() {
-            assertThrows(IllegalStateException.class,
+            // Die Meldung wird mitgeprüft: Die Bank lehnt solche Überweisungen ohnehin ab, meldet
+            // dann aber nur "nicht gedeckt" – der Kunde soll den eigentlichen Grund erfahren.
+            IllegalStateException vomSparbuch = assertThrows(IllegalStateException.class,
                     () -> portal.ueberweisen(anna, spar.getKontonummer(), bertGiro.getIban(), new Geldbetrag(1), ""));
-            assertThrows(IllegalStateException.class,
+            assertEquals("Überweisungen sind nur von einem Girokonto aus möglich.", vomSparbuch.getMessage());
+            IllegalStateException aufsSparbuch = assertThrows(IllegalStateException.class,
                     () -> portal.ueberweisen(anna, giro.getKontonummer(), spar.getIban(), new Geldbetrag(1), ""));
+            assertEquals("Das Empfängerkonto kann keine Überweisungen empfangen.", aufsSparbuch.getMessage());
             verwaltung.kontoSperren(admin, bertGiro.getKontonummer());
-            assertThrows(IllegalStateException.class,
+            IllegalStateException aufsGesperrte = assertThrows(IllegalStateException.class,
                     () -> portal.ueberweisen(anna, giro.getKontonummer(), bertGiro.getIban(), new Geldbetrag(1), ""));
+            assertEquals("Das Empfängerkonto kann keine Überweisungen empfangen.", aufsGesperrte.getMessage());
+            assertEquals(new Geldbetrag(200), giro.getKontostand(), "nichts abgebucht");
         }
 
         @Test
