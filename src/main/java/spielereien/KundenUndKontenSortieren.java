@@ -32,19 +32,19 @@ public class KundenUndKontenSortieren {
 		Kunde hans = new Kunde("Hans", "Meier", "Unterm Regenbogen 19", LocalDate.of(1990, 1, 5));
 		Kunde otto = new Kunde("Otto", "Kar", "Hoch über den Wolken 7", LocalDate.of(1992, 2, 25));
 		Kunde sabrina = new Kunde("Sabrina", "August", "Im Wald 15", LocalDate.of(1988, 3, 21));
-		Kunde doro = new Kunde("Doro", "Hubrich", "Zuhause", LocalDate.of(1976, 7, 13));
+		Kunde lena = new Kunde("Lena", "Hoffmann", "Zuhause", LocalDate.of(1980, 4, 12));
 		Kunde miriam = new Kunde("Miriam", "Andres", "Woanders 17", LocalDate.of(2002, 7, 15));
 		Kunde ernst = new Kunde("Ernst", "August", "Im Wald 15", LocalDate.of(1989, 3, 1));
 		
 		// Ein Dispo von 0 ist nicht mehr erlaubt, daher der übliche Standarddispo von 500 Euro
 		Konto eins = new Girokonto(hans, 123, new Geldbetrag(500));
 		Konto zwei = new Sparbuch(otto, 234);
-		Konto drei = new Sparbuch(doro, 333);
+		Konto drei = new Sparbuch(lena, 333);
 		Konto vier = new Girokonto(sabrina, 432, new Geldbetrag(500));
 		Konto fuenf = new Sparbuch(miriam, 987);
 		Konto sechs = new Girokonto(ernst, 945, new Geldbetrag(500));
 		
-		Kunde[] kunden = {hans, otto, sabrina, doro, miriam, ernst};
+		Kunde[] kunden = {hans, otto, sabrina, lena, miriam, ernst};
 		Konto[] konten = {eins, zwei, drei, vier, fuenf, sechs};
 
 

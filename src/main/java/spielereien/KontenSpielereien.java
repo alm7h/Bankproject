@@ -47,7 +47,7 @@ public class    KontenSpielereien {
 
 
 
-        Kunde ich = new Kunde("Dorothea", "Hubrich", "zuhause", LocalDate.parse("1976-07-13"));
+        Kunde ich = new Kunde("Lena", "Hoffmann", "zuhause", LocalDate.parse("1980-04-12"));
 
         Girokonto k1 = new Girokonto(ich, 999, new Geldbetrag(500));
         //letzter Parameter ist der Dispo
