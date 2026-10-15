@@ -94,6 +94,11 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <!-- jeder Testlauf beginnt mit frischen Daten; sonst könnten Ergebnisse
+                                 eines früheren Laufs eine gesunkene Abdeckung verdecken -->
+                            <append>false</append>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>report</id>
@@ -105,9 +110,46 @@
                             <includes>
                                 <include>bankprojekt/**</include>
                             </includes>
-                            <excludes>
-                                <exclude>bankprojekt/oberflaeche/**</exclude>
-                            </excludes>
+                        </configuration>
+                    </execution>
+                    <!-- Mindestabdeckung: Jede Klasse der Verwaltung und der Oberfläche muss zu
+                         mindestens 90 % (Zeilen und Zweige) getestet sein, sonst scheitert mvn verify.
+                         Ausgenommen sind nur die beiden JavaFX-Einstiegspunkte: Start ruft
+                         Application.launch auf (nur einmal pro JVM möglich und blockierend),
+                         BankAnwendung.start zeigt das Fenster bzw. beendet JavaFX. Ihre Logik steckt
+                         in der getesteten Fenstersteuerung. -->
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>CLASS</element>
+                                    <includes>
+                                        <include>bankprojekt.verwaltung.*</include>
+                                        <include>bankprojekt.oberflaeche.*</include>
+                                    </includes>
+                                    <excludes>
+                                        <exclude>bankprojekt.oberflaeche.Start</exclude>
+                                        <exclude>bankprojekt.oberflaeche.BankAnwendung</exclude>
+                                    </excludes>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.90</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.90</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
                         </configuration>
                     </execution>
                 </executions>

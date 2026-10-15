@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Formular zum Eröffnen eines Kontos. Kontonummer, IBAN und der
+     Eröffnungssaldo 0 werden automatisch vergeben. -->
+
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+
+<GridPane xmlns="http://javafx.com/javafx"
+          xmlns:fx="http://javafx.com/fxml"
+          fx:controller="bankprojekt.oberflaeche.KontoFormularController"
+          styleClass="formular" prefWidth="460">
+
+    <columnConstraints>
+        <ColumnConstraints minWidth="130"/>
+        <ColumnConstraints hgrow="ALWAYS"/>
+    </columnConstraints>
+
+    <Label text="Kunde *" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+    <ComboBox fx:id="kunde" maxWidth="Infinity" promptText="Kunden auswählen"
+              GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+    <Label text="Kontoart *" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+    <ComboBox fx:id="kontoart" maxWidth="Infinity" promptText="Kontoart auswählen"
+              GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+    <Label text="Währung *" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+    <ComboBox fx:id="waehrung" maxWidth="Infinity" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+    <Label fx:id="dispoBeschriftung" text="Dispo *" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+    <TextField fx:id="dispo" promptText="z. B. 500,00" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+    <Label text="Eröffnungssaldo" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+    <Label fx:id="saldo" styleClass="feldname" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+    <Label text="Kontonummer und IBAN werden automatisch vergeben."
+           styleClass="hinweis" GridPane.rowIndex="5" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+
+    <Label fx:id="fehler" styleClass="fehlermeldung" maxWidth="Infinity"
+           GridPane.rowIndex="6" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+</GridPane>

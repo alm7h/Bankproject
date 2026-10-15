@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Protokoll: wer hat wann was getan (nur lesbar), neueste Einträge zuerst. -->
+
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="bankprojekt.oberflaeche.ProtokollController"
+      stylesheets="@verwaltung.css"
+      styleClass="arbeitsbereich">
+
+    <Label text="Protokoll" styleClass="ueberschrift"/>
+
+    <HBox styleClass="werkzeugleiste">
+        <TextField fx:id="suche" promptText="Suche in Benutzer und Details" prefWidth="280"/>
+        <ComboBox fx:id="aktionFilter" prefWidth="230"/>
+    </HBox>
+
+    <TableView fx:id="tabelle" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="zeitSpalte" text="Zeitpunkt" prefWidth="160"/>
+            <TableColumn fx:id="benutzerSpalte" text="Benutzer" prefWidth="130"/>
+            <TableColumn fx:id="aktionSpalte" text="Aktion" prefWidth="180"/>
+            <TableColumn fx:id="detailsSpalte" text="Details" prefWidth="460"/>
+        </columns>
+        <columnResizePolicy>
+            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+        </columnResizePolicy>
+        <placeholder>
+            <Label text="Keine Einträge gefunden."/>
+        </placeholder>
+    </TableView>
+
+    <Label fx:id="anzahl" styleClass="fusszeile"/>
+</VBox>
