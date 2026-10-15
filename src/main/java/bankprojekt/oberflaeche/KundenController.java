@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 
 import bankprojekt.verwaltung.Kundenakte;
 import bankprojekt.verwaltung.Kundenstatus;
+import bankprojekt.verwaltung.Kundenzugang;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
@@ -41,6 +42,9 @@ public class KundenController implements Ansicht {
     /** Knopf „Konten anzeigen" */
     @FXML
     private Button kontenAnzeigenKnopf;
+    /** Knopf „Portalzugang einrichten" bzw. „Portalpasswort zurücksetzen" */
+    @FXML
+    private Button portalKnopf;
     /** Knopf „Deaktivieren" bzw. „Aktivieren" */
     @FXML
     private Button statusKnopf;
@@ -65,6 +69,9 @@ public class KundenController implements Ansicht {
     /** Spalte Anzahl Konten */
     @FXML
     private TableColumn<Kundenakte, Integer> kontenSpalte;
+    /** Spalte Portalzugang (Benutzername oder „–") */
+    @FXML
+    private TableColumn<Kundenakte, String> portalSpalte;
     /** Spalte Status */
     @FXML
     private TableColumn<Kundenakte, String> statusSpalte;
@@ -94,6 +101,8 @@ public class KundenController implements Ansicht {
         telefonSpalte.setCellValueFactory(z -> new ReadOnlyStringWrapper(z.getValue().getTelefon()));
         kontenSpalte.setCellValueFactory(z -> new ReadOnlyObjectWrapper<>(
                 sitzung.verwaltung().getKontenVon(z.getValue().getKundennummer()).size()));
+        portalSpalte.setCellValueFactory(z -> new ReadOnlyStringWrapper(sitzung.verwaltung()
+                .getKundenzugangVon(z.getValue().getKundennummer()).map(Kundenzugang::getBenutzername).orElse("–")));
         statusSpalte.setCellValueFactory(z -> new ReadOnlyStringWrapper(z.getValue().getStatus().toString()));
         statusSpalte.setCellFactory(s -> Darstellung.statusZelle());
         // gesperrte Kunden ausgegraut; Doppelklick öffnet das Bearbeiten-Formular
@@ -148,6 +157,9 @@ public class KundenController implements Ansicht {
         bearbeitenKnopf.setDisable(kunde == null);
         kontenAnzeigenKnopf.setDisable(kunde == null || kontenAnzeigen == null);
         statusKnopf.setDisable(kunde == null);
+        portalKnopf.setDisable(kunde == null);
+        portalKnopf.setText(kunde != null && sitzung.verwaltung().getKundenzugangVon(kunde.getKundennummer()).isPresent()
+                ? "Portalpasswort zurücksetzen" : "Portalzugang einrichten");
         boolean aktivieren = kunde != null && !kunde.isAktiv();
         statusKnopf.setText(aktivieren ? "Aktivieren" : "Deaktivieren");
         statusKnopf.getStyleClass().remove("gefahr");
@@ -200,6 +212,36 @@ public class KundenController implements Ansicht {
         Kundenakte kunde = tabelle.getSelectionModel().getSelectedItem();
         if (kunde != null && kontenAnzeigen != null)
             kontenAnzeigen.accept(kunde);
+    }
+
+    /**
+     * Reaktion auf „Portalzugang einrichten" bzw. „Portalpasswort zurücksetzen": In
+     * beiden Fällen muss der Kunde das Passwort bei der nächsten Anmeldung ändern.
+     */
+    @FXML
+    private void portalzugang() {
+        Kundenakte kunde = tabelle.getSelectionModel().getSelectedItem();
+        if (kunde == null)
+            return;
+        Kundenzugang zugang = sitzung.verwaltung().getKundenzugangVon(kunde.getKundennummer()).orElse(null);
+        Dialoge.Geladen<PortalzugangFormularController> formular = Dialoge.laden("portalzugangFormular.fxml");
+        PortalzugangFormularController eingaben = formular.controller();
+        eingaben.setKunde(kunde, zugang);
+        String titel = zugang == null ? "Portalzugang einrichten" : "Portalpasswort zurücksetzen";
+        if (Dialoge.formular(Dialoge.fenster(tabelle), titel, formular.wurzel(), eingaben.getFehlerfeld(), () -> {
+            char[] passwort = eingaben.getPasswort();
+            try {
+                if (zugang == null)
+                    sitzung.verwaltung().portalzugangEinrichten(sitzung.benutzer(), kunde.getKundennummer(),
+                            eingaben.getBenutzername(), passwort);
+                else
+                    sitzung.verwaltung().portalpasswortZuruecksetzen(sitzung.benutzer(), kunde.getKundennummer(),
+                            passwort);
+            } finally {
+                java.util.Arrays.fill(passwort, '\0');
+            }
+        }))
+            aktualisieren();
     }
 
     /**

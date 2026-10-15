@@ -28,6 +28,7 @@
         <Button text="Neuer Kunde" styleClass="primaer" onAction="#neuerKunde"/>
         <Button fx:id="bearbeitenKnopf" text="Bearbeiten" onAction="#bearbeiten"/>
         <Button fx:id="kontenAnzeigenKnopf" text="Konten anzeigen" onAction="#kontenAnzeigen"/>
+        <Button fx:id="portalKnopf" text="Portalzugang einrichten" onAction="#portalzugang"/>
         <Button fx:id="statusKnopf" text="Deaktivieren" onAction="#statusWechseln"/>
     </HBox>
 
@@ -39,6 +40,7 @@
             <TableColumn fx:id="emailSpalte" text="E-Mail" prefWidth="220"/>
             <TableColumn fx:id="telefonSpalte" text="Telefon" prefWidth="140"/>
             <TableColumn fx:id="kontenSpalte" text="Konten" prefWidth="70"/>
+            <TableColumn fx:id="portalSpalte" text="Portal" prefWidth="110"/>
             <TableColumn fx:id="statusSpalte" text="Status" prefWidth="100"/>
         </columns>
         <columnResizePolicy>

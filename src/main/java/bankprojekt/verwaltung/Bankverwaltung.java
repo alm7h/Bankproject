@@ -21,6 +21,7 @@ import java.util.StringJoiner;
 import bankprojekt.basisdaten.Geldbetrag;
 import bankprojekt.basisdaten.Konto;
 import bankprojekt.basisdaten.Waehrung;
+import bankprojekt.exceptions.GesperrtException;
 
 /**
  * Die Bankverwaltung für die Mitarbeiter: verwaltet Kunden, Konten und Benutzer
@@ -38,6 +39,11 @@ import bankprojekt.basisdaten.Waehrung;
  * {@link IllegalArgumentException}, unzulässige Aktionen (z. B. ein Konto mit
  * Guthaben auflösen) zu einer {@link IllegalStateException}; die Meldungen sind
  * zur Anzeige in der Oberfläche gedacht.
+ * <p>
+ * Für das Kundenportal hält die Verwaltung außerdem die {@link Kundenzugang Kundenzugänge},
+ * die {@link Kontoantrag Kontoanträge} und die {@link Buchung Buchungen} (Kontoauszüge).
+ * Hier stehen die Aktionen der Mitarbeiter dazu (Anträge entscheiden, Portalzugänge
+ * einrichten, Bareinzahlungen); was ein Kunde selbst tut, bietet das {@link Kundenportal}.
  * <p>
  * Die gesamte Verwaltung ist serialisierbar und wird vom {@link Datenspeicher}
  * nach jeder Änderung gespeichert.
@@ -79,6 +85,25 @@ public final class Bankverwaltung implements Serializable {
      * laufende Nummer für die nächste Kundennummer
      */
     private long naechsteKundennummer = 1;
+
+    // Die folgenden Felder sind nicht final, damit readObject sie für Dateien
+    // nachrüsten kann, die vor dem Kundenportal gespeichert wurden.
+    /**
+     * Portalzugänge der Kunden nach Benutzername (Kleinbuchstaben)
+     */
+    private Map<String, Kundenzugang> kundenzugaenge = new LinkedHashMap<>();
+    /**
+     * Kontoanträge nach Antragsnummer
+     */
+    private Map<String, Kontoantrag> antraege = new LinkedHashMap<>();
+    /**
+     * Buchungen (Kontoauszüge) nach Kontonummer, älteste zuerst
+     */
+    private Map<Long, List<Buchung>> buchungen = new LinkedHashMap<>();
+    /**
+     * laufende Nummer für die nächste Antragsnummer
+     */
+    private long naechsteAntragsnummer = 1;
 
     /**
      * Uhr für Datum und Zeitstempel (in Tests austauschbar)
@@ -159,8 +184,16 @@ public final class Bankverwaltung implements Serializable {
      * @param details nähere Beschreibung
      */
     void protokollieren(String benutzername, Protokollaktion aktion, String details) {
-        protokoll.add(new Protokolleintrag(LocalDateTime.now(uhr), benutzername, aktion, details));
+        protokoll.add(new Protokolleintrag(jetzt(), benutzername, aktion, details));
         geaendert();
+    }
+
+    /**
+     * Liefert den aktuellen Zeitpunkt nach der Uhr der Verwaltung.
+     * @return jetzt
+     */
+    LocalDateTime jetzt() {
+        return LocalDateTime.now(uhr);
     }
 
     /**
@@ -240,7 +273,7 @@ public final class Bankverwaltung implements Serializable {
      * @param neu die neuen Daten
      * @return z. B. "Adresse, E-Mail" oder "keine Änderungen"
      */
-    private static String aenderungenBeschreiben(Kundendaten alt, Kundendaten neu) {
+    static String aenderungenBeschreiben(Kundendaten alt, Kundendaten neu) {
         StringJoiner felder = new StringJoiner(", ");
         if (!alt.vorname().equals(neu.vorname())) felder.add("Vorname");
         if (!alt.nachname().equals(neu.nachname())) felder.add("Nachname");
@@ -301,7 +334,7 @@ public final class Bankverwaltung implements Serializable {
      * @return die Kundenakte
      * @throws IllegalArgumentException wenn es den Kunden nicht gibt
      */
-    private Kundenakte kundeHolen(String kundennummer) {
+    Kundenakte kundeHolen(String kundennummer) {
         return findeKunde(kundennummer).orElseThrow(() ->
                 new IllegalArgumentException("Einen Kunden mit der Nummer " + kundennummer + " gibt es nicht."));
     }
@@ -355,10 +388,7 @@ public final class Bankverwaltung implements Serializable {
                                     Waehrung waehrung, Geldbetrag dispo) {
         String wer = pruefeAkteur(akteur);
         Kundenakte kunde = kundeHolen(kundennummer);
-        if (kontoart == null)
-            throw new IllegalArgumentException("Bitte eine Kontoart auswählen.");
-        if (waehrung == null)
-            throw new IllegalArgumentException("Bitte eine Währung auswählen.");
+        Eingabepruefung.kontowahl(kontoart, waehrung);
         if (!kunde.isAktiv())
             throw new IllegalStateException("Für den gesperrten Kunden " + kunde
                     + " können keine Konten eröffnet werden.");
@@ -450,7 +480,7 @@ public final class Bankverwaltung implements Serializable {
      * @return die Kontoakte
      * @throws IllegalArgumentException wenn es das Konto nicht gibt
      */
-    private Kontoakte kontoHolen(long kontonummer) {
+    Kontoakte kontoHolen(long kontonummer) {
         return findeKonto(kontonummer).orElseThrow(() ->
                 new IllegalArgumentException("Ein Konto mit der Nummer " + kontonummer + " gibt es nicht."));
     }
@@ -544,8 +574,7 @@ public final class Bankverwaltung implements Serializable {
         String name = Eingabepruefung.benutzername(benutzername);
         String anzeige = Eingabepruefung.pflichtfeld(anzeigename, "Anzeigename");
         Eingabepruefung.passwort(passwort);
-        if (benutzer.containsKey(name))
-            throw new IllegalArgumentException("Der Benutzername \"" + name + "\" ist bereits vergeben.");
+        benutzernameFreiPruefen(name);
         Benutzer neu = new Benutzer(name, anzeige, Passwortschutz.hashen(passwort), LocalDateTime.now(uhr));
         benutzer.put(name, neu);
         protokollieren(wer, Protokollaktion.BENUTZER_ANGELEGT, "Benutzer " + neu + " angelegt");
@@ -671,8 +700,399 @@ public final class Bankverwaltung implements Serializable {
                 .toList();
     }
 
+    // ------------------------------------------------------------------ Benutzernamen
+
     /**
-     * Stellt nach dem Einlesen die nicht gespeicherte Uhr wieder her.
+     * Prüft, ob ein Benutzername schon vergeben ist – an einen Mitarbeiter oder an einen
+     * Kunden, denn beide melden sich über dieselbe Anmeldemaske an.
+     * @param benutzername der Benutzername in Kleinbuchstaben
+     * @return true, wenn er vergeben ist
+     */
+    boolean benutzernameVergeben(String benutzername) {
+        return benutzer.containsKey(benutzername) || kundenzugaenge.containsKey(benutzername);
+    }
+
+    /**
+     * Meldet einen Fehler, wenn ein Benutzername schon vergeben ist.
+     * @param benutzername der Benutzername in Kleinbuchstaben
+     * @throws IllegalArgumentException wenn er vergeben ist
+     */
+    void benutzernameFreiPruefen(String benutzername) {
+        if (benutzernameVergeben(benutzername))
+            throw new IllegalArgumentException("Der Benutzername \"" + benutzername + "\" ist bereits vergeben.");
+    }
+
+    // ------------------------------------------------------------------ Kundenzugänge
+
+    /**
+     * Sucht einen Kundenzugang über seinen Benutzernamen (Groß-/Kleinschreibung egal).
+     * @param benutzername der Benutzername
+     * @return der Zugang, falls vorhanden
+     */
+    public Optional<Kundenzugang> findeKundenzugang(String benutzername) {
+        if (benutzername == null)
+            return Optional.empty();
+        return Optional.ofNullable(kundenzugaenge.get(benutzername.strip().toLowerCase(Locale.ROOT)));
+    }
+
+    /**
+     * Liefert den Portalzugang eines Kunden.
+     * @param kundennummer die Kundennummer
+     * @return der Zugang, falls der Kunde einen hat
+     */
+    public Optional<Kundenzugang> getKundenzugangVon(String kundennummer) {
+        return kundenzugaenge.values().stream()
+                .filter(z -> Objects.equals(z.getKundennummer(), kundennummer))
+                .findFirst();
+    }
+
+    /**
+     * Nimmt einen neuen Kundenzugang auf (Registrierung im Kundenportal).
+     * @param zugang der Zugang mit noch freiem Benutzernamen
+     */
+    void kundenzugangHinzufuegen(Kundenzugang zugang) {
+        kundenzugaenge.put(zugang.getBenutzername(), zugang);
+    }
+
+    /**
+     * Prüft, ob sich ein Kunde mit diesem Zugang anmelden darf: Neukunden mit noch
+     * offenem Antrag ja, Kunden nur, solange sie nicht deaktiviert sind.
+     * @param zugang der Zugang
+     * @return true, wenn die Anmeldung erlaubt ist
+     */
+    boolean kundenzugangAktiv(Kundenzugang zugang) {
+        return !zugang.istKunde() || kundeHolen(zugang.getKundennummer()).isAktiv();
+    }
+
+    /**
+     * Vermerkt eine erfolgreiche Anmeldung im Kundenportal.
+     * @param zugang der angemeldete Zugang
+     */
+    void kundenanmeldungVermerken(Kundenzugang zugang) {
+        zugang.setLetzteAnmeldung(jetzt());
+        protokollieren(zugang.getBenutzername(), Protokollaktion.ANMELDUNG, "Im Kundenportal angemeldet");
+    }
+
+    /**
+     * Richtet für einen bestehenden Kunden einen Portalzugang ein. Der Kunde muss das
+     * Startpasswort bei der ersten Anmeldung ändern.
+     * @param akteur der ausführende Benutzer
+     * @param kundennummer Kundennummer des Kunden
+     * @param benutzername gewünschter Benutzername (wird in Kleinbuchstaben gespeichert)
+     * @param startpasswort Startpasswort (mindestens 4 Zeichen)
+     * @return der neue Zugang
+     * @throws IllegalStateException wenn der Akteur nicht angemeldet/aktiv ist oder der
+     *                               Kunde schon einen Zugang hat
+     * @throws IllegalArgumentException wenn es den Kunden nicht gibt, der Benutzername
+     *                                  ungültig oder vergeben oder das Passwort zu kurz ist
+     */
+    public Kundenzugang portalzugangEinrichten(Benutzer akteur, String kundennummer, String benutzername,
+                                               char[] startpasswort) {
+        String wer = pruefeAkteur(akteur);
+        Kundenakte kunde = kundeHolen(kundennummer);
+        if (getKundenzugangVon(kundennummer).isPresent())
+            throw new IllegalStateException("Der Kunde " + kunde + " hat bereits einen Portalzugang.");
+        String name = Eingabepruefung.benutzername(benutzername);
+        Eingabepruefung.passwort(startpasswort);
+        benutzernameFreiPruefen(name);
+        Kundenzugang zugang = new Kundenzugang(name, Passwortschutz.hashen(startpasswort), kundennummer, true,
+                jetzt());
+        kundenzugaenge.put(name, zugang);
+        protokollieren(wer, Protokollaktion.PORTALZUGANG_EINGERICHTET,
+                "Portalzugang \"" + name + "\" für Kunde " + kunde + " eingerichtet");
+        return zugang;
+    }
+
+    /**
+     * Setzt das Passwort des Portalzugangs eines Kunden neu (z. B. wenn er es vergessen
+     * hat). Der Kunde muss es bei der nächsten Anmeldung ändern.
+     * @param akteur der ausführende Benutzer
+     * @param kundennummer Kundennummer des Kunden
+     * @param neuesPasswort das neue Passwort (mindestens 4 Zeichen)
+     * @throws IllegalStateException wenn der Akteur nicht angemeldet/aktiv ist oder der
+     *                               Kunde keinen Zugang hat
+     * @throws IllegalArgumentException wenn es den Kunden nicht gibt oder das Passwort zu kurz ist
+     */
+    public void portalpasswortZuruecksetzen(Benutzer akteur, String kundennummer, char[] neuesPasswort) {
+        String wer = pruefeAkteur(akteur);
+        Kundenakte kunde = kundeHolen(kundennummer);
+        Kundenzugang zugang = getKundenzugangVon(kundennummer).orElseThrow(() ->
+                new IllegalStateException("Der Kunde " + kunde + " hat noch keinen Portalzugang."));
+        Eingabepruefung.passwort(neuesPasswort);
+        zugang.setPasswort(Passwortschutz.hashen(neuesPasswort), true);
+        protokollieren(wer, Protokollaktion.PORTALPASSWORT_ZURUECKGESETZT,
+                "Portalpasswort von \"" + zugang + "\" (Kunde " + kunde + ") zurückgesetzt");
+    }
+
+    // ------------------------------------------------------------------ Kontoanträge
+
+    /**
+     * Nimmt einen neuen, offenen Antrag mit fortlaufender Antragsnummer auf
+     * (protokolliert wird vom Aufrufer).
+     * @param art Art des Antrags
+     * @param benutzername Benutzername des Antragstellers
+     * @param antragsteller Name des Antragstellers
+     * @param daten Stammdaten (nur Neukunde, sonst null)
+     * @param kundennummer Kundennummer (nur weiteres Konto, sonst null)
+     * @param kontoart gewünschte Kontoart
+     * @param waehrung gewünschte Währung
+     * @return der neue Antrag
+     */
+    Kontoantrag antragStellen(Antragsart art, String benutzername, String antragsteller, Kundendaten daten,
+                              String kundennummer, Kontoart kontoart, Waehrung waehrung) {
+        String nummer = String.format("A%06d", naechsteAntragsnummer);
+        Kontoantrag antrag = new Kontoantrag(nummer, art, benutzername, antragsteller, daten, kundennummer,
+                kontoart, waehrung, jetzt());
+        naechsteAntragsnummer++;
+        antraege.put(nummer, antrag);
+        return antrag;
+    }
+
+    /**
+     * Liefert die Anträge, die über einen Kundenzugang gestellt wurden.
+     * @param benutzername Benutzername des Zugangs
+     * @return nicht veränderbare Liste, nach Antragsnummer sortiert
+     */
+    List<Kontoantrag> antraegeVon(String benutzername) {
+        return antraege.values().stream()
+                .filter(a -> a.getBenutzername().equals(benutzername))
+                .sorted(Comparator.comparing(Kontoantrag::getAntragsnummer))
+                .toList();
+    }
+
+    /**
+     * Liefert die Kontoanträge, optional nur mit einem Status.
+     * @param status nur Anträge mit diesem Status; null für alle
+     * @return nicht veränderbare Liste, nach Antragsnummer sortiert
+     */
+    public List<Kontoantrag> getAntraege(Antragsstatus status) {
+        return antraege.values().stream()
+                .filter(a -> status == null || a.getStatus() == status)
+                .sorted(Comparator.comparing(Kontoantrag::getAntragsnummer))
+                .toList();
+    }
+
+    /**
+     * Liefert die Zahl der offenen Anträge (z. B. für die Navigation der Verwaltung).
+     * @return Anzahl der Anträge mit Status {@link Antragsstatus#OFFEN}
+     */
+    public long getAnzahlOffeneAntraege() {
+        return antraege.values().stream().filter(a -> a.getStatus() == Antragsstatus.OFFEN).count();
+    }
+
+    /**
+     * Sucht einen Antrag über seine Antragsnummer.
+     * @param antragsnummer die Antragsnummer
+     * @return der Antrag, falls vorhanden
+     */
+    public Optional<Kontoantrag> findeAntrag(String antragsnummer) {
+        return Optional.ofNullable(antraege.get(antragsnummer));
+    }
+
+    /**
+     * Liefert einen offenen Antrag oder meldet einen Fehler.
+     * @param antragsnummer die Antragsnummer
+     * @return der offene Antrag
+     * @throws IllegalArgumentException wenn es den Antrag nicht gibt
+     * @throws IllegalStateException wenn er schon entschieden ist
+     */
+    private Kontoantrag offenenAntragHolen(String antragsnummer) {
+        Kontoantrag antrag = findeAntrag(antragsnummer).orElseThrow(() ->
+                new IllegalArgumentException("Einen Antrag " + antragsnummer + " gibt es nicht."));
+        if (antrag.getStatus() != Antragsstatus.OFFEN)
+            throw new IllegalStateException("Der Antrag " + antragsnummer + " ist bereits " + antrag.getStatus() + ".");
+        return antrag;
+    }
+
+    /**
+     * Genehmigt einen offenen Antrag: Bei einem Neukunden wird zuerst der Kunde aus den
+     * Antragsdaten angelegt und dem Portalzugang zugeordnet, dann in jedem Fall das
+     * Konto eröffnet.
+     * @param akteur der ausführende Benutzer
+     * @param antragsnummer die Antragsnummer
+     * @param dispo Dispo in der Kontowährung; nur für ein Girokonto (muss dann größer 0 sein)
+     * @return das eröffnete Konto
+     * @throws IllegalStateException wenn der Akteur nicht angemeldet/aktiv ist, der Antrag
+     *                               schon entschieden oder der Kunde inzwischen gesperrt ist
+     * @throws IllegalArgumentException wenn es den Antrag nicht gibt oder der Dispo ungültig ist
+     */
+    public Kontoakte antragGenehmigen(Benutzer akteur, String antragsnummer, Geldbetrag dispo) {
+        String wer = pruefeAkteur(akteur);
+        Kontoantrag antrag = offenenAntragHolen(antragsnummer);
+        // Dispo vorab prüfen, damit bei einem Fehler noch kein Kunde angelegt ist
+        antrag.getKontoart().fabrik(dispo);
+        String kundennummer;
+        if (antrag.getArt() == Antragsart.NEUKUNDE) {
+            Kundenakte kunde = kundeAnlegen(akteur, antrag.getKundendaten());
+            kundennummer = kunde.getKundennummer();
+            kundenzugaenge.get(antrag.getBenutzername()).setKundennummer(kundennummer);
+        } else {
+            kundennummer = antrag.getKundennummer();
+        }
+        Kontoakte konto = kontoEroeffnen(akteur, kundennummer, antrag.getKontoart(), antrag.getWaehrung(), dispo);
+        antrag.genehmigen(wer, jetzt(), kundennummer, konto.getKontonummer());
+        protokollieren(wer, Protokollaktion.ANTRAG_GENEHMIGT, "Antrag " + antragsnummer + " von "
+                + antrag.getAntragsteller() + " genehmigt: " + konto);
+        return konto;
+    }
+
+    /**
+     * Lehnt einen offenen Antrag mit Begründung ab; der Kunde sieht sie im Kundenportal.
+     * @param akteur der ausführende Benutzer
+     * @param antragsnummer die Antragsnummer
+     * @param begruendung die Begründung (Pflicht)
+     * @throws IllegalStateException wenn der Akteur nicht angemeldet/aktiv ist oder der
+     *                               Antrag schon entschieden ist
+     * @throws IllegalArgumentException wenn es den Antrag nicht gibt oder die Begründung fehlt
+     */
+    public void antragAblehnen(Benutzer akteur, String antragsnummer, String begruendung) {
+        String wer = pruefeAkteur(akteur);
+        Kontoantrag antrag = offenenAntragHolen(antragsnummer);
+        String grund = Eingabepruefung.pflichtfeld(begruendung, "Begründung");
+        antrag.ablehnen(wer, jetzt(), grund);
+        protokollieren(wer, Protokollaktion.ANTRAG_ABGELEHNT, "Antrag " + antragsnummer + " von "
+                + antrag.getAntragsteller() + " abgelehnt: " + grund);
+    }
+
+    // ------------------------------------------------------------------ Buchungen
+
+    /**
+     * Zahlt am Schalter Bargeld auf ein Konto ein.
+     * @param akteur der ausführende Benutzer
+     * @param kontonummer die Kontonummer
+     * @param betrag der Betrag (größer 0)
+     * @param text freiwilliger Buchungstext
+     * @throws IllegalStateException wenn der Akteur nicht angemeldet/aktiv ist oder das
+     *                               Konto gesperrt bzw. aufgelöst ist
+     * @throws IllegalArgumentException wenn es das Konto nicht gibt oder der Betrag ungültig ist
+     */
+    public void bareinzahlung(Benutzer akteur, long kontonummer, Geldbetrag betrag, String text) {
+        String wer = pruefeAkteur(akteur);
+        Kontoakte konto = kontoHolen(kontonummer);
+        Eingabepruefung.betrag(betrag);
+        einzahlen(konto, betrag);
+        buchen(konto, Buchungsart.BAREINZAHLUNG, betrag, buchungstext(text, "Bareinzahlung am Schalter"), wer);
+        protokollieren(wer, Protokollaktion.BAREINZAHLUNG, betrag + " auf " + konto.getIbanFormatiert() + " eingezahlt");
+    }
+
+    /**
+     * Zahlt am Schalter Bargeld von einem Konto aus. Es gelten die Abhebungsregeln der
+     * Kontoart (z. B. Dispo, Monatsgrenze des Sparbuchs).
+     * @param akteur der ausführende Benutzer
+     * @param kontonummer die Kontonummer
+     * @param betrag der Betrag (größer 0)
+     * @param text freiwilliger Buchungstext
+     * @throws IllegalStateException wenn der Akteur nicht angemeldet/aktiv ist, das Konto
+     *                               gesperrt bzw. aufgelöst ist oder die Regeln die
+     *                               Auszahlung nicht erlauben
+     * @throws IllegalArgumentException wenn es das Konto nicht gibt oder der Betrag ungültig ist
+     */
+    public void barauszahlung(Benutzer akteur, long kontonummer, Geldbetrag betrag, String text) {
+        String wer = pruefeAkteur(akteur);
+        Kontoakte konto = kontoHolen(kontonummer);
+        Eingabepruefung.betrag(betrag);
+        abheben(konto, betrag);
+        buchen(konto, Buchungsart.BARAUSZAHLUNG, betrag, buchungstext(text, "Barauszahlung am Schalter"), wer);
+        protokollieren(wer, Protokollaktion.BARAUSZAHLUNG, betrag + " von " + konto.getIbanFormatiert() + " ausgezahlt");
+    }
+
+    /**
+     * Liefert einen Buchungstext oder einen Standardtext, wenn keiner angegeben ist.
+     * @param text eingegebener Text, darf null sein
+     * @param standard Standardtext
+     * @return der bereinigte Text oder der Standardtext
+     */
+    static String buchungstext(String text, String standard) {
+        String bereinigt = Eingabepruefung.freiwillig(text);
+        return bereinigt.isEmpty() ? standard : bereinigt;
+    }
+
+    /**
+     * Zahlt auf ein Konto ein und übersetzt eine Sperre in eine verständliche Meldung.
+     * @param konto das Konto
+     * @param betrag der Betrag
+     * @throws IllegalStateException wenn das Konto gesperrt oder aufgelöst ist
+     */
+    void einzahlen(Kontoakte konto, Geldbetrag betrag) {
+        try {
+            konto.getKonto().einzahlen(betrag);
+        } catch (GesperrtException e) {
+            throw new IllegalStateException(gesperrtMeldung(konto), e);
+        }
+    }
+
+    /**
+     * Hebt von einem Konto ab und übersetzt Sperre und Ablehnung in verständliche Meldungen.
+     * @param konto das Konto
+     * @param betrag der Betrag
+     * @throws IllegalStateException wenn das Konto gesperrt oder aufgelöst ist oder die
+     *                               Regeln der Kontoart die Abhebung nicht erlauben
+     */
+    void abheben(Kontoakte konto, Geldbetrag betrag) {
+        boolean erlaubt;
+        try {
+            erlaubt = konto.getKonto().abheben(betrag);
+        } catch (GesperrtException e) {
+            throw new IllegalStateException(gesperrtMeldung(konto), e);
+        }
+        if (!erlaubt)
+            throw new IllegalStateException("Das Konto " + konto.getIbanFormatiert() + " lässt diese Abbuchung nicht "
+                    + "zu: Die Deckung reicht nicht oder die Regeln der Kontoart (" + konto.getKontoart()
+                    + ") erlauben sie nicht.");
+    }
+
+    /**
+     * Meldung für ein gesperrtes oder aufgelöstes Konto.
+     * @param konto das Konto
+     * @return z. B. "Das Konto DE.. ist gesperrt – keine Buchung möglich."
+     */
+    static String gesperrtMeldung(Kontoakte konto) {
+        return "Das Konto " + konto.getIbanFormatiert() + " ist " + konto.getStatus() + " – keine Buchung möglich.";
+    }
+
+    /**
+     * Schreibt eine Buchung in den Kontoauszug; der Saldo danach ist der aktuelle
+     * Kontostand. Der Betrag wird in die Kontowährung umgerechnet und bei Abgängen negativ
+     * gespeichert.
+     * @param konto das gebuchte Konto (die Buchung ist schon ausgeführt)
+     * @param art Art der Buchung
+     * @param betrag der gebuchte Betrag (positiv)
+     * @param text Buchungstext
+     * @param wer Benutzername des Buchenden
+     */
+    void buchen(Kontoakte konto, Buchungsart art, Geldbetrag betrag, String text, String wer) {
+        Geldbetrag inKontowaehrung = betrag.umrechnen(konto.getWaehrung());
+        Geldbetrag gebucht = art.istAbgang()
+                ? new Geldbetrag(-inKontowaehrung.getBetrag(), inKontowaehrung.getWaehrung())
+                : inKontowaehrung;
+        buchungen.computeIfAbsent(konto.getKontonummer(), nr -> new ArrayList<>())
+                .add(new Buchung(jetzt(), konto.getKontonummer(), art, gebucht, konto.getKontostand(), text, wer));
+    }
+
+    /**
+     * Liefert den Kontoauszug eines Kontos.
+     * @param kontonummer die Kontonummer
+     * @return nicht veränderbare Liste der Buchungen, älteste zuerst (leer, wenn es keine gibt)
+     */
+    public List<Buchung> getBuchungen(long kontonummer) {
+        return List.copyOf(buchungen.getOrDefault(kontonummer, List.of()));
+    }
+
+    /**
+     * Sucht ein Konto über seine IBAN (Leerzeichen und Groß-/Kleinschreibung egal).
+     * @param iban die IBAN
+     * @return das Konto, falls es eines mit dieser IBAN gibt
+     */
+    public Optional<Kontoakte> findeKontoNachIban(String iban) {
+        if (iban == null)
+            return Optional.empty();
+        String kompakt = iban.replace(" ", "").toUpperCase(Locale.ROOT);
+        return konten.values().stream().filter(k -> k.getIban().equals(kompakt)).findFirst();
+    }
+
+    /**
+     * Stellt nach dem Einlesen die nicht gespeicherte Uhr wieder her und ergänzt die
+     * Felder des Kundenportals, falls die Datei aus einer älteren Version stammt.
      * @param in der Eingabestrom
      * @throws IOException bei einem Fehler beim Lesen
      * @throws ClassNotFoundException falls eine Klasse nicht gefunden wird
@@ -681,5 +1101,14 @@ public final class Bankverwaltung implements Serializable {
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         this.uhr = Clock.systemDefaultZone();
+        // Dateien von vor dem Kundenportal enthalten diese Felder noch nicht
+        if (kundenzugaenge == null)
+            kundenzugaenge = new LinkedHashMap<>();
+        if (antraege == null)
+            antraege = new LinkedHashMap<>();
+        if (buchungen == null)
+            buchungen = new LinkedHashMap<>();
+        if (naechsteAntragsnummer < 1)
+            naechsteAntragsnummer = 1;
     }
 }

@@ -51,6 +51,36 @@ public final class Testdaten {
     }
 
     /**
+     * Legt einen Portalzugang mit schnellem Passwort-Hash an (Passwort {@link #PASSWORT}),
+     * ohne Protokolleintrag – für Tests, die einen Kunden im Portal brauchen.
+     * @param verwaltung die Verwaltung
+     * @param benutzername der Benutzername (in Kleinbuchstaben)
+     * @param kundennummer Kundennummer oder null für einen Neukunden ohne genehmigten Antrag
+     * @return der Zugang
+     */
+    public static Kundenzugang kundenzugang(Bankverwaltung verwaltung, String benutzername, String kundennummer) {
+        Kundenzugang zugang = new Kundenzugang(benutzername, HASH, kundennummer, false, verwaltung.jetzt());
+        verwaltung.kundenzugangHinzufuegen(zugang);
+        return zugang;
+    }
+
+    /**
+     * Registriert einen Neukunden wie das Kundenportal, aber mit schnellem Passwort-Hash
+     * (Passwort {@link #PASSWORT}).
+     * @param verwaltung die Verwaltung
+     * @param benutzername der Benutzername (in Kleinbuchstaben)
+     * @param daten die Stammdaten
+     * @param kontoart gewünschte Kontoart
+     * @return der offene Antrag
+     */
+    public static Kontoantrag neukunde(Bankverwaltung verwaltung, String benutzername, Kundendaten daten,
+                                       Kontoart kontoart) {
+        kundenzugang(verwaltung, benutzername, null);
+        return verwaltung.antragStellen(Antragsart.NEUKUNDE, benutzername,
+                daten.nachname() + ", " + daten.vorname(), daten, null, kontoart, bankprojekt.basisdaten.Waehrung.EURO);
+    }
+
+    /**
      * Zahlt über die Bank auf ein Konto ein (in der Oberfläche gibt es noch keine Buchungen).
      * @param verwaltung die Verwaltung
      * @param kontonummer die Kontonummer

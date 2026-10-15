@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Portalzugang für einen bestehenden Kunden einrichten bzw. dessen Passwort zurücksetzen. -->
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+
+<GridPane xmlns="http://javafx.com/javafx"
+          xmlns:fx="http://javafx.com/fxml"
+          fx:controller="bankprojekt.oberflaeche.PortalzugangFormularController"
+          styleClass="formular" prefWidth="460">
+
+    <columnConstraints>
+        <ColumnConstraints minWidth="170"/>
+        <ColumnConstraints hgrow="ALWAYS"/>
+    </columnConstraints>
+
+    <Label text="Kunde" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+    <Label fx:id="kunde" styleClass="feldname" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+    <Label text="Benutzername *" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+    <TextField fx:id="benutzername" promptText="z. B. anna.schmidt" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+    <Label fx:id="passwortBeschriftung" text="Startpasswort *" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+    <PasswordField fx:id="passwort" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+    <Label text="Passwort wiederholen *" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+    <PasswordField fx:id="wiederholung" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+    <Label text="Der Kunde muss dieses Passwort bei der nächsten Anmeldung durch ein eigenes ersetzen."
+           styleClass="hinweis" wrapText="true"
+           GridPane.rowIndex="4" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+
+    <Label fx:id="fehler" styleClass="fehlermeldung" maxWidth="Infinity" wrapText="true"
+           GridPane.rowIndex="5" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+</GridPane>

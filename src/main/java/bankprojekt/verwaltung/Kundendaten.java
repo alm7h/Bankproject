@@ -1,5 +1,7 @@
 package bankprojekt.verwaltung;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDate;
 
 /**
@@ -19,7 +21,13 @@ import java.time.LocalDate;
  * @author m.alharethi
  */
 public record Kundendaten(String vorname, String nachname, LocalDate geburtsdatum,
-                          String adresse, String telefon, String email) {
+                          String adresse, String telefon, String email) implements Serializable {
+    /**
+     * Versionsnummer für die Serialisierung (Kundendaten stecken in gespeicherten Kontoanträgen).
+     */
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     /**
      * Prüft und bereinigt die Kundendaten.
      * @throws IllegalArgumentException wenn ein Pflichtfeld fehlt oder ein Wert ungültig ist

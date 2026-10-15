@@ -1,9 +1,11 @@
 package bankprojekt.oberflaeche;
 
+import bankprojekt.verwaltung.Anmeldeergebnis;
 import bankprojekt.verwaltung.Anmeldung;
 import bankprojekt.verwaltung.Bankverwaltung;
 import bankprojekt.verwaltung.Benutzer;
 import bankprojekt.verwaltung.Datenspeicher;
+import bankprojekt.verwaltung.Kundenzugang;
 import bankprojekt.verwaltung.Testdaten;
 import bankprojekt.verwaltung.VerstellbareUhr;
 import javafx.scene.Parent;
@@ -62,7 +64,7 @@ class LoginControllerTest {
         Dialoge.Geladen<LoginController> geladen = FxHilfe.laden("login.fxml");
         maske = geladen.wurzel();
         controller = geladen.controller();
-        controller.setAnmeldung(anmeldung, angemeldet::add);
+        controller.setAnmeldung(anmeldung, ergebnis -> angemeldet.add(ergebnis.benutzer()));
     }
 
     /**
@@ -196,6 +198,39 @@ class LoginControllerTest {
         assertTrue(meldung().startsWith("Die Änderung konnte nicht gespeichert werden"), meldung());
         assertEquals("", FxHilfe.<PasswordField>suche(maske, "passwort").getText());
         assertTrue(angemeldet.isEmpty());
+    }
+
+    @Test
+    void kunde_meldetSichUeberDieselbeMaskeAn_undDasErgebnisWirdWeitergegeben() {
+        Kundenzugang zugang = Testdaten.kundenzugang(verwaltung, "anna.s", null);
+        List<Anmeldeergebnis> ergebnisse = new ArrayList<>();
+        controller.setAnmeldung(anmeldung, ergebnisse::add);
+        anmelden("anna.s", Testdaten.PASSWORT);
+        assertEquals(1, ergebnisse.size());
+        assertSame(zugang, ergebnisse.get(0).kundenzugang());
+    }
+
+    @Test
+    void registrierung_istOhneZielDeaktiviert_undMitZielStartbar() {
+        Button registrieren = FxHilfe.suche(maske, "registrierenKnopf");
+        assertTrue(registrieren.isDisabled());
+        int[] gestartet = {0};
+        controller.setRegistrierung(() -> gestartet[0]++);
+        assertFalse(registrieren.isDisabled());
+        registrieren.fire();
+        assertEquals(1, gestartet[0]);
+
+        controller.setRegistrierung(null);
+        assertTrue(registrieren.isDisabled());
+        registrieren.setDisable(false);
+        registrieren.fire();   // ohne Ziel passiert nichts
+        assertEquals(1, gestartet[0]);
+    }
+
+    @Test
+    void setBenutzername_fuelltDenNamenVor() {
+        controller.setBenutzername("anna.s");
+        assertEquals("anna.s", FxHilfe.<TextField>suche(maske, "benutzername").getText());
     }
 
     @Test

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Bareinzahlung bzw. Barauszahlung am Schalter. -->
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+
+<GridPane xmlns="http://javafx.com/javafx"
+          xmlns:fx="http://javafx.com/fxml"
+          fx:controller="bankprojekt.oberflaeche.BarFormularController"
+          styleClass="formular" prefWidth="460">
+
+    <columnConstraints>
+        <ColumnConstraints minWidth="130"/>
+        <ColumnConstraints hgrow="ALWAYS"/>
+    </columnConstraints>
+
+    <Label text="Konto" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+    <Label fx:id="konto" styleClass="feldname" wrapText="true" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+    <Label text="Betrag *" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+    <HBox spacing="8" alignment="CENTER_LEFT" GridPane.rowIndex="1" GridPane.columnIndex="1">
+        <TextField fx:id="betrag" promptText="z. B. 100,00" prefWidth="140"/>
+        <Label fx:id="waehrung"/>
+    </HBox>
+
+    <Label text="Buchungstext" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+    <TextField fx:id="text" promptText="optional" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+    <Label fx:id="fehler" styleClass="fehlermeldung" maxWidth="Infinity" wrapText="true"
+           GridPane.rowIndex="3" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+</GridPane>

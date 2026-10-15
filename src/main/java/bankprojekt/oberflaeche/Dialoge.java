@@ -151,11 +151,27 @@ final class Dialoge {
      * @return true, wenn gespeichert wurde
      */
     static boolean formular(Window besitzer, String titel, Parent inhalt, Label fehlerfeld, Runnable speichern) {
+        return formular(besitzer, titel, inhalt, fehlerfeld, "Speichern", speichern);
+    }
+
+    /**
+     * Zeigt ein Formular als Dialog mit eigener Beschriftung des Bestätigungsknopfs
+     * (z. B. „Genehmigen"); sonst wie {@link #formular(Window, String, Parent, Label, Runnable)}.
+     * @param besitzer Fenster, über dem der Dialog erscheint
+     * @param titel Titel des Dialogs
+     * @param inhalt das Formular
+     * @param fehlerfeld Feld im Formular für Fehlermeldungen
+     * @param knopftext Beschriftung des Bestätigungsknopfs
+     * @param speichern die Aktion, die die Eingaben übernimmt
+     * @return true, wenn die Aktion ausgeführt wurde
+     */
+    static boolean formular(Window besitzer, String titel, Parent inhalt, Label fehlerfeld, String knopftext,
+                            Runnable speichern) {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.initOwner(besitzer);
         dialog.setTitle(titel);
         dialog.setHeaderText(titel);
-        ButtonType speichernTyp = new ButtonType("Speichern", ButtonData.OK_DONE);
+        ButtonType speichernTyp = new ButtonType(knopftext, ButtonData.OK_DONE);
         // eigene Beschriftung statt ButtonType.CANCEL, das je nach Locale "Cancel" heißt
         ButtonType abbrechenTyp = new ButtonType("Abbrechen", ButtonData.CANCEL_CLOSE);
         DialogPane flaeche = dialog.getDialogPane();
@@ -176,6 +192,23 @@ final class Dialoge {
             }
         });
         return anzeige.apply(dialog).filter(speichernTyp::equals).isPresent();
+    }
+
+    /**
+     * Zeigt Inhalt in einem Dialog, der nur geschlossen wird (z. B. einen Kontoauszug).
+     * @param besitzer Fenster, über dem der Dialog erscheint
+     * @param titel Titel des Dialogs
+     * @param inhalt der anzuzeigende Inhalt
+     */
+    static void anzeigen(Window besitzer, String titel, Parent inhalt) {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.initOwner(besitzer);
+        dialog.setTitle(titel);
+        dialog.setHeaderText(titel);
+        dialog.getDialogPane().setContent(inhalt);
+        dialog.getDialogPane().getButtonTypes().add(new ButtonType("Schließen", ButtonData.CANCEL_CLOSE));
+        gestalten(dialog.getDialogPane());
+        anzeige.apply(dialog);
     }
 
     /**

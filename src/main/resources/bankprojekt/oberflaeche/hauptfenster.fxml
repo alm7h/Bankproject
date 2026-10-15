@@ -29,6 +29,8 @@
                           toggleGroup="$navigation" onAction="#kundenZeigen"/>
             <ToggleButton fx:id="kontenKnopf" text="Konten" styleClass="navigation"
                           toggleGroup="$navigation" onAction="#kontenZeigen"/>
+            <ToggleButton fx:id="antraegeKnopf" text="Anträge" styleClass="navigation"
+                          toggleGroup="$navigation" onAction="#antraegeZeigen"/>
             <ToggleButton fx:id="benutzerKnopf" text="Benutzer" styleClass="navigation"
                           toggleGroup="$navigation" onAction="#benutzerZeigen"/>
             <ToggleButton fx:id="protokollKnopf" text="Protokoll" styleClass="navigation"

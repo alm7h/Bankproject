@@ -7,7 +7,6 @@ import java.util.function.Consumer;
 
 import bankprojekt.verwaltung.Anmeldeergebnis;
 import bankprojekt.verwaltung.Anmeldung;
-import bankprojekt.verwaltung.Benutzer;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -18,7 +17,7 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 
 /**
- * Controller der Anmeldemaske ({@code login.fxml}).
+ * Controller der gemeinsamen Anmeldemaske für Mitarbeiter und Kunden ({@code login.fxml}).
  * <p>
  * Falsche Zugangsdaten werden unter den Feldern gemeldet und das Passwortfeld
  * geleert. Ist die Anmeldung nach zu vielen Fehlversuchen gesperrt, sind die
@@ -44,33 +43,78 @@ public class LoginController {
     /** Knopf „Anmelden" */
     @FXML
     private Button anmeldenKnopf;
+    /** Knopf „Neu hier? Konto eröffnen" */
+    @FXML
+    private Button registrierenKnopf;
 
     /**
      * prüft die Zugangsdaten
      */
     private Anmeldung anmeldung;
     /**
-     * wird nach erfolgreicher Anmeldung mit dem Benutzer aufgerufen
+     * wird nach erfolgreicher Anmeldung mit dem Ergebnis aufgerufen (Mitarbeiter oder Kunde)
      */
-    private Consumer<Benutzer> beiErfolg;
+    private Consumer<Anmeldeergebnis> beiErfolg;
+    /**
+     * startet die Registrierung eines Neukunden; null, solange keine angeboten wird
+     */
+    private Runnable registrierung;
     /**
      * zählt während einer Sperre die Restdauer herunter
      */
     private Timeline countdown;
 
     /**
+     * Die Registrierung ist erst möglich, wenn sie über {@link #setRegistrierung} angeboten wird.
+     */
+    @FXML
+    private void initialize() {
+        registrierenKnopf.setDisable(true);
+    }
+
+    /**
      * Übergibt die Anmeldung und die Aktion nach erfolgreicher Anmeldung. Ist die
      * Anmeldung gerade gesperrt (z. B. nach Abmelden während einer Sperre), wird
      * sofort der Countdown gezeigt.
      * @param anmeldung prüft die Zugangsdaten
-     * @param beiErfolg wird mit dem angemeldeten Benutzer aufgerufen
+     * @param beiErfolg wird mit dem erfolgreichen Ergebnis aufgerufen
      */
-    public void setAnmeldung(Anmeldung anmeldung, Consumer<Benutzer> beiErfolg) {
+    public void setAnmeldung(Anmeldung anmeldung, Consumer<Anmeldeergebnis> beiErfolg) {
         this.anmeldung = Objects.requireNonNull(anmeldung);
         this.beiErfolg = Objects.requireNonNull(beiErfolg);
         if (!anmeldung.getRestsperre().isZero())
             sperreAnzeigen();
         Platform.runLater(benutzername::requestFocus);
+    }
+
+    /**
+     * Legt fest, was „Neu hier? Konto eröffnen" tut.
+     * @param registrierung startet die Registrierung
+     */
+    public void setRegistrierung(Runnable registrierung) {
+        this.registrierung = registrierung;
+        registrierenKnopf.setDisable(registrierung == null);
+    }
+
+    /**
+     * Füllt den Benutzernamen vor (z. B. nach der Registrierung) und setzt den Fokus
+     * auf das Passwort.
+     * @param name der Benutzername
+     */
+    public void setBenutzername(String name) {
+        benutzername.setText(name);
+        Platform.runLater(passwort::requestFocus);
+    }
+
+    /**
+     * Reaktion auf „Neu hier? Konto eröffnen".
+     */
+    @FXML
+    private void registrieren() {
+        if (registrierung != null) {
+            beenden();
+            registrierung.run();
+        }
     }
 
     /**
@@ -90,13 +134,13 @@ public class LoginController {
         switch (ergebnis.status()) {
             case ERFOLGREICH -> {
                 meldung.setText("");
-                beiErfolg.accept(ergebnis.benutzer());
+                beiErfolg.accept(ergebnis);
             }
             case FALSCHE_ZUGANGSDATEN -> fehlversuchMelden("Benutzername oder Passwort ist falsch.",
                     ergebnis.verbleibendeVersuche());
             case DEAKTIVIERT -> fehlversuchMelden(
-                    "Dieser Zugang ist deaktiviert. Bitte wenden Sie sich an eine Administratorin "
-                            + "oder einen Administrator.", ergebnis.verbleibendeVersuche());
+                    "Dieser Zugang ist deaktiviert. Bitte wenden Sie sich an Ihre Bank.",
+                    ergebnis.verbleibendeVersuche());
             case GESPERRT -> sperreAnzeigen();
         }
     }

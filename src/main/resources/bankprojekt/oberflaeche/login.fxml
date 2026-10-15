@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- Anmeldemaske der Bankverwaltung: Benutzername und Passwort,
-     Fehlermeldungen erscheinen direkt unter den Feldern. -->
+<!-- Gemeinsame Anmeldemaske für Mitarbeiter und Kunden: Benutzername und Passwort,
+     Fehlermeldungen erscheinen direkt unter den Feldern. Neue Kunden starten von hier
+     aus die Registrierung. -->
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
@@ -16,16 +18,16 @@
            fx:controller="bankprojekt.oberflaeche.LoginController"
            stylesheets="@verwaltung.css"
            styleClass="anmeldung"
-           prefWidth="520" prefHeight="460">
+           prefWidth="520" prefHeight="520">
 
     <VBox styleClass="karte" spacing="8" maxWidth="360" maxHeight="-Infinity">
         <padding>
             <Insets top="28" right="32" bottom="28" left="32"/>
         </padding>
 
-        <Label text="Bankverwaltung" styleClass="titel"/>
-        <Label text="Bitte melden Sie sich mit Ihrem Mitarbeiterzugang an." styleClass="untertitel"
-               wrapText="true"/>
+        <Label text="Willkommen bei Ihrer Bank" styleClass="titel"/>
+        <Label text="Melden Sie sich mit Ihrem Benutzernamen und Passwort an – als Kundin, Kunde oder Mitarbeiter."
+               styleClass="untertitel" wrapText="true"/>
 
         <Label text="Benutzername" styleClass="feldname">
             <VBox.margin>
@@ -46,5 +48,14 @@
 
         <Button fx:id="anmeldenKnopf" text="Anmelden" styleClass="primaer" defaultButton="true"
                 maxWidth="Infinity" onAction="#anmelden"/>
+
+        <Separator>
+            <VBox.margin>
+                <Insets top="10"/>
+            </VBox.margin>
+        </Separator>
+        <Label text="Noch kein Kunde?" styleClass="hinweis"/>
+        <Button fx:id="registrierenKnopf" text="Neu hier? Konto eröffnen" styleClass="link-knopf"
+                onAction="#registrieren"/>
     </VBox>
 </StackPane>

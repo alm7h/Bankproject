@@ -166,6 +166,13 @@ class DialogeTest {
         }
 
         @Test
+        void eigeneKnopfbeschriftung() {
+            new Dialogantworten().klicke("Genehmigen");
+            assertTrue(Dialoge.formular(null, "Antrag", new StackPane(), fehlerfeld, "Genehmigen", () -> gespeichert++));
+            assertEquals(1, gespeichert);
+        }
+
+        @Test
         void abbrechen_fuehrtDieAktionNichtAus() {
             new Dialogantworten().klicke("Abbrechen");
             assertFalse(Dialoge.formular(null, "Titel", new StackPane(), fehlerfeld, () -> gespeichert++));
@@ -187,6 +194,15 @@ class DialogeTest {
             assertEquals(2, antworten.gezeigt().size(), "Formular und Fehlermeldung");
             assertTrue(antworten.letzter().getContentText().contains("Platte voll"));
         }
+    }
+
+    @Test
+    void anzeigen_zeigtInhaltMitSchliessenKnopf() {
+        Label inhalt = new Label("Kontoauszug");
+        Dialogantworten antworten = new Dialogantworten().klicke("Schließen");
+        Dialoge.anzeigen(null, "Kontoauszug DE..", inhalt);
+        assertSame(inhalt, antworten.letzter().getContent());
+        assertEquals("Kontoauszug DE..", antworten.letzter().getHeaderText());
     }
 
     @Nested

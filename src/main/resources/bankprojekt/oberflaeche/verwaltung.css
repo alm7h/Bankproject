@@ -238,3 +238,43 @@
     -fx-vgap: 10;
     -fx-padding: 8 4 4 4;
 }
+
+/* ------------------------------------------------------------ Kundenportal und Registrierung */
+
+.link-knopf {
+    -fx-background-color: transparent;
+    -fx-text-fill: -akzent;
+    -fx-underline: true;
+    -fx-padding: 4 0 0 0;
+}
+
+.link-knopf:hover {
+    -fx-text-fill: -akzent-dunkel;
+}
+
+.begruessung {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text;
+}
+
+.kontoart-wahl {
+    -fx-font-weight: bold;
+}
+
+.kontoart-beschreibung {
+    -fx-text-fill: -text-leise;
+    -fx-font-size: 12px;
+    -fx-padding: 0 0 6 26;
+    -fx-wrap-text: true;
+}
+
+.erfolgsmeldung {
+    -fx-text-fill: #166534;
+    -fx-wrap-text: true;
+}
+
+/* negative Beträge in Tabellen (Kontoauszug) */
+.table-cell.negativ {
+    -fx-text-fill: -gefahr;
+}

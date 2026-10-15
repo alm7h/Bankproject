@@ -374,8 +374,64 @@ class KontenControllerTest {
         }
 
         @Test
+        void bareinzahlung_undBarauszahlung_amSchalter() {
+            waehle(giro);
+            Dialogantworten antworten = new Dialogantworten().dann(d -> {
+                Parent formular = Dialogantworten.inhalt(d);
+                Dialogantworten.knopf(d, "Einzahlen").fire();
+                assertEquals("Betrag ist ein Pflichtfeld.", FxHilfe.text(formular, "fehler"));
+                FxHilfe.tippe(formular, "betrag", "300");
+                Dialogantworten.knopf(d, "Einzahlen").fire();
+            }).dann(d -> {
+                Parent formular = Dialogantworten.inhalt(d);
+                FxHilfe.tippe(formular, "betrag", "900");
+                Dialogantworten.knopf(d, "Auszahlen").fire();
+                assertTrue(FxHilfe.text(formular, "fehler").contains("lässt diese Abbuchung nicht zu"));
+                FxHilfe.tippe(formular, "betrag", "50");
+                FxHilfe.tippe(formular, "text", "Bar");
+                Dialogantworten.knopf(d, "Auszahlen").fire();
+            });
+            knopf("einzahlenKnopf").fire();
+            assertEquals("Bareinzahlung", antworten.letzter().getHeaderText());
+            knopf("auszahlenKnopf").fire();
+            assertEquals("Barauszahlung", antworten.letzter().getHeaderText());
+            assertEquals(new Geldbetrag(250), giro.getKontostand());
+            assertEquals(new Geldbetrag(250).toString(), FxHilfe.text(ansicht, "detailStand"));
+            assertEquals(2, verwaltung.getBuchungen(giro.getKontonummer()).size());
+        }
+
+        @Test
+        void barbuchung_abgebrochen_undNurFuerAktiveKonten() {
+            waehle(giro);
+            new Dialogantworten().klicke("Abbrechen");
+            knopf("einzahlenKnopf").fire();
+            assertTrue(verwaltung.getBuchungen(giro.getKontonummer()).isEmpty());
+            verwaltung.kontoSperren(admin, giro.getKontonummer());
+            controller.aktualisieren();
+            assertTrue(knopf("einzahlenKnopf").isDisabled() && knopf("auszahlenKnopf").isDisabled());
+            assertFalse(knopf("auszugKnopf").isDisabled());
+        }
+
+        @Test
+        void kontoauszug_imDialog() {
+            verwaltung.bareinzahlung(admin, giro.getKontonummer(), new Geldbetrag(20), null);
+            waehle(giro);
+            Dialogantworten antworten = new Dialogantworten().dann(d -> {
+                @SuppressWarnings("unchecked")
+                TableView<bankprojekt.verwaltung.Buchung> auszug =
+                        (TableView<bankprojekt.verwaltung.Buchung>) d.getContent();
+                assertEquals(1, auszug.getItems().size());
+                Dialogantworten.knopf(d, "Schließen").fire();
+            });
+            knopf("auszugKnopf").fire();
+            assertEquals("Kontoauszug " + giro.getIbanFormatiert() + " – Schmidt, Anna",
+                    antworten.letzter().getHeaderText());
+        }
+
+        @Test
         void aktionen_ohneAuswahl_tunNichts() {
-            for (String id : List.of("sperrenKnopf", "entsperrenKnopf", "aufloesenKnopf")) {
+            for (String id : List.of("sperrenKnopf", "entsperrenKnopf", "aufloesenKnopf", "einzahlenKnopf",
+                    "auszahlenKnopf", "auszugKnopf")) {
                 Node knopf = knopf(id);
                 knopf.setDisable(false);
                 ((Button) knopf).fire();   // ein unerwarteter Dialog ließe den Test scheitern

@@ -44,6 +44,36 @@ class DarstellungTest {
         }
 
         @Test
+        void begruessung_nachTageszeit() {
+            assertEquals("Guten Abend, Anna!", Darstellung.begruessung(java.time.LocalTime.of(4, 59), "Anna"));
+            assertEquals("Guten Morgen, Anna!", Darstellung.begruessung(java.time.LocalTime.of(5, 0), "Anna"));
+            assertEquals("Guten Morgen, Anna!", Darstellung.begruessung(java.time.LocalTime.of(10, 59), "Anna"));
+            assertEquals("Guten Tag, Anna!", Darstellung.begruessung(java.time.LocalTime.of(11, 0), "Anna"));
+            assertEquals("Guten Tag, Anna!", Darstellung.begruessung(java.time.LocalTime.of(17, 59), "Anna"));
+            assertEquals("Guten Abend, Anna!", Darstellung.begruessung(java.time.LocalTime.of(18, 0), "Anna"));
+        }
+
+        @Test
+        void betragZelle_rechtsbuendig_undNegativRot() {
+            TableView<bankprojekt.basisdaten.Geldbetrag> tabelle = new TableView<>(FXCollections.observableArrayList(
+                    new bankprojekt.basisdaten.Geldbetrag(5), new bankprojekt.basisdaten.Geldbetrag(-5), null));
+            TableColumn<bankprojekt.basisdaten.Geldbetrag, bankprojekt.basisdaten.Geldbetrag> spalte =
+                    new TableColumn<>("Betrag");
+            spalte.setCellValueFactory(z -> new javafx.beans.property.ReadOnlyObjectWrapper<>(z.getValue()));
+            spalte.setCellFactory(s -> Darstellung.betragZelle());
+            tabelle.getColumns().add(spalte);
+            new Scene(tabelle, 300, 200);
+            FxHilfe.auslegen(tabelle);
+            List<javafx.scene.control.TableCell<?, ?>> zellen = tabelle.lookupAll(".table-cell").stream()
+                    .<javafx.scene.control.TableCell<?, ?>>map(n -> (javafx.scene.control.TableCell<?, ?>) n).toList();
+            assertTrue(zellen.stream().allMatch(z -> z.getAlignment() == javafx.geometry.Pos.CENTER_RIGHT));
+            assertEquals(1, zellen.stream().filter(z -> z.getStyleClass().contains("negativ")).count());
+            assertTrue(zellen.stream().anyMatch(z -> new bankprojekt.basisdaten.Geldbetrag(5).toString()
+                    .equals(z.getText())));
+            assertTrue(zellen.stream().anyMatch(z -> !z.isEmpty() && z.getText() == null), "Zeile ohne Betrag");
+        }
+
+        @Test
         void cssName_ersetztUmlaute_undEntferntSonderzeichen() {
             assertEquals("aufgeloest", Darstellung.cssName("aufgelöst"));
             assertEquals("aeoeuess", Darstellung.cssName("Ä Ö Ü ß"));

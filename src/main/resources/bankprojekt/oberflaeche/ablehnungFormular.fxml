@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Ablehnung eines Kontoantrags mit Begründung (der Kunde sieht sie im Kundenportal). -->
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="bankprojekt.oberflaeche.AblehnungFormularController"
+      spacing="10" prefWidth="460">
+
+    <Label fx:id="zusammenfassung" wrapText="true"/>
+    <Label text="Begründung * (der Kunde sieht sie im Kundenportal)" styleClass="feldname" wrapText="true"/>
+    <TextArea fx:id="begruendung" prefRowCount="3" wrapText="true"
+              promptText="z. B. Für ein Girokonto fehlt ein Einkommensnachweis."/>
+    <Label fx:id="fehler" styleClass="fehlermeldung" maxWidth="Infinity" wrapText="true"/>
+</VBox>
