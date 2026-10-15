@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Registrierung eines Neukunden in fünf Schritten: Begrüßung, persönliche Daten,
+     Kontowahl, Zugangsdaten, Zusammenfassung - danach eine Dankesseite. Es ist immer
+     nur die Seite des aktuellen Schritts sichtbar; das steuert der Controller. -->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="bankprojekt.oberflaeche.RegistrierungController"
+           stylesheets="@verwaltung.css"
+           styleClass="anmeldung"
+           prefWidth="720" prefHeight="680">
+
+    <VBox styleClass="karte" spacing="12" maxWidth="580" maxHeight="-Infinity">
+        <padding>
+            <Insets top="26" right="32" bottom="24" left="32"/>
+        </padding>
+
+        <Label fx:id="schrittAnzeige" styleClass="untertitel"/>
+        <Label fx:id="titel" styleClass="titel" wrapText="true"/>
+
+        <StackPane>
+            <!-- Schritt 1: Begrüßung -->
+            <VBox fx:id="seiteWillkommen" spacing="10">
+                <Label fx:id="willkommenText" wrapText="true"/>
+            </VBox>
+
+            <!-- Schritt 2: persönliche Daten (wiederverwendetes Kundenformular) -->
+            <VBox fx:id="seiteDaten" spacing="8">
+                <Label text="Diese Angaben brauchen wir für Ihr Konto. Felder mit * sind Pflicht."
+                       styleClass="hinweis" wrapText="true"/>
+                <fx:include fx:id="datenformular" source="kundeFormular.fxml"/>
+            </VBox>
+
+            <!-- Schritt 3: Kontowahl; die Kontoarten fügt der Controller ein -->
+            <VBox fx:id="seiteKonto" spacing="6">
+                <VBox fx:id="kontoarten" spacing="2"/>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <padding>
+                        <Insets top="8"/>
+                    </padding>
+                    <Label text="Währung" styleClass="feldname"/>
+                    <ComboBox fx:id="waehrung" prefWidth="120"/>
+                </HBox>
+            </VBox>
+
+            <!-- Schritt 4: Zugangsdaten -->
+            <VBox fx:id="seiteZugang" spacing="10">
+                <Label text="Mit diesen Daten melden Sie sich künftig im Kundenportal an."
+                       styleClass="hinweis" wrapText="true"/>
+                <GridPane styleClass="formular">
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="160"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                    </columnConstraints>
+                    <Label text="Benutzername *" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <TextField fx:id="benutzername" promptText="z. B. anna.schmidt"
+                               GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                    <Label text="Passwort *" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                    <PasswordField fx:id="passwort" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                    <Label text="Passwort wiederholen *" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                    <PasswordField fx:id="wiederholung" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                </GridPane>
+                <Label text="Benutzername: 3–30 Zeichen (Buchstaben, Ziffern, . _ -). Passwort: mindestens 4 Zeichen."
+                       styleClass="hinweis" wrapText="true"/>
+            </VBox>
+
+            <!-- Schritt 5: Zusammenfassung -->
+            <VBox fx:id="seiteZusammenfassung" spacing="10">
+                <Label fx:id="zusammenfassung" wrapText="true"/>
+                <Label text="Mit „Antrag absenden“ schicken Sie Ihren Antrag an unsere Mitarbeiterinnen und Mitarbeiter."
+                       styleClass="hinweis" wrapText="true"/>
+            </VBox>
+
+            <!-- Abschluss: Dank -->
+            <VBox fx:id="seiteDanke" spacing="10">
+                <Label fx:id="dankeText" wrapText="true"/>
+            </VBox>
+        </StackPane>
+
+        <Label fx:id="schrittFehler" styleClass="fehlermeldung" wrapText="true" maxWidth="Infinity"/>
+
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <Button fx:id="abbrechenKnopf" text="Abbrechen" onAction="#abbrechen"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="zurueckKnopf" text="Zurück" onAction="#zurueck"/>
+            <Button fx:id="weiterKnopf" text="Weiter" styleClass="primaer" defaultButton="true" onAction="#weiter"/>
+        </HBox>
+    </VBox>
+</StackPane>

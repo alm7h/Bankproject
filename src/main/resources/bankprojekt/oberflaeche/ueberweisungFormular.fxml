@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Formular für eine Überweisung vom eigenen Girokonto an ein Girokonto dieser Bank. -->
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+
+<GridPane xmlns="http://javafx.com/javafx"
+          xmlns:fx="http://javafx.com/fxml"
+          fx:controller="bankprojekt.oberflaeche.UeberweisungFormularController"
+          styleClass="formular" prefWidth="480">
+
+    <columnConstraints>
+        <ColumnConstraints minWidth="140"/>
+        <ColumnConstraints hgrow="ALWAYS"/>
+    </columnConstraints>
+
+    <Label text="Von" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+    <Label fx:id="von" styleClass="feldname" wrapText="true" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+    <Label text="Empfänger-IBAN *" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+    <TextField fx:id="iban" promptText="DE.. .... .... .... .... .." GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+    <Label text="Betrag *" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+    <HBox spacing="8" alignment="CENTER_LEFT" GridPane.rowIndex="2" GridPane.columnIndex="1">
+        <TextField fx:id="betrag" promptText="z. B. 50,00" prefWidth="140"/>
+        <Label fx:id="waehrung"/>
+    </HBox>
+
+    <Label text="Verwendungszweck" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+    <TextField fx:id="zweck" promptText="z. B. Miete Oktober" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+    <Label text="Überweisungen sind an Girokonten unserer Bank möglich und werden sofort ausgeführt."
+           styleClass="hinweis" wrapText="true"
+           GridPane.rowIndex="4" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+
+    <Label fx:id="fehler" styleClass="fehlermeldung" maxWidth="Infinity" wrapText="true"
+           GridPane.rowIndex="5" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+</GridPane>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Kontoauszug: alle Buchungen eines Kontos, neueste zuerst. Wird im Kundenportal und
+     in der Verwaltung wiederverwendet. -->
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+
+<TableView xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:id="auszugTabelle"
+           fx:controller="bankprojekt.oberflaeche.KontoauszugController"
+           prefHeight="260">
+    <columns>
+        <TableColumn fx:id="datumSpalte" text="Datum" prefWidth="120"/>
+        <TableColumn fx:id="artSpalte" text="Art" prefWidth="140"/>
+        <TableColumn fx:id="textSpalte" text="Text" prefWidth="260"/>
+        <TableColumn fx:id="betragSpalte" text="Betrag" prefWidth="110"/>
+        <TableColumn fx:id="saldoSpalte" text="Saldo" prefWidth="110"/>
+    </columns>
+    <columnResizePolicy>
+        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+    </columnResizePolicy>
+    <placeholder>
+        <Label text="Noch keine Buchungen."/>
+    </placeholder>
+</TableView>

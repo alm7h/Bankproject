@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Kundenportal, "Meine Konten": links die eigenen Konten mit Gesamtsaldo, rechts das
+     gewählte Konto mit Aktionen und Kontoauszug. -->
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="bankprojekt.oberflaeche.PortalKontenController"
+      stylesheets="@verwaltung.css"
+      styleClass="arbeitsbereich" spacing="16">
+
+    <VBox spacing="10" HBox.hgrow="ALWAYS" minWidth="340">
+        <Label text="Meine Konten" styleClass="ueberschrift"/>
+        <TableView fx:id="tabelle" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="kontoSpalte" text="Konto" prefWidth="260"/>
+                <TableColumn fx:id="standSpalte" text="Kontostand" prefWidth="120"/>
+                <TableColumn fx:id="statusSpalte" text="Status" prefWidth="90"/>
+            </columns>
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/>
+            </columnResizePolicy>
+            <placeholder>
+                <Label text="Sie haben noch keine Konten."/>
+            </placeholder>
+        </TableView>
+        <Label fx:id="gesamt" styleClass="fusszeile"/>
+    </VBox>
+
+    <VBox styleClass="detail" prefWidth="560" minWidth="440">
+        <Label fx:id="keineAuswahl" text="Wählen Sie links ein Konto." styleClass="hinweis"/>
+        <VBox fx:id="detailInhalt" spacing="10" VBox.vgrow="ALWAYS">
+            <Label fx:id="detailTitel" styleClass="detail-titel" wrapText="true"/>
+            <Label fx:id="detailStand" styleClass="kontostand"/>
+            <Label fx:id="detailStatus"/>
+            <HBox spacing="8">
+                <Button fx:id="ueberweisenKnopf" text="Überweisen" styleClass="primaer" onAction="#ueberweisen"/>
+                <Button fx:id="umbuchenKnopf" text="Umbuchen" onAction="#umbuchen"/>
+                <Button fx:id="sperrenKnopf" text="Konto sperren" styleClass="gefahr" onAction="#sperren"/>
+            </HBox>
+            <Label fx:id="aktionHinweis" styleClass="hinweis" wrapText="true"/>
+            <Separator/>
+            <Label text="Kontoauszug" styleClass="detail-titel"/>
+            <StackPane VBox.vgrow="ALWAYS">
+                <fx:include fx:id="auszug" source="kontoauszug.fxml"/>
+            </StackPane>
+        </VBox>
+    </VBox>
+</HBox>

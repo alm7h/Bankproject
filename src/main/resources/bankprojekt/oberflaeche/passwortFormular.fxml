@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Formular zum Ändern des eigenen Passworts im Kundenportal (auch erzwungen nach
+     einem von der Bank vergebenen Passwort). -->
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+
+<GridPane xmlns="http://javafx.com/javafx"
+          xmlns:fx="http://javafx.com/fxml"
+          fx:controller="bankprojekt.oberflaeche.PasswortFormularController"
+          styleClass="formular" prefWidth="460">
+
+    <columnConstraints>
+        <ColumnConstraints minWidth="190"/>
+        <ColumnConstraints hgrow="ALWAYS"/>
+    </columnConstraints>
+
+    <Label fx:id="hinweis" styleClass="hinweis" wrapText="true" maxWidth="Infinity"
+           text="Das neue Passwort muss mindestens 4 Zeichen lang sein."
+           GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+
+    <Label text="Bisheriges Passwort *" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+    <PasswordField fx:id="altesPasswort" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+    <Label text="Neues Passwort *" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+    <PasswordField fx:id="neuesPasswort" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+    <Label text="Neues Passwort wiederholen *" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+    <PasswordField fx:id="wiederholung" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+    <Label fx:id="fehler" styleClass="fehlermeldung" maxWidth="Infinity" wrapText="true"
+           GridPane.rowIndex="4" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+</GridPane>

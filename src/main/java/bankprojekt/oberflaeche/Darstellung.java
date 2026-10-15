@@ -2,6 +2,7 @@ package bankprojekt.oberflaeche;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
@@ -10,6 +11,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import bankprojekt.basisdaten.Geldbetrag;
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.TableCell;
@@ -100,6 +103,44 @@ final class Darstellung {
             throw new IllegalArgumentException(feldname + " \"" + betrag
                     + "\" ist ungültig. Bitte einen Betrag wie 500 oder 500,00 eingeben.");
         return Double.parseDouble(betrag.replace(',', '.'));
+    }
+
+    /**
+     * Liefert eine Begrüßung passend zur Tageszeit.
+     * @param zeit die Uhrzeit
+     * @param name der Name, mit dem begrüßt wird
+     * @return z. B. "Guten Morgen, Anna!" (5–11 Uhr), "Guten Tag, Anna!" (11–18 Uhr),
+     *         sonst "Guten Abend, Anna!"
+     */
+    static String begruessung(LocalTime zeit, String name) {
+        int stunde = zeit.getHour();
+        String gruss = stunde >= 5 && stunde < 11 ? "Guten Morgen"
+                : stunde >= 11 && stunde < 18 ? "Guten Tag" : "Guten Abend";
+        return gruss + ", " + name + "!";
+    }
+
+    /**
+     * Erzeugt eine rechtsbündige Tabellenzelle für Geldbeträge; negative Beträge
+     * werden rot dargestellt (CSS-Klasse "negativ").
+     * @param <S> Typ der Tabellenzeilen
+     * @return die Zelle
+     */
+    static <S> TableCell<S, Geldbetrag> betragZelle() {
+        return new TableCell<>() {
+            @Override
+            protected void updateItem(Geldbetrag betrag, boolean leer) {
+                super.updateItem(betrag, leer);
+                setAlignment(Pos.CENTER_RIGHT);
+                getStyleClass().remove("negativ");
+                if (leer || betrag == null) {
+                    setText(null);
+                } else {
+                    setText(betrag.toString());
+                    if (betrag.isNegativ())
+                        getStyleClass().add("negativ");
+                }
+            }
+        };
     }
 
     /**

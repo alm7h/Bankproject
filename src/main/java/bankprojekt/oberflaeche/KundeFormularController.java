@@ -58,12 +58,20 @@ public class KundeFormularController {
      */
     public void setKunde(Kundenakte kunde) {
         kundennummer.setText(kunde.getKundennummer());
-        vorname.setText(kunde.getVorname());
-        nachname.setText(kunde.getNachname());
-        geburtsdatum.setText(Darstellung.datum(kunde.getGeburtsdatum()));
-        adresse.setText(kunde.getAdresse());
-        telefon.setText(kunde.getTelefon());
-        email.setText(kunde.getEmail());
+        setKundendaten(kunde.getKundendaten());
+    }
+
+    /**
+     * Füllt die Eingabefelder mit Stammdaten vor (z. B. aus einem früheren Antrag).
+     * @param daten die Stammdaten
+     */
+    public void setKundendaten(Kundendaten daten) {
+        vorname.setText(daten.vorname());
+        nachname.setText(daten.nachname());
+        geburtsdatum.setText(Darstellung.datum(daten.geburtsdatum()));
+        adresse.setText(daten.adresse());
+        telefon.setText(daten.telefon());
+        email.setText(daten.email());
     }
 
     /**

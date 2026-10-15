@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Formular für einen Kontoantrag im Kundenportal: Kontoart und Währung, bei einem
+     neuen Neukundenantrag zusätzlich die persönlichen Daten. -->
+
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="bankprojekt.oberflaeche.KontoantragFormularController"
+      spacing="8" prefWidth="480">
+
+    <Label text="Kontoart *" styleClass="feldname"/>
+    <ComboBox fx:id="kontoart" maxWidth="Infinity" promptText="Kontoart wählen"/>
+    <Label fx:id="beschreibung" styleClass="hinweis" wrapText="true"/>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Währung *" styleClass="feldname"/>
+        <ComboBox fx:id="waehrung" prefWidth="120"/>
+    </HBox>
+
+    <VBox fx:id="datenBereich" spacing="6" visible="false" managed="false">
+        <Separator/>
+        <Label text="Ihre Angaben" styleClass="feldname"/>
+        <fx:include fx:id="datenformular" source="kundeFormular.fxml"/>
+    </VBox>
+
+    <Label fx:id="antragFehler" styleClass="fehlermeldung" maxWidth="Infinity" wrapText="true"/>
+</VBox>

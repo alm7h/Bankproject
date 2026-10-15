@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Kundenportal, "Meine Daten": Stammdaten ansehen, Kontaktdaten ändern, Passwort ändern. -->
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="bankprojekt.oberflaeche.PortalDatenController"
+      stylesheets="@verwaltung.css"
+      styleClass="arbeitsbereich">
+
+    <Label text="Meine Daten" styleClass="ueberschrift"/>
+
+    <VBox styleClass="detail" maxWidth="640">
+        <GridPane hgap="10" vgap="8">
+            <columnConstraints>
+                <ColumnConstraints minWidth="140"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+            </columnConstraints>
+            <Label text="Kundennummer" styleClass="feldname" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+            <Label fx:id="kundennummer" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+            <Label text="Name" styleClass="feldname" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+            <Label fx:id="name" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+            <Label text="Geburtsdatum" styleClass="feldname" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+            <Label fx:id="geburtsdatum" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+            <Label text="Benutzername" styleClass="feldname" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+            <Label fx:id="benutzername" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+        </GridPane>
+        <Label text="Name und Geburtsdatum ändert auf Wunsch Ihre Bank." styleClass="hinweis"/>
+
+        <Separator/>
+        <Label text="Kontaktdaten" styleClass="detail-titel"/>
+        <GridPane styleClass="formular">
+            <columnConstraints>
+                <ColumnConstraints minWidth="140"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+            </columnConstraints>
+            <Label text="Adresse *" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+            <TextArea fx:id="adresse" prefRowCount="3" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+            <Label text="Telefon" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+            <TextField fx:id="telefon" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+            <Label text="E-Mail *" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+            <TextField fx:id="email" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+        </GridPane>
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Button fx:id="speichernKnopf" text="Kontaktdaten speichern" styleClass="primaer"
+                    onAction="#kontaktdatenSpeichern"/>
+            <Label fx:id="meldung" wrapText="true"/>
+        </HBox>
+
+        <Separator/>
+        <Label text="Passwort" styleClass="detail-titel"/>
+        <Button fx:id="passwortKnopf" text="Passwort ändern" onAction="#passwortAendern"/>
+    </VBox>
+</VBox>
