@@ -3,7 +3,7 @@
 [![Build](https://github.com/alm7h/Bankproject/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/alm7h/Bankproject/actions/workflows/build.yml)
 ![Java 21](https://img.shields.io/badge/Java-21-orange)
 ![JavaFX](https://img.shields.io/badge/JavaFX-22-blue)
-[![License: MIT](https://img.shields.io/github/license/alm7h/Bankproject)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A Java 21 + JavaFX learning project that models a small banking domain and includes a JavaFX application with one login for two groups: staff manage customers, accounts, applications and staff users in the **Verwaltung**, clients open accounts, transfer money and read their statements in the **Kundenportal**. The project demonstrates clean domain modeling (accounts, customers, money, currencies), design patterns (Template Method, Abstract Factory, Observer), collections/streams, concurrency with `ExecutorService`, persistence via Java serialization, a thorough unit test suite (JUnit 5 + Mockito), and code quality tooling (SpotBugs, JaCoCo, Javadoc).
 
