@@ -1,0 +1,19 @@
+Bankproject
+Copyright (c) 2026 Mohameed Al-Harethi
+
+This project was written for a university Java course. Parts of it are based
+on course material provided by the course instructor, Dorothea Hubrich. The
+following files are based on that material and still carry the instructor's
+@author tag:
+
+  src/main/java/bankprojekt/aktienhandel/Aktie.java
+  src/main/java/bankprojekt/basisdaten/Girokonto.java
+  src/main/java/bankprojekt/basisdaten/Kunde.java
+  src/main/java/bankprojekt/basisdaten/Sparbuch.java
+  src/main/java/bankprojekt/exceptions/GesperrtException.java
+  src/main/java/spielereien/KontenSpielereien.java
+
+The parts of these files that come from the course material are not covered by
+the MIT License in LICENSE; the rights to them remain with their author. The
+MIT License applies to everything else in this repository, including the
+changes and additions made to these files.

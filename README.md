@@ -148,6 +148,7 @@ See `pom.xml` for exact versions and plugins.
 │     ├─ java/bankprojekt/        # Unit and UI tests, same packages as the classes they test
 │     └─ resources/               # test-only files (e.g. a deliberately broken FXML file)
 ├─ LICENSE
+├─ NOTICE                        # files based on course material (not under the MIT License)
 └─ README.md
 ```
 
@@ -293,3 +294,5 @@ Please open an issue or pull request.
 
 ## License
 Released under the [MIT License](LICENSE) — © 2026 Mohameed Al-Harethi.
+
+**Exception: course material.** This project was written for a university course, and parts of it are based on the course material. The files that still carry the course instructor's `@author` tag (`Aktie`, `Girokonto`, `Kunde`, `Sparbuch`, `GesperrtException`, `KontenSpielereien`) are not fully covered by the MIT License; see [NOTICE](NOTICE).
