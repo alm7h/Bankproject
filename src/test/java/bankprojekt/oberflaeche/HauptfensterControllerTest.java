@@ -111,6 +111,22 @@ class HauptfensterControllerTest {
     }
 
     @Test
+    void antraege_zeigenDieZahlOffenerAntraege_undAktualisierenSieNachEntscheidungen() {
+        Testdaten.neukunde(verwaltung, "carla.k", Testdaten.kunde("Carla", "Klein"), Kontoart.SPARBUCH);
+        anmelden();
+        assertEquals("Anträge (1)", nav("antraegeKnopf").getText());
+        nav("antraegeKnopf").fire();
+        assertNotNull(aktuelleAnsicht().lookup("#genehmigenKnopf"), "Antragsansicht");
+        @SuppressWarnings("unchecked")
+        TableView<bankprojekt.verwaltung.Kontoantrag> antraege =
+                (TableView<bankprojekt.verwaltung.Kontoantrag>) aktuelleAnsicht().lookup("#tabelle");
+        antraege.getSelectionModel().selectFirst();
+        new Dialogantworten().klicke("Genehmigen");
+        FxHilfe.druecke((Parent) aktuelleAnsicht(), "genehmigenKnopf");
+        assertEquals("Anträge", nav("antraegeKnopf").getText());
+    }
+
+    @Test
     void abmelden_ruftDieAbmeldeaktion() {
         anmelden();
         FxHilfe.druecke(fenster, "abmeldenKnopf");

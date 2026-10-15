@@ -34,6 +34,9 @@ public class HauptfensterController {
     /** Navigationsknopf „Konten" */
     @FXML
     private ToggleButton kontenKnopf;
+    /** Navigationsknopf „Anträge" (mit Zahl der offenen Anträge) */
+    @FXML
+    private ToggleButton antraegeKnopf;
     /** Navigationsknopf „Benutzer" */
     @FXML
     private ToggleButton benutzerKnopf;
@@ -87,6 +90,14 @@ public class HauptfensterController {
     }
 
     /**
+     * Zeigt die Zahl der offenen Kontoanträge in der Navigation, z. B. „Anträge (2)".
+     */
+    private void antraegeZaehlen() {
+        long offen = sitzung.verwaltung().getAnzahlOffeneAntraege();
+        antraegeKnopf.setText(offen == 0 ? "Anträge" : "Anträge (" + offen + ")");
+    }
+
+    /**
      * Zeigt die Kundenansicht.
      */
     @FXML
@@ -109,6 +120,15 @@ public class HauptfensterController {
      */
     private KontenController kontenAnsicht() {
         return zeigen("konten.fxml", kontenKnopf);
+    }
+
+    /**
+     * Zeigt die Kontoanträge aus dem Kundenportal.
+     */
+    @FXML
+    private void antraegeZeigen() {
+        AntraegeController antraege = zeigen("antraege.fxml", antraegeKnopf);
+        antraege.setNachEntscheidung(this::antraegeZaehlen);
     }
 
     /**
@@ -144,6 +164,7 @@ public class HauptfensterController {
         knopf.setSelected(true);
         inhalt.getChildren().setAll(ansicht.wurzel());
         ansicht.controller().aktualisieren();
+        antraegeZaehlen();
         return (C) ansicht.controller();
     }
 

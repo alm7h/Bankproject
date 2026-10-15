@@ -84,6 +84,11 @@
                     <Button fx:id="entsperrenKnopf" text="Entsperren" onAction="#entsperren"/>
                     <Button fx:id="aufloesenKnopf" text="Auflösen" styleClass="gefahr" onAction="#aufloesen"/>
                 </HBox>
+                <HBox spacing="8">
+                    <Button fx:id="einzahlenKnopf" text="Einzahlung" onAction="#einzahlen"/>
+                    <Button fx:id="auszahlenKnopf" text="Auszahlung" onAction="#auszahlen"/>
+                    <Button fx:id="auszugKnopf" text="Kontoauszug" onAction="#kontoauszugZeigen"/>
+                </HBox>
                 <Label fx:id="aufloesenHinweis" styleClass="hinweis" wrapText="true"/>
             </VBox>
         </VBox>

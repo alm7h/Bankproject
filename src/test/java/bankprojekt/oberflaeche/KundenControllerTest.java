@@ -6,6 +6,7 @@ import bankprojekt.verwaltung.Benutzer;
 import bankprojekt.verwaltung.Kontoart;
 import bankprojekt.verwaltung.Kundenakte;
 import bankprojekt.verwaltung.Kundenstatus;
+import bankprojekt.verwaltung.Kundenzugang;
 import bankprojekt.verwaltung.Testdaten;
 import bankprojekt.verwaltung.VerstellbareUhr;
 import javafx.scene.Node;
@@ -298,6 +299,67 @@ class KundenControllerTest {
             knopf("statusKnopf").fire();
             assertTrue(anna.isAktiv());
             assertFalse(bert.isAktiv());
+        }
+    }
+
+    @Nested
+    class PortalzugangTests {
+        @Test
+        void spalteUndKnopf_zeigenDenStandDesPortalzugangs() {
+            assertEquals("–", FxHilfe.zelle(tabelle, "Portal", anna));
+            tabelle.getSelectionModel().select(anna);
+            assertEquals("Portalzugang einrichten", knopf("portalKnopf").getText());
+            Testdaten.kundenzugang(verwaltung, "anna.s", anna.getKundennummer());
+            controller.aktualisieren();
+            assertEquals("anna.s", FxHilfe.zelle(tabelle, "Portal", anna));
+            assertEquals("Portalpasswort zurücksetzen", knopf("portalKnopf").getText());
+        }
+
+        @Test
+        void portalzugangEinrichten_imDialog() {
+            tabelle.getSelectionModel().select(anna);
+            Dialogantworten antworten = new Dialogantworten().dann(d -> {
+                Parent formular = Dialogantworten.inhalt(d);
+                FxHilfe.tippe(formular, "benutzername", "admin");
+                FxHilfe.tippe(formular, "passwort", "start1");
+                FxHilfe.tippe(formular, "wiederholung", "start1");
+                Dialogantworten.knopf(d, "Speichern").fire();
+                assertTrue(FxHilfe.text(formular, "fehler").contains("bereits vergeben"));
+                FxHilfe.tippe(formular, "benutzername", "anna.s");
+                Dialogantworten.knopf(d, "Speichern").fire();
+            });
+            knopf("portalKnopf").fire();
+            assertEquals("Portalzugang einrichten", antworten.letzter().getHeaderText());
+            Kundenzugang zugang = verwaltung.getKundenzugangVon(anna.getKundennummer()).orElseThrow();
+            assertTrue(zugang.mussPasswortAendern());
+            assertEquals("anna.s", FxHilfe.zelle(tabelle, "Portal", anna));
+        }
+
+        @Test
+        void portalpasswortZuruecksetzen_imDialog() {
+            Kundenzugang zugang = Testdaten.kundenzugang(verwaltung, "anna.s", anna.getKundennummer());
+            controller.aktualisieren();
+            tabelle.getSelectionModel().select(anna);
+            Dialogantworten antworten = new Dialogantworten().dann(d -> {
+                Parent formular = Dialogantworten.inhalt(d);
+                FxHilfe.tippe(formular, "passwort", "neu-123");
+                FxHilfe.tippe(formular, "wiederholung", "neu-123");
+                Dialogantworten.knopf(d, "Speichern").fire();
+            });
+            knopf("portalKnopf").fire();
+            assertEquals("Portalpasswort zurücksetzen", antworten.letzter().getHeaderText());
+            assertTrue(zugang.mussPasswortAendern());
+        }
+
+        @Test
+        void portalzugang_abgebrochen_oderOhneAuswahl() {
+            tabelle.getSelectionModel().select(anna);
+            new Dialogantworten().klicke("Abbrechen");
+            knopf("portalKnopf").fire();
+            assertTrue(verwaltung.getKundenzugangVon(anna.getKundennummer()).isEmpty());
+            tabelle.getSelectionModel().clearSelection();
+            knopf("portalKnopf").setDisable(false);
+            knopf("portalKnopf").fire();
         }
     }
 

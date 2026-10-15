@@ -109,6 +109,15 @@ public class KontenController implements Ansicht {
     /** Knopf „Auflösen" */
     @FXML
     private Button aufloesenKnopf;
+    /** Knopf „Einzahlung" (bar am Schalter) */
+    @FXML
+    private Button einzahlenKnopf;
+    /** Knopf „Auszahlung" (bar am Schalter) */
+    @FXML
+    private Button auszahlenKnopf;
+    /** Knopf „Kontoauszug" */
+    @FXML
+    private Button auszugKnopf;
     /** Hinweis, warum nicht aufgelöst werden kann */
     @FXML
     private Label aufloesenHinweis;
@@ -243,6 +252,8 @@ public class KontenController implements Ansicht {
         sperrenKnopf.setDisable(status != Kontostatus.AKTIV);
         entsperrenKnopf.setDisable(status != Kontostatus.GESPERRT);
         aufloesenKnopf.setDisable(status == Kontostatus.AUFGELOEST || !guthabenNull);
+        einzahlenKnopf.setDisable(status != Kontostatus.AKTIV);
+        auszahlenKnopf.setDisable(status != Kontostatus.AKTIV);
         aufloesenHinweis.setText(status != Kontostatus.AUFGELOEST && !guthabenNull
                 ? "Auflösen ist nur bei einem Kontostand von 0 möglich." : "");
     }
@@ -279,6 +290,61 @@ public class KontenController implements Ansicht {
             tabelle.getSelectionModel().select(neu[0]);
             tabelle.scrollTo(neu[0]);
         }
+    }
+
+    /**
+     * Reaktion auf „Einzahlung": Bareinzahlung am Schalter.
+     */
+    @FXML
+    private void einzahlen() {
+        barBuchen(true);
+    }
+
+    /**
+     * Reaktion auf „Auszahlung": Barauszahlung am Schalter.
+     */
+    @FXML
+    private void auszahlen() {
+        barBuchen(false);
+    }
+
+    /**
+     * Zeigt das Formular für eine Bareinzahlung bzw. -auszahlung und bucht.
+     * @param einzahlung true für eine Einzahlung, false für eine Auszahlung
+     */
+    private void barBuchen(boolean einzahlung) {
+        Kontoakte konto = tabelle.getSelectionModel().getSelectedItem();
+        if (konto == null)
+            return;
+        Dialoge.Geladen<BarFormularController> formular = Dialoge.laden("barFormular.fxml");
+        BarFormularController eingaben = formular.controller();
+        eingaben.setKonto(konto);
+        boolean gebucht = Dialoge.formular(Dialoge.fenster(tabelle), einzahlung ? "Bareinzahlung" : "Barauszahlung",
+                formular.wurzel(), eingaben.getFehlerfeld(), einzahlung ? "Einzahlen" : "Auszahlen", () -> {
+                    if (einzahlung)
+                        sitzung.verwaltung().bareinzahlung(sitzung.benutzer(), konto.getKontonummer(),
+                                eingaben.getBetrag(), eingaben.getText());
+                    else
+                        sitzung.verwaltung().barauszahlung(sitzung.benutzer(), konto.getKontonummer(),
+                                eingaben.getBetrag(), eingaben.getText());
+                });
+        if (gebucht)
+            suchen();
+    }
+
+    /**
+     * Reaktion auf „Kontoauszug": zeigt alle Buchungen des Kontos.
+     */
+    @FXML
+    private void kontoauszugZeigen() {
+        Kontoakte konto = tabelle.getSelectionModel().getSelectedItem();
+        if (konto == null)
+            return;
+        Dialoge.Geladen<KontoauszugController> auszug = Dialoge.laden("kontoauszug.fxml");
+        auszug.controller().setBuchungen(sitzung.verwaltung().getBuchungen(konto.getKontonummer()));
+        auszug.wurzel().setStyle("-fx-pref-width: 760px;");
+        Dialoge.anzeigen(Dialoge.fenster(tabelle), "Kontoauszug " + konto.getIbanFormatiert()
+                + " – " + konto.getInhaberName(), auszug.wurzel());
     }
 
     /**

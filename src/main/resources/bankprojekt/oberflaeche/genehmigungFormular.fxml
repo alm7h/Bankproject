@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Genehmigung eines Kontoantrags: Zusammenfassung, beim Girokonto der Dispo. -->
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="bankprojekt.oberflaeche.GenehmigungFormularController"
+      spacing="10" prefWidth="460">
+
+    <Label fx:id="zusammenfassung" wrapText="true"/>
+
+    <HBox fx:id="dispoZeile" spacing="8" alignment="CENTER_LEFT">
+        <Label text="Dispo *" styleClass="feldname"/>
+        <TextField fx:id="dispo" promptText="z. B. 500,00" prefWidth="140"/>
+        <Label fx:id="waehrung"/>
+    </HBox>
+
+    <Label fx:id="hinweis" styleClass="hinweis" wrapText="true"/>
+    <Label fx:id="fehler" styleClass="fehlermeldung" maxWidth="Infinity" wrapText="true"/>
+</VBox>
