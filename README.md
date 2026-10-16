@@ -9,6 +9,9 @@ A Java 21 + JavaFX learning project that models a small banking domain and inclu
 
 This repository is intended for teaching/learning purposes but is structured like a production Maven project so you can build, test, and package it easily.
 
+![Verwaltung, view Konten: list of all accounts with IBAN, account type, owner, balance and status, and the details of the selected account on the right](docs/screenshots/01-verwaltung-konten.png)
+*The Verwaltung (Konten): every account with type, owner, balance and status, details and actions for the selected one. All screenshots show invented demo data.*
+
 
 ## Contents
 - Overview
@@ -96,6 +99,10 @@ On the very first start (no data file yet) one user is created:
 - **Benutzer** — staff users: create, edit the display name, reset a password, deactivate (with confirmation; not yourself) and reactivate.
 - **Protokoll** — read-only audit log: who did what and when (logins, failed logins, lockouts, logouts — also when the window is closed — registrations, applications and decisions, transfers, every create/edit/block/close).
 
+| Kunden | Anträge | Protokoll |
+|---|---|---|
+| <img src="docs/screenshots/02-verwaltung-kunden.png" alt="Kunden view: customers with customer number, date of birth, contact data, number of accounts, portal login and status; a deactivated customer is greyed out" width="280"> | <img src="docs/screenshots/03-verwaltung-antraege.png" alt="Anträge view: two open applications; the selected new-client application shows the applicant's data with the buttons Genehmigen and Ablehnen" width="280"> | <img src="docs/screenshots/04-verwaltung-protokoll.png" alt="Protokoll view: audit log with time, user, action and details, e.g. logins, a failed login, transfers and a locked account" width="280"> |
+
 **Data file.** All data (bank, customers, accounts, users, client logins, applications, statements, audit log) is saved with Java serialization after every change to `~/.bankprojekt/verwaltung.ser`. Another file can be chosen with `-Dbankprojekt.datei=/path/to/file.ser`. Deleting the file resets the app to the seed user (all data is lost). Files saved by the earlier version without the Kundenportal can still be loaded.
 
 
@@ -108,6 +115,9 @@ Clients use the same login screen as staff.
 - **Meine Konten** — own accounts with live balances and a total in EUR; per account the statement (newest first, outgoing amounts in red) and the actions **Überweisen** (from a Girokonto to any active Girokonto of the bank, by IBAN), **Umbuchen** (between own accounts; the rules of the sending account apply, e.g. dispo or the Sparbuch limit) and **Konto sperren** (after confirmation; only the bank can unlock).
 - **Anträge** — status of each application with the opened account or the rejection reason; "Weiteres Konto beantragen".
 - **Meine Daten** — customer data, change address/phone/e-mail, change the password.
+
+![Kundenportal, view Meine Konten: greeting, the client's Girokonto and Sparbuch with balances and total in EUR, and the statement of the selected Girokonto with outgoing amounts in red](docs/screenshots/05-kundenportal-konten.png)
+*The Kundenportal (Meine Konten): own accounts with the total in EUR and the statement of the selected account.*
 
 Money comes into accounts through cash deposits at the counter (Verwaltung → Konten → Einzahlung) or transfers.
 
@@ -147,6 +157,7 @@ See `pom.xml` for exact versions and plugins.
 │  └─ test
 │     ├─ java/bankprojekt/        # Unit and UI tests, same packages as the classes they test
 │     └─ resources/               # test-only files (e.g. a deliberately broken FXML file)
+├─ docs/screenshots/             # screenshots of the app for this README
 ├─ LICENSE
 ├─ NOTICE                        # files based on course material (not under the MIT License)
 └─ README.md

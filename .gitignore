@@ -47,5 +47,5 @@ ToDoList
 ### Local test plan (not versioned) ###
 Test_Plan.md
 
-### Local screenshots for the README (uploaded to GitHub, not versioned) ###
+### Local raw screenshots and demo data (the README images live in docs/screenshots) ###
 /screenshots/
