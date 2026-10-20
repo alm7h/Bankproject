@@ -5,8 +5,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -240,6 +246,114 @@ class GeldbetragTest {
         }
     }
 
+    /**
+     * Hält Ergebnisse fest, die sich bei der Umstellung des Betrags von double auf
+     * BigDecimal nicht ändern dürfen. Die Beträge werden wie in der Oberfläche aus ganzen
+     * Cent gebildet. Erwartet wird jeweils der exakte Wert, mit BigDecimal berechnet und
+     * kaufmännisch (HALF_UP) auf Cent gerundet. Gemeldet werden die ersten Abweichungen.
+     */
+    @Nested
+    class ExakteErgebnisseTests {
+        /** obere Grenze der Raster in Cent (1.000,00) */
+        private static final int MAX_CENT = 100_000;
+
+        /** so viele Abweichungen werden höchstens gemeldet */
+        private static final int MAX_MELDUNGEN = 5;
+
+        @Test
+        void plusUndMinus_ergebenFuerCentbetraegeDenExaktenWert() {
+            List<String> abweichungen = new ArrayList<>();
+            for (int a = -MAX_CENT; a <= MAX_CENT; a += 211) {
+                for (int b = 0; b <= MAX_CENT; b += 97) {
+                    Geldbetrag x = new Geldbetrag(a / 100.0);
+                    Geldbetrag y = new Geldbetrag(b / 100.0);
+                    double summe = x.plus(y).getBetrag();
+                    double differenz = x.minus(y).getBetrag();
+                    if (summe != (a + b) / 100.0 && abweichungen.size() < MAX_MELDUNGEN)
+                        abweichungen.add(a + " + " + b + " Cent ergibt " + summe);
+                    if (differenz != (a - b) / 100.0 && abweichungen.size() < MAX_MELDUNGEN)
+                        abweichungen.add(a + " - " + b + " Cent ergibt " + differenz);
+                }
+            }
+            assertEquals(List.of(), abweichungen);
+        }
+
+        @Test
+        void mal_mitGanzzahligemFaktor_ergibtDenExaktenWert() {
+            List<String> abweichungen = new ArrayList<>();
+            for (int cent = -MAX_CENT; cent <= MAX_CENT; cent += 113) {
+                Geldbetrag betrag = new Geldbetrag(cent / 100.0);
+                for (int faktor = 0; faktor <= 100; faktor++) {
+                    double produkt = betrag.mal(faktor).getBetrag();
+                    if (produkt != cent * faktor / 100.0 && abweichungen.size() < MAX_MELDUNGEN)
+                        abweichungen.add(cent + " Cent mal " + faktor + " ergibt " + produkt);
+                }
+            }
+            assertEquals(List.of(), abweichungen);
+        }
+
+        /**
+         * In diesen Richtungen liegt das exakte Ergebnis nie genau auf einem halben Cent,
+         * daher ergibt jeder Betrag von 0,01 bis 1.000,00 den exakten, kaufmännisch
+         * gerundeten Wert.
+         * @param von Währung des Ausgangsbetrags
+         * @param nach Zielwährung
+         */
+        @ParameterizedTest
+        @CsvSource({
+                "DENAR, EURO", "DOBRA, EURO", "FRANC, EURO",
+                "FRANC, DENAR", "FRANC, DOBRA", "DENAR, DOBRA", "DOBRA, DENAR"
+        })
+        void umrechnen_ohneHalbeCent_ergibtDenExaktenWert(Waehrung von, Waehrung nach) {
+            BigDecimal kursVon = BigDecimal.valueOf(von.getUmrechnungskursZuEuro());
+            BigDecimal kursNach = BigDecimal.valueOf(nach.getUmrechnungskursZuEuro());
+            List<String> abweichungen = new ArrayList<>();
+            for (int cent = 1; cent <= MAX_CENT; cent++) {
+                double erwartet = BigDecimal.valueOf(cent, 2).multiply(kursNach)
+                        .divide(kursVon, 2, RoundingMode.HALF_UP).doubleValue();
+                double ist = new Geldbetrag(cent / 100.0, von).umrechnen(nach).getBetrag();
+                if (ist != erwartet && abweichungen.size() < MAX_MELDUNGEN)
+                    abweichungen.add(cent + " Cent " + von + " ergeben " + ist + " " + nach + " statt " + erwartet);
+            }
+            assertEquals(List.of(), abweichungen);
+        }
+
+        /**
+         * Von Euro in Denar (Kurs 61,5) und Dobra (Kurs 24,5) ergibt ein gerader
+         * Centbetrag genau zwei Nachkommastellen, es muss also nichts gerundet werden.
+         * Ungerade Centbeträge enden dagegen auf einen halben Cent; die double-Rechnung
+         * rundet sie je nach Binärdarstellung mal ab und mal auf, deshalb werden sie hier
+         * bewusst nicht festgehalten.
+         * @param nach Zielwährung
+         */
+        @ParameterizedTest
+        @EnumSource(value = Waehrung.class, names = {"DENAR", "DOBRA"})
+        void umrechnen_vonEuroBeiGeradenCentbetraegen_ergibtDenExaktenWert(Waehrung nach) {
+            BigDecimal kurs = BigDecimal.valueOf(nach.getUmrechnungskursZuEuro());
+            List<String> abweichungen = new ArrayList<>();
+            for (int cent = 2; cent <= MAX_CENT; cent += 2) {
+                double erwartet = BigDecimal.valueOf(cent, 2).multiply(kurs).doubleValue();
+                double ist = new Geldbetrag(cent / 100.0).umrechnen(nach).getBetrag();
+                if (ist != erwartet && abweichungen.size() < MAX_MELDUNGEN)
+                    abweichungen.add(cent + " Cent EUR ergeben " + ist + " " + nach + " statt " + erwartet);
+            }
+            assertEquals(List.of(), abweichungen);
+        }
+
+        /**
+         * Der Konstruktor rundet nicht: getBetrag liefert genau den übergebenen Wert,
+         * auch mit mehr als zwei Nachkommastellen (z. B. für den ungerundeten Aktienkurs).
+         * @param wert der übergebene Betrag
+         */
+        @ParameterizedTest
+        @ValueSource(doubles = {0.0, 12.34, -5.0, -0.01, 1234.567, 0.30000000000000004, 0.00001,
+                123456789.12, 491.96775})
+        void getBetrag_liefertGenauDenUebergebenenWert(double wert) {
+            assertEquals(wert, new Geldbetrag(wert).getBetrag());
+            assertEquals(wert, new Geldbetrag(wert, Waehrung.FRANC).getBetrag());
+        }
+    }
+
     @Nested
     class UmrechnenTests {
         @Test
@@ -357,6 +471,22 @@ class GeldbetragTest {
             assertEquals(euro, denar);
             assertEquals(euro.hashCode(), denar.hashCode());
         }
+
+        /**
+         * 10 € entsprechen genau 615 MKD bzw. 245 STN.
+         * @param betrag der Gegenwert
+         * @param waehrung die Währung des Gegenwerts
+         */
+        @ParameterizedTest
+        @CsvSource({"615, DENAR", "245, DOBRA"})
+        void equalsUndHashCode_zehnEuroGleichDemExaktenGegenwert(double betrag, Waehrung waehrung) {
+            Geldbetrag zehnEuro = new Geldbetrag(10);
+            Geldbetrag gegenwert = new Geldbetrag(betrag, waehrung);
+            assertEquals(zehnEuro, gegenwert);
+            assertEquals(gegenwert, zehnEuro);
+            assertEquals(0, zehnEuro.compareTo(gegenwert));
+            assertEquals(zehnEuro.hashCode(), gegenwert.hashCode());
+        }
     }
 
     @Nested
@@ -388,6 +518,27 @@ class GeldbetragTest {
         @Test
         void toString_negativerBetrag() {
             assertEquals("-3,00 EUR", new Geldbetrag(-3).toString());
+        }
+
+        /**
+         * Die Ausgabe rundet kaufmännisch auf zwei Nachkommastellen, und zwar den
+         * Dezimalwert (1,005 wird zu 1,01), nicht die Binärdarstellung des double.
+         * @param betrag der Betrag
+         * @param waehrung die Währung
+         * @param erwartet die erwartete Ausgabe
+         */
+        @ParameterizedTest
+        @CsvSource(delimiter = '|', value = {
+                "0           | EURO  | 0,00 EUR",
+                "9999999.99  | EURO  | 9.999.999,99 EUR",
+                "9999999.995 | EURO  | 10.000.000,00 EUR",
+                "-1234.5     | EURO  | -1.234,50 EUR",
+                "491.96775   | FRANC | 491,97 KMF",
+                "1234.565    | DENAR | 1.234,57 MKD",
+                "1.005       | DOBRA | 1,01 STN"
+        })
+        void toString_rundetKaufmaennischAufZweiNachkommastellen(double betrag, Waehrung waehrung, String erwartet) {
+            assertEquals(erwartet, new Geldbetrag(betrag, waehrung).toString());
         }
     }
 }
