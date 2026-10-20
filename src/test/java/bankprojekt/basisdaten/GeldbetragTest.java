@@ -9,6 +9,9 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -351,6 +354,35 @@ class GeldbetragTest {
         void getBetrag_liefertGenauDenUebergebenenWert(double wert) {
             assertEquals(wert, new Geldbetrag(wert).getBetrag());
             assertEquals(wert, new Geldbetrag(wert, Waehrung.FRANC).getBetrag());
+        }
+    }
+
+    /**
+     * Geldbeträge, die noch mit dem double-Feld gespeichert wurden, müssen unverändert
+     * gelesen werden. Die Datei hat {@code bankprojekt.verwaltung.AlteDateienErzeuger} auf
+     * Commit d7ba47f erzeugt; dort steht auch, wie man sie neu erzeugt.
+     */
+    @Nested
+    class AlteDateienTests {
+        @Test
+        void geldbetraegeImDoubleFormat_werdenUnveraendertGelesen() throws IOException, ClassNotFoundException {
+            InputStream datei = GeldbetragTest.class.getResourceAsStream("geldbetraege-double.ser");
+            assertNotNull(datei, "Testdatei fehlt");
+            Object gelesen;
+            try (ObjectInputStream ein = new ObjectInputStream(datei)) {
+                gelesen = ein.readObject();
+            }
+
+            double[] betraege = {0, 12.34, -5, 61.5, 491.97, 24.5, 1234.567, 0.30000000000000004, 9_999_999.99};
+            Waehrung[] waehrungen = {Waehrung.EURO, Waehrung.EURO, Waehrung.EURO, Waehrung.DENAR, Waehrung.FRANC,
+                    Waehrung.DOBRA, Waehrung.DENAR, Waehrung.EURO, Waehrung.EURO};
+            List<?> liste = assertInstanceOf(List.class, gelesen);
+            assertEquals(betraege.length, liste.size());
+            for (int i = 0; i < betraege.length; i++) {
+                Geldbetrag betrag = assertInstanceOf(Geldbetrag.class, liste.get(i));
+                assertEquals(betraege[i], betrag.getBetrag(), "Betrag Nr. " + i);
+                assertEquals(waehrungen[i], betrag.getWaehrung(), "Währung Nr. " + i);
+            }
         }
     }
 
