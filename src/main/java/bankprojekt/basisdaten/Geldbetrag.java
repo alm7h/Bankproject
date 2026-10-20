@@ -1,6 +1,13 @@
 package bankprojekt.basisdaten;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamField;
+import java.io.Serial;
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import org.decimal4j.util.DoubleRounder;
 
 /**
@@ -22,9 +29,16 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     public static final Geldbetrag NULL_EURO = new Geldbetrag(0);
 
     /**
-     * Betrag in der in waehrung angegebenen Währung
+     * Betrag in der in waehrung angegebenen Währung, exakt als Dezimalzahl.
+     * <p>
+     * Das Feld heißt wert und nicht betrag, weil der Name auch im Speicherformat steht:
+     * Ältere Versionen haben den Betrag als double unter dem Namen betrag gespeichert;
+     * hieße das neue Feld genauso, ließen sich solche Dateien wegen des anderen Typs nicht
+     * mehr lesen. {@code readObject} rechnet sie beim Lesen um. Nicht final, weil
+     * {@code readObject} das Feld setzen muss; es gibt aber keine Setter, der Geldbetrag
+     * bleibt unveränderlich.
      */
-    private final double betrag;
+    private BigDecimal wert;
 
     /**
      * Repräsentiert die Währung eines Geldbetrags.
@@ -32,7 +46,9 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     private Waehrung waehrung;
 
     /**
-     * erstellt einen Geldbetrag in der Währung Euro
+     * erstellt einen Geldbetrag in der Währung Euro. Gespeichert wird der Dezimalwert,
+     * mit dem Java den double ausgibt ({@link BigDecimal#valueOf(double)}), also z. B.
+     * genau 0,1 und nicht die Binärdarstellung 0,1000000000000000055…; gerundet wird nicht.
      * @param betrag Betrag in €
      * @throws IllegalArgumentException wenn betrag unendlich oder NaN ist
      */
@@ -40,12 +56,13 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     {
         if(!Double.isFinite(betrag))
             throw new IllegalArgumentException("Der Betrag ist nicht finit");
-        this.betrag = betrag;
+        this.wert = BigDecimal.valueOf(betrag);
         this.waehrung = Waehrung.EURO;
     }
 
     /**
      * Konstruktor zur Erstellung eines Geldbetrags mit einem spezifischen Betrag und einer angegebenen Währung.
+     * Wie bei {@link #Geldbetrag(double)} wird der Dezimalwert des double ungerundet gespeichert.
      *
      * @param betrag Der Betrag in der angegebenen Währung.
      * @param waehrung Die Währung des Betrags.
@@ -54,7 +71,30 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     public Geldbetrag(double betrag, Waehrung waehrung) throws IllegalArgumentException {
         if(!Double.isFinite(betrag) || waehrung == null)
             throw new IllegalArgumentException("Der Betrag ist nicht finit oder die angegebene Waehrung ist null");
-        this.betrag = betrag;
+        this.wert = BigDecimal.valueOf(betrag);
+        this.waehrung = waehrung;
+    }
+
+    /**
+     * erstellt einen Geldbetrag in der Währung Euro
+     * @param betrag Betrag in €; er wird exakt (ungerundet) übernommen
+     * @throws IllegalArgumentException wenn betrag null ist
+     */
+    public Geldbetrag(BigDecimal betrag) {
+        this(betrag, Waehrung.EURO);
+    }
+
+    /**
+     * Konstruktor zur Erstellung eines Geldbetrags mit einem exakten Betrag und einer angegebenen Währung.
+     *
+     * @param betrag Der Betrag in der angegebenen Währung; er wird exakt (ungerundet) übernommen.
+     * @param waehrung Die Währung des Betrags.
+     * @throws IllegalArgumentException Wenn betrag oder waehrung null ist.
+     */
+    public Geldbetrag(BigDecimal betrag, Waehrung waehrung) {
+        if(betrag == null || waehrung == null)
+            throw new IllegalArgumentException("Der Betrag oder die angegebene Waehrung ist null");
+        this.wert = betrag;
         this.waehrung = waehrung;
     }
 
@@ -82,18 +122,28 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
         if (zielwaehrung == null)
             throw new IllegalArgumentException("Die Zielwährung darf nicht null sein");
         if (this.waehrung == zielwaehrung) return this;
-        double inEuro = this.betrag / this.waehrung.getUmrechnungskursZuEuro();
+        // bewusst noch mit double gerechnet, damit die Ergebnisse genau wie bisher bleiben
+        double inEuro = this.wert.doubleValue() / this.waehrung.getUmrechnungskursZuEuro();
         // Umrechnung und Rundung auf 2 Stellen
         double zielBetragGerundet = DoubleRounder.round(inEuro * zielwaehrung.getUmrechnungskursZuEuro(), 2);
         return new Geldbetrag(zielBetragGerundet, zielwaehrung);
     }
 
     /**
-     * Betrag von this
-     * @return Betrag in der Währung von this
+     * Betrag von this als double
+     * @return Betrag in der Währung von this, als nächstgelegener double-Wert (für exakte
+     *         Rechnungen {@link #getBetragExakt()} verwenden)
      */
     public double getBetrag() {
-        return betrag;
+        return wert.doubleValue();
+    }
+
+    /**
+     * Betrag von this, exakt als Dezimalzahl
+     * @return Betrag in der Währung von this
+     */
+    public BigDecimal getBetragExakt() {
+        return wert;
     }
 
     /**
@@ -102,7 +152,7 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
      */
     public boolean isNegativ()
     {
-        return this.betrag < 0;
+        return this.wert.signum() < 0;
     }
 
     /**
@@ -115,7 +165,7 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
         if(summand == null || summand.isNegativ()) throw new IllegalArgumentException("Summand ist null oder negativ");
         // Den Summanden in die Währung von 'this' umrechnen
         Geldbetrag konvertiert = summand.umrechnen(this.waehrung);
-        return new Geldbetrag(aufCentRunden(this.betrag + konvertiert.getBetrag()), this.waehrung);
+        return new Geldbetrag(aufCentRunden(this.wert.add(konvertiert.getBetragExakt())), this.waehrung);
     }
     /**
      * rechnet this - subtrahend
@@ -127,7 +177,7 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
         if(subtrahend == null || subtrahend.isNegativ()) throw new IllegalArgumentException("Subtrahend ist null oder negativ");
         // Den Subtrahenden in die Währung von 'this' umrechnen
         Geldbetrag konvertiert = subtrahend.umrechnen(this.waehrung);
-        return new Geldbetrag(aufCentRunden(this.betrag - konvertiert.getBetrag()), this.waehrung);
+        return new Geldbetrag(aufCentRunden(this.wert.subtract(konvertiert.getBetragExakt())), this.waehrung);
     }
 
     /**
@@ -140,24 +190,25 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     {
         if(!Double.isFinite(faktor))
             throw new IllegalArgumentException("Faktor ist nicht finit");
-        return new Geldbetrag(aufCentRunden(this.betrag * faktor), this.waehrung);
+        // der Faktor zählt wie im Konstruktor mit seinem Dezimalwert
+        return new Geldbetrag(aufCentRunden(this.wert.multiply(BigDecimal.valueOf(faktor))), this.waehrung);
     }
 
     /**
-     * Rundet ein Rechenergebnis auf 2 Nachkommastellen (Cent).
+     * Rundet ein Rechenergebnis kaufmännisch (HALF_UP) auf 2 Nachkommastellen (Cent).
      * <p>
-     * Bisher wurde mit den rohen double-Werten weitergerechnet. Dabei entstehen
-     * Rundungsfehler, die sich über mehrere Buchungen aufsummieren: z. B. ergab
-     * 1,00 - 0,90 den Wert 0,09999999999999998, sodass die restlichen 0,10 € nicht mehr
-     * abgehoben werden konnten, und 0,10 + 0,20 war nicht gleich 0,30. Deshalb wird jedes
-     * Ergebnis von plus, minus und mal – wie schon bei {@link #umrechnen(Waehrung)} –
-     * auf Cent gerundet.
+     * Früher wurde mit double gerechnet. Dabei entstanden Rundungsfehler, die sich über
+     * mehrere Buchungen aufsummierten: z. B. ergab 1,00 - 0,90 den Wert
+     * 0,09999999999999998. Mit BigDecimal rechnen plus, minus und mal exakt. Gerundet
+     * werden muss trotzdem: bei mal mit einem Faktor wie 1/3 und bei Operanden mit mehr
+     * als zwei Nachkommastellen (z. B. dem ungerundeten Aktienkurs). Gerundet wird der
+     * Dezimalwert, 1,005 ergibt also 1,01.
      *
      * @param wert das ungerundete Ergebnis
      * @return der auf 2 Nachkommastellen gerundete Wert
      */
-    private static double aufCentRunden(double wert) {
-        return DoubleRounder.round(wert, 2);
+    private static BigDecimal aufCentRunden(BigDecimal wert) {
+        return wert.setScale(2, RoundingMode.HALF_UP);
     }
 
     /**
@@ -210,12 +261,13 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     /**
      * Rechnet den Betrag von this in Euro um (ohne Rundung). Wird von
      * {@link #compareTo(Geldbetrag)} und {@link #hashCode()} gemeinsam genutzt, damit
-     * Vergleich und Hashcode garantiert auf demselben Wert beruhen.
+     * Vergleich und Hashcode garantiert auf demselben Wert beruhen. Gerechnet wird
+     * bewusst noch mit double, damit Vergleich und Hashcode genau wie bisher bleiben.
      *
      * @return der Betrag von this in Euro
      */
     private double inEuro() {
-        return this.betrag / this.waehrung.getUmrechnungskursZuEuro();
+        return this.wert.doubleValue() / this.waehrung.getUmrechnungskursZuEuro();
     }
 
     /**
@@ -226,6 +278,44 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
      */
     @Override
     public String toString() {
-        return String.format("%,.2f %s", this.betrag, this.waehrung);
+        return String.format("%,.2f %s", this.wert, this.waehrung);
+    }
+
+    /**
+     * Liest einen Geldbetrag im aktuellen oder im alten Speicherformat. Fehlt das Feld
+     * wert, ist es das alte Format mit dem double im Feld betrag; es wird wie im
+     * Konstruktor mit {@link BigDecimal#valueOf(double)} umgerechnet, sodass
+     * {@link #getBetrag()} genau den bisherigen Wert liefert.
+     * @param ein der Eingabestrom
+     * @throws IOException bei einem Fehler beim Lesen
+     * @throws InvalidObjectException wenn Betrag oder Währung fehlen oder ungültig sind
+     * @throws ClassNotFoundException falls eine Klasse nicht gefunden wird
+     */
+    @Serial
+    private void readObject(ObjectInputStream ein) throws IOException, ClassNotFoundException {
+        ObjectInputStream.GetField felder = ein.readFields();
+        Object gelesenerBetrag = felder.defaulted("wert") ? alterBetrag(felder) : felder.get("wert", null);
+        Object gelesenWaehrung = felder.get("waehrung", null);
+        if (!(gelesenerBetrag instanceof BigDecimal b) || !(gelesenWaehrung instanceof Waehrung w))
+            throw new InvalidObjectException("Der gespeicherte Geldbetrag ist ungültig");
+        this.wert = b;
+        this.waehrung = w;
+    }
+
+    /**
+     * Liest den Betrag aus dem alten Speicherformat, in dem er als double im Feld betrag steht.
+     * @param felder die gelesenen Felder
+     * @return der Betrag als BigDecimal
+     * @throws IOException bei einem Fehler beim Lesen
+     * @throws InvalidObjectException wenn das Feld fehlt, kein double oder nicht finit ist
+     */
+    private static BigDecimal alterBetrag(ObjectInputStream.GetField felder) throws IOException {
+        ObjectStreamField feld = felder.getObjectStreamClass().getField("betrag");
+        if (feld == null || feld.getType() != double.class)
+            throw new InvalidObjectException("Der gespeicherte Geldbetrag enthält keinen Betrag");
+        double alt = felder.get("betrag", 0.0);
+        if (!Double.isFinite(alt))
+            throw new InvalidObjectException("Der gespeicherte Betrag ist nicht finit");
+        return BigDecimal.valueOf(alt);
     }
 }
