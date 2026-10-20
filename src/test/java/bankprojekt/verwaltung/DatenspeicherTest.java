@@ -1,12 +1,15 @@
 package bankprojekt.verwaltung;
 
+import bankprojekt.basisdaten.Festgeldkonto;
 import bankprojekt.basisdaten.Geldbetrag;
+import bankprojekt.basisdaten.Girokonto;
 import bankprojekt.basisdaten.Waehrung;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import javax.management.Attribute;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InvalidClassException;
 import java.io.InvalidObjectException;
 import java.io.ObjectOutputStream;
@@ -14,6 +17,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,6 +48,71 @@ class DatenspeicherTest {
         try (ObjectOutputStream aus = new ObjectOutputStream(Files.newOutputStream(datei))) {
             aus.writeObject(objekt);
         }
+    }
+
+    /**
+     * Kopiert die Testdatei im alten Format (Beträge als double, erzeugt von
+     * {@link AlteDateienErzeuger} auf Commit d7ba47f) in das temporäre Verzeichnis.
+     * @return die Kopie
+     * @throws IOException bei Lese- oder Schreibfehlern
+     */
+    private Path alteDatei() throws IOException {
+        Path datei = ordner.resolve("verwaltung.ser");
+        try (InputStream alt = DatenspeicherTest.class.getResourceAsStream("verwaltung-double.ser")) {
+            assertNotNull(alt, "Testdatei fehlt");
+            Files.copy(alt, datei);
+        }
+        return datei;
+    }
+
+    /**
+     * Prüft Währung und Betrag eines Geldbetrags exakt, ohne Toleranz.
+     * @param betrag erwarteter Betrag
+     * @param waehrung erwartete Währung
+     * @param ist der geprüfte Geldbetrag
+     */
+    private static void assertBetrag(double betrag, Waehrung waehrung, Geldbetrag ist) {
+        assertEquals(waehrung, ist.getWaehrung());
+        assertEquals(betrag, ist.getBetrag());
+    }
+
+    @Test
+    void laden_dateiMitBetraegenAlsDouble_liefertAlleBetraegeUnveraendert() throws IOException {
+        Bankverwaltung geladen = new Datenspeicher(alteDatei()).laden();
+
+        assertEquals("Hoffmann, Lena", geladen.findeKunde("K000001").orElseThrow().getName());
+        assertEquals("Becker, Jonas", geladen.findeKunde("K000002").orElseThrow().getName());
+        assertBetrag(1234.56, Waehrung.EURO, geladen.kontoHolen(1).getKontostand());
+        assertBetrag(500, Waehrung.EURO, ((Girokonto) geladen.kontoHolen(1).getKonto()).getDispo());
+        assertBetrag(-20.5, Waehrung.EURO, geladen.kontoHolen(2).getKontostand());
+        assertBetrag(300, Waehrung.EURO, ((Girokonto) geladen.kontoHolen(2).getKonto()).getDispo());
+        assertBetrag(6149.5, Waehrung.DENAR, geladen.kontoHolen(3).getKontostand());
+        assertBetrag(10_000, Waehrung.EURO, geladen.kontoHolen(4).getKontostand());
+        assertBetrag(2500, Waehrung.EURO,
+                ((Festgeldkonto) geladen.kontoHolen(4).getKonto()).getGekuendigterBetrag());
+
+        // Kontoauszug des Sparbuchs: Einzahlung in Denar, Einzahlung in Euro, Auszahlung
+        List<Buchung> auszug = geladen.getBuchungen(3);
+        assertEquals(List.of(6150.0, 615.0, -615.5), auszug.stream().map(b -> b.betrag().getBetrag()).toList());
+        assertEquals(List.of(6150.0, 6765.0, 6149.5),
+                auszug.stream().map(b -> b.saldoDanach().getBetrag()).toList());
+        assertTrue(auszug.stream().allMatch(b -> b.betrag().getWaehrung() == Waehrung.DENAR
+                && b.saldoDanach().getWaehrung() == Waehrung.DENAR));
+    }
+
+    @Test
+    void alteDatei_laesstSichWeiterbearbeitenUndWiederLaden() throws IOException {
+        Path datei = alteDatei();
+        Bankverwaltung geladen = new Datenspeicher(datei).laden();
+        Benutzer admin = Testdaten.admin(geladen);
+        geladen.bareinzahlung(admin, 1, new Geldbetrag(0.44), null);
+        geladen.barauszahlung(admin, 3, new Geldbetrag(0.5, Waehrung.DENAR), null);
+
+        Bankverwaltung wieder = new Datenspeicher(datei).laden();
+
+        assertBetrag(1235, Waehrung.EURO, wieder.kontoHolen(1).getKontostand());
+        assertBetrag(6149, Waehrung.DENAR, wieder.kontoHolen(3).getKontostand());
+        assertEquals(4, wieder.getBuchungen(3).size());
     }
 
     @Test
