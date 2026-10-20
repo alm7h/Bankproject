@@ -1,23 +1,27 @@
 package bankprojekt.basisdaten;
 
+import java.math.BigDecimal;
+
 /**
  * Repräsentiert verschiedene Währungen mit festem Wechselkurs zum Euro.
  */
 public enum Waehrung {
     /** Euro (EUR), die Bezugswährung mit dem Kurs 1 */
-    EURO(1.0, "EUR"),
+    EURO("1", "EUR"),
     /** Mazedonischer Denar (MKD): 61,5 Denar entsprechen 1 Euro */
-    DENAR(61.5, "MKD"),
+    DENAR("61.5", "MKD"),
     /** Komoren-Franc (KMF): 491,96775 Franc entsprechen 1 Euro */
-    FRANC(491.96775, "KMF"),
+    FRANC("491.96775", "KMF"),
     /** São-Tomé-Dobra (STN): 24,5 Dobra entsprechen 1 Euro */
-    DOBRA(24.5, "STN");
+    DOBRA("24.5", "STN");
 
     /**
      * Umrechnungskurs der Währung zum Euro: gibt an, wie viele Einheiten dieser
-     * Währung 1 Euro entsprechen.
+     * Währung 1 Euro entsprechen. Der Kurs wird als BigDecimal gespeichert, damit er
+     * genau dem festgelegten Dezimalwert entspricht (491,96775 ist als double nicht
+     * exakt darstellbar).
      */
-    private final double umrechnungskursZuEuro;
+    private final BigDecimal umrechnungskursZuEuro;
 
     /**
      * Kürzel der Währung, also der übliche Code, an dem man die Währung erkennt,
@@ -28,20 +32,30 @@ public enum Waehrung {
     /**
      * Legt eine Währung mit ihrem Umrechnungskurs zum Euro und ihrem Kürzel an.
      *
-     * @param kurs    Umrechnungskurs der Währung zum Euro
+     * @param kurs    Umrechnungskurs der Währung zum Euro als Dezimaltext, z. B. "61.5"
      * @param kuerzel Kürzel der Währung
      */
-     Waehrung(double kurs, String kuerzel) {
-        this.umrechnungskursZuEuro = kurs;
+     Waehrung(String kurs, String kuerzel) {
+        this.umrechnungskursZuEuro = new BigDecimal(kurs);
         this.kuerzel = kuerzel;
     }
 
     /**
-     * Liefert den Umrechnungskurs der Währung zum Euro.
+     * Liefert den Umrechnungskurs der Währung zum Euro als double. Der Wert wird aus dem
+     * exakten Kurs abgeleitet und ist der nächstgelegene double-Wert.
      *
      * @return wie viele Einheiten dieser Währung 1 Euro entsprechen
      */
     public double getUmrechnungskursZuEuro() {
+        return umrechnungskursZuEuro.doubleValue();
+    }
+
+    /**
+     * Liefert den Umrechnungskurs der Währung zum Euro exakt.
+     *
+     * @return wie viele Einheiten dieser Währung 1 Euro entsprechen, genau als Dezimalzahl
+     */
+    public BigDecimal getUmrechnungskursExakt() {
         return umrechnungskursZuEuro;
     }
 
