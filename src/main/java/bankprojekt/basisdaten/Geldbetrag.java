@@ -7,6 +7,7 @@ import java.io.ObjectStreamField;
 import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.math.RoundingMode;
 
 /**
@@ -226,7 +227,8 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
 
     /**
      * Vergleicht this mit einem anderen Geldbetrag. Verglichen wird der Wert in Euro,
-     * der über die Umrechnungskurse der jeweiligen Währungen berechnet wird.
+     * der über die Umrechnungskurse der jeweiligen Währungen berechnet wird, z. B. sind
+     * 0,14 € und 8,61 MKD gleich.
      *
      * @param o der Geldbetrag, mit dem this verglichen wird
      * @return eine negative Zahl, 0 oder eine positive Zahl, je nachdem, ob this
@@ -237,7 +239,7 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     public int compareTo(Geldbetrag o) throws NullPointerException {
         if(o == null) throw new NullPointerException();
         if(this ==  o) return 0;
-        return Double.compare(this.inEuro(), o.inEuro());
+        return this.inEuro().compareTo(o.inEuro());
     }
 
     /**
@@ -263,24 +265,32 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
      * (gleiche Objekte liefern den gleichen Hashcode), muss deshalb auch der Hashcode
      * aus genau demselben Eurowert berechnet werden – und nicht aus dem reinen Betrag
      * in der jeweiligen Währung.
+     * <p>
+     * Vorher werden die Nullen am Ende entfernt: BigDecimal liefert für 1.0 und 1.00
+     * verschiedene Hashcodes, obwohl beide Beträge gleich sind.
      *
      * @return Hashcode des Eurowerts
      */
     @Override
     public int hashCode() {
-        return Double.hashCode(inEuro());
+        return inEuro().stripTrailingZeros().hashCode();
     }
 
     /**
-     * Rechnet den Betrag von this in Euro um (ohne Rundung). Wird von
+     * Rechnet den Betrag von this in Euro um (ohne Rundung auf Cent). Wird von
      * {@link #compareTo(Geldbetrag)} und {@link #hashCode()} gemeinsam genutzt, damit
-     * Vergleich und Hashcode garantiert auf demselben Wert beruhen. Gerechnet wird
-     * bewusst noch mit double, damit Vergleich und Hashcode genau wie bisher bleiben.
+     * Vergleich und Hashcode garantiert auf demselben Wert beruhen.
+     * <p>
+     * Gerechnet wird mit dem exakten Kurs und 34 signifikanten Stellen
+     * ({@link MathContext#DECIMAL128}); ein Quotient wie 1 ÷ 61,5 hat unendlich viele
+     * Stellen. Gleichwertige Beträge ergeben trotzdem genau denselben Wert, weil beide
+     * Quotienten dieselbe Zahl sind und gleich gerundet werden. Mit double waren z. B.
+     * 0,14 € und 8,61 MKD verschieden.
      *
      * @return der Betrag von this in Euro
      */
-    private double inEuro() {
-        return this.wert.doubleValue() / this.waehrung.getUmrechnungskursZuEuro();
+    private BigDecimal inEuro() {
+        return this.wert.divide(this.waehrung.getUmrechnungskursExakt(), MathContext.DECIMAL128);
     }
 
     /**
