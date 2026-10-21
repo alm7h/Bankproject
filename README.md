@@ -127,7 +127,6 @@ Money comes into accounts through cash deposits at the counter (Verwaltung → K
 - Build: Apache Maven (Maven wrapper included)
 - CI: GitHub Actions
 - UI: JavaFX (OpenJFX `javafx-controls`, `javafx-fxml`)
-- Money rounding: decimal4j
 - Testing: JUnit 5 (Jupiter) + Mockito
 - Analysis: SpotBugs, JaCoCo, Javadoc
 

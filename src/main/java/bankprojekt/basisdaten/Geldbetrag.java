@@ -8,7 +8,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import org.decimal4j.util.DoubleRounder;
 
 /**
  * Ein Geldbetrag mit Währung
@@ -124,8 +123,9 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
         if (this.waehrung == zielwaehrung) return this;
         // bewusst noch mit double gerechnet, damit die Ergebnisse genau wie bisher bleiben
         double inEuro = this.wert.doubleValue() / this.waehrung.getUmrechnungskursZuEuro();
-        // Umrechnung und Rundung auf 2 Stellen
-        double zielBetragGerundet = DoubleRounder.round(inEuro * zielwaehrung.getUmrechnungskursZuEuro(), 2);
+        // Umrechnung und Rundung auf 2 Stellen; gerundet wird wie bisher der exakte Binärwert des double
+        double zielBetrag = inEuro * zielwaehrung.getUmrechnungskursZuEuro();
+        double zielBetragGerundet = new BigDecimal(zielBetrag).setScale(2, RoundingMode.HALF_UP).doubleValue();
         return new Geldbetrag(zielBetragGerundet, zielwaehrung);
     }
 
