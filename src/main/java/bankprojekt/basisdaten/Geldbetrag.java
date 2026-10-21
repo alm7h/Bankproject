@@ -7,8 +7,8 @@ import java.io.ObjectStreamField;
 import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.math.RoundingMode;
-import org.decimal4j.util.DoubleRounder;
 
 /**
  * Ein Geldbetrag mit Währung
@@ -22,6 +22,17 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
      * Versionsnummer für die Serialisierung.
      */
     private static final long serialVersionUID = 1L;
+
+    /**
+     * Anzahl der Nachkommastellen, auf die Ergebnisse gerundet werden (Cent).
+     */
+    private static final int NACHKOMMASTELLEN = 2;
+
+    /**
+     * Rundungsart für alle Ergebnisse: kaufmännisch (HALF_UP). Ab einem halben Cent wird
+     * vom Betrag her aufgerundet, z. B. 0,005 zu 0,01 und -0,005 zu -0,01.
+     */
+    private static final RoundingMode RUNDUNG = RoundingMode.HALF_UP;
 
     /**
      * 0 €
@@ -110,10 +121,14 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     /**
      * Konvertiert den aktuellen Geldbetrag in eine andere Zielwährung.
      * Wenn die Zielwährung identisch mit der aktuellen Währung ist, wird der ursprüngliche Geldbetrag zurückgegeben.
+     * <p>
+     * Gerechnet wird exakt mit den Kursen als Dezimalzahlen (Betrag × Zielkurs ÷ Ausgangskurs);
+     * gerundet wird nur das Ergebnis, einmal und kaufmännisch. Z. B. sind 0,01 € genau 0,615 MKD,
+     * das ergibt 0,62 MKD. (Mit double war 0,615 binär 0,61499999… und wurde zu 0,61 abgerundet.)
      *
      * @param zielwaehrung Die Währung, in die der Betrag umgerechnet werden soll.
      *                     Die Zielwährung darf nicht null sein.
-     * @return Ein neuer Geldbetrag in der Zielwährung, wobei der Betrag auf zwei Dezimalstellen gerundet ist.
+     * @return Ein neuer Geldbetrag in der Zielwährung, wobei der Betrag kaufmännisch auf zwei Dezimalstellen gerundet ist.
      * @throws IllegalArgumentException Falls die Zielwährung null ist.
      */
     public Geldbetrag umrechnen(Waehrung zielwaehrung) {
@@ -122,11 +137,10 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
         if (zielwaehrung == null)
             throw new IllegalArgumentException("Die Zielwährung darf nicht null sein");
         if (this.waehrung == zielwaehrung) return this;
-        // bewusst noch mit double gerechnet, damit die Ergebnisse genau wie bisher bleiben
-        double inEuro = this.wert.doubleValue() / this.waehrung.getUmrechnungskursZuEuro();
-        // Umrechnung und Rundung auf 2 Stellen
-        double zielBetragGerundet = DoubleRounder.round(inEuro * zielwaehrung.getUmrechnungskursZuEuro(), 2);
-        return new Geldbetrag(zielBetragGerundet, zielwaehrung);
+        // erst multiplizieren (exakt), dann teilen und dabei einmal auf Cent runden
+        BigDecimal zielBetrag = this.wert.multiply(zielwaehrung.getUmrechnungskursExakt())
+                .divide(this.waehrung.getUmrechnungskursExakt(), NACHKOMMASTELLEN, RUNDUNG);
+        return new Geldbetrag(zielBetrag, zielwaehrung);
     }
 
     /**
@@ -208,12 +222,13 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
      * @return der auf 2 Nachkommastellen gerundete Wert
      */
     private static BigDecimal aufCentRunden(BigDecimal wert) {
-        return wert.setScale(2, RoundingMode.HALF_UP);
+        return wert.setScale(NACHKOMMASTELLEN, RUNDUNG);
     }
 
     /**
      * Vergleicht this mit einem anderen Geldbetrag. Verglichen wird der Wert in Euro,
-     * der über die Umrechnungskurse der jeweiligen Währungen berechnet wird.
+     * der über die Umrechnungskurse der jeweiligen Währungen berechnet wird, z. B. sind
+     * 0,14 € und 8,61 MKD gleich.
      *
      * @param o der Geldbetrag, mit dem this verglichen wird
      * @return eine negative Zahl, 0 oder eine positive Zahl, je nachdem, ob this
@@ -224,7 +239,7 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     public int compareTo(Geldbetrag o) throws NullPointerException {
         if(o == null) throw new NullPointerException();
         if(this ==  o) return 0;
-        return Double.compare(this.inEuro(), o.inEuro());
+        return this.inEuro().compareTo(o.inEuro());
     }
 
     /**
@@ -250,24 +265,32 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
      * (gleiche Objekte liefern den gleichen Hashcode), muss deshalb auch der Hashcode
      * aus genau demselben Eurowert berechnet werden – und nicht aus dem reinen Betrag
      * in der jeweiligen Währung.
+     * <p>
+     * Vorher werden die Nullen am Ende entfernt: BigDecimal liefert für 1.0 und 1.00
+     * verschiedene Hashcodes, obwohl beide Beträge gleich sind.
      *
      * @return Hashcode des Eurowerts
      */
     @Override
     public int hashCode() {
-        return Double.hashCode(inEuro());
+        return inEuro().stripTrailingZeros().hashCode();
     }
 
     /**
-     * Rechnet den Betrag von this in Euro um (ohne Rundung). Wird von
+     * Rechnet den Betrag von this in Euro um (ohne Rundung auf Cent). Wird von
      * {@link #compareTo(Geldbetrag)} und {@link #hashCode()} gemeinsam genutzt, damit
-     * Vergleich und Hashcode garantiert auf demselben Wert beruhen. Gerechnet wird
-     * bewusst noch mit double, damit Vergleich und Hashcode genau wie bisher bleiben.
+     * Vergleich und Hashcode garantiert auf demselben Wert beruhen.
+     * <p>
+     * Gerechnet wird mit dem exakten Kurs und 34 signifikanten Stellen
+     * ({@link MathContext#DECIMAL128}); ein Quotient wie 1 ÷ 61,5 hat unendlich viele
+     * Stellen. Gleichwertige Beträge ergeben trotzdem genau denselben Wert, weil beide
+     * Quotienten dieselbe Zahl sind und gleich gerundet werden. Mit double waren z. B.
+     * 0,14 € und 8,61 MKD verschieden.
      *
      * @return der Betrag von this in Euro
      */
-    private double inEuro() {
-        return this.wert.doubleValue() / this.waehrung.getUmrechnungskursZuEuro();
+    private BigDecimal inEuro() {
+        return this.wert.divide(this.waehrung.getUmrechnungskursExakt(), MathContext.DECIMAL128);
     }
 
     /**

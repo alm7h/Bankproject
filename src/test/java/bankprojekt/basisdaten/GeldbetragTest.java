@@ -24,8 +24,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -448,6 +450,84 @@ class GeldbetragTest {
         }
     }
 
+    /**
+     * Umrechnungen werden exakt gerechnet und nur einmal kaufmännisch gerundet – auch wenn
+     * das exakte Ergebnis genau auf einem halben Cent liegt.
+     */
+    @Nested
+    class ExakteUmrechnungTests {
+        /** Grenze des Rasters in Cent (±1.000,00) */
+        private static final int MAX_CENT = 100_000;
+
+        /** so viele Abweichungen werden höchstens gemeldet */
+        private static final int MAX_MELDUNGEN = 5;
+
+        /**
+         * Das exakte Ergebnis liegt genau auf einem halben Cent und wird aufgerundet. Die
+         * frühere double-Rechnung hat diese Fälle abgerundet (z. B. 0,615 war binär
+         * 0,61499999…).
+         * @param betrag der Betrag in der Ausgangswährung
+         * @param von die Ausgangswährung
+         * @param nach die Zielwährung
+         * @param erwartet das kaufmännisch gerundete Ergebnis
+         */
+        @ParameterizedTest
+        @CsvSource({
+                "0.01,  EURO,  DENAR, 0.62",
+                "0.01,  EURO,  DOBRA, 0.25",
+                "20,    EURO,  FRANC, 9839.36",
+                "1230,  DENAR, FRANC, 9839.36",
+                "490,   DOBRA, FRANC, 9839.36",
+                "-0.01, EURO,  DENAR, -0.62"
+        })
+        void umrechnen_rundetHalbeCentKaufmaennisch(String betrag, Waehrung von, Waehrung nach, String erwartet) {
+            Geldbetrag ergebnis = new Geldbetrag(new BigDecimal(betrag), von).umrechnen(nach);
+            assertEquals(new BigDecimal(erwartet), ergebnis.getBetragExakt());
+            assertEquals(nach, ergebnis.getWaehrung());
+        }
+
+        @Test
+        void umrechnen_liefertGenauZweiNachkommastellen() {
+            assertEquals(new BigDecimal("6150.00"), new Geldbetrag(100).umrechnen(Waehrung.DENAR).getBetragExakt());
+            assertEquals(new BigDecimal("2.00"), new Geldbetrag(49, Waehrung.DOBRA).umrechnen(Waehrung.EURO).getBetragExakt());
+        }
+
+        /**
+         * Jeder Betrag von -1.000,00 bis 1.000,00 ergibt in jeder Richtung den exakten,
+         * kaufmännisch gerundeten Wert – auch die halben Cent, z. B. alle ungeraden
+         * Centbeträge von Euro in Denar oder Dobra. Gemeldet werden die ersten Abweichungen.
+         * @param von die Ausgangswährung
+         */
+        @ParameterizedTest
+        @EnumSource(Waehrung.class)
+        void umrechnen_ergibtInJederRichtungDenExaktenWert(Waehrung von) {
+            List<String> abweichungen = new ArrayList<>();
+            for (Waehrung nach : Waehrung.values()) {
+                if (nach == von) continue;
+                for (int cent = -MAX_CENT; cent <= MAX_CENT; cent++) {
+                    BigDecimal betrag = BigDecimal.valueOf(cent, 2);
+                    BigDecimal erwartet = betrag.multiply(nach.getUmrechnungskursExakt())
+                            .divide(von.getUmrechnungskursExakt(), 2, RoundingMode.HALF_UP);
+                    BigDecimal ist = new Geldbetrag(betrag, von).umrechnen(nach).getBetragExakt();
+                    if (ist.compareTo(erwartet) != 0 && abweichungen.size() < MAX_MELDUNGEN)
+                        abweichungen.add(betrag + " " + von + " ergeben " + ist + " " + nach + " statt " + erwartet);
+                }
+            }
+            assertEquals(List.of(), abweichungen);
+        }
+
+        /**
+         * plus und minus rechnen den Operanden in die Währung von this um, also ebenfalls exakt.
+         */
+        @Test
+        void plusUndMinus_rechnenDenOperandenExaktUm() {
+            Geldbetrag zehnDenar = new Geldbetrag(new BigDecimal("10"), Waehrung.DENAR);
+            Geldbetrag einCent = new Geldbetrag(new BigDecimal("0.01"));
+            assertEquals(new BigDecimal("10.62"), zehnDenar.plus(einCent).getBetragExakt());
+            assertEquals(new BigDecimal("9.38"), zehnDenar.minus(einCent).getBetragExakt());
+        }
+    }
+
     @Nested
     class VergleichTests {
         @Test
@@ -527,6 +607,112 @@ class GeldbetragTest {
             assertEquals(gegenwert, zehnEuro);
             assertEquals(0, zehnEuro.compareTo(gegenwert));
             assertEquals(zehnEuro.hashCode(), gegenwert.hashCode());
+        }
+    }
+
+    /**
+     * Gleichwertige Beträge in verschiedenen Währungen sind genau gleich und haben den
+     * gleichen Hashcode. Mit double waren z. B. 0,14 € und 8,61 MKD verschieden.
+     */
+    @Nested
+    class ExakterVergleichTests {
+        /**
+         * Paare mit genau demselben Wert in Euro, die die frühere double-Rechnung für
+         * verschieden hielt. 820 MKD und 6.559,57 KMF sind beide genau 40/3 € – ein
+         * Eurowert mit unendlich vielen Nachkommastellen.
+         * @param betragA der erste Betrag
+         * @param waehrungA seine Währung
+         * @param betragB der zweite Betrag
+         * @param waehrungB seine Währung
+         */
+        @ParameterizedTest
+        @CsvSource({
+                "0.14,  EURO,  8.61,     DENAR",
+                "0.22,  EURO,  5.39,     DOBRA",
+                "40,    EURO,  19678.71, FRANC",
+                "8.61,  DENAR, 3.43,     DOBRA",
+                "820,   DENAR, 6559.57,  FRANC",
+                "-0.14, EURO,  -8.61,    DENAR"
+        })
+        void gleichwertigeBetraege_sindGleichMitGleichemHashcode(String betragA, Waehrung waehrungA,
+                                                                  String betragB, Waehrung waehrungB) {
+            Geldbetrag a = new Geldbetrag(new BigDecimal(betragA), waehrungA);
+            Geldbetrag b = new Geldbetrag(new BigDecimal(betragB), waehrungB);
+            assertEquals(a, b);
+            assertEquals(b, a);
+            assertEquals(0, a.compareTo(b));
+            assertEquals(0, b.compareTo(a));
+            assertEquals(a.hashCode(), b.hashCode());
+        }
+
+        @Test
+        void einCentDaneben_istKleinerBzwGroesser() {
+            Geldbetrag euro = new Geldbetrag(new BigDecimal("0.14"));
+            assertTrue(euro.compareTo(new Geldbetrag(new BigDecimal("8.60"), Waehrung.DENAR)) > 0);
+            assertTrue(euro.compareTo(new Geldbetrag(new BigDecimal("8.62"), Waehrung.DENAR)) < 0);
+            Geldbetrag denar = new Geldbetrag(new BigDecimal("820"), Waehrung.DENAR);
+            assertTrue(denar.compareTo(new Geldbetrag(new BigDecimal("6559.56"), Waehrung.FRANC)) > 0);
+            assertTrue(denar.compareTo(new Geldbetrag(new BigDecimal("6559.58"), Waehrung.FRANC)) < 0);
+        }
+
+        /**
+         * Zu jedem Eurobetrag im Raster gibt es einen genau gleichwertigen Betrag in der
+         * Fremdwährung (bei Denar und Dobra zu jedem geraden Centbetrag, beim Franc zu jedem
+         * Vielfachen von 40 €). Beide sind gleich, mit gleichem Hashcode, und der Gegenwert
+         * ±1 Cent ist kleiner bzw. größer. Gemeldet werden die ersten Abweichungen.
+         * @param waehrung die Fremdwährung
+         * @param schritt Abstand der Eurobeträge in Cent
+         * @param maxCent größter Eurobetrag in Cent
+         */
+        @ParameterizedTest
+        @CsvSource({"DENAR, 2, 100000", "DOBRA, 2, 100000", "FRANC, 4000, 1000000"})
+        void gleichwertigeBetraegeImRaster_sindGleich(Waehrung waehrung, int schritt, int maxCent) {
+            BigDecimal einCent = new BigDecimal("0.01");
+            List<String> abweichungen = new ArrayList<>();
+            for (int cent = schritt; cent <= maxCent; cent += schritt) {
+                Geldbetrag euro = new Geldbetrag(BigDecimal.valueOf(cent, 2));
+                BigDecimal gegenwert = BigDecimal.valueOf(cent, 2).multiply(waehrung.getUmrechnungskursExakt());
+                Geldbetrag fremd = new Geldbetrag(gegenwert, waehrung);
+                boolean richtig = euro.equals(fremd) && fremd.equals(euro) && euro.hashCode() == fremd.hashCode()
+                        && euro.compareTo(new Geldbetrag(gegenwert.subtract(einCent), waehrung)) > 0
+                        && euro.compareTo(new Geldbetrag(gegenwert.add(einCent), waehrung)) < 0;
+                if (!richtig && abweichungen.size() < 5)
+                    abweichungen.add(BigDecimal.valueOf(cent, 2) + " EUR / " + gegenwert + " " + waehrung);
+            }
+            assertEquals(List.of(), abweichungen);
+        }
+
+        @Test
+        void gleichwertigerBetrag_findetDenEintragInEinerHashMap() {
+            Map<Geldbetrag, String> eintraege = new HashMap<>();
+            eintraege.put(new Geldbetrag(new BigDecimal("0.14")), "14 Cent");
+            assertEquals("14 Cent", eintraege.get(new Geldbetrag(new BigDecimal("8.61"), Waehrung.DENAR)));
+        }
+
+        /**
+         * BigDecimal liefert für 1.0 und 1.00 verschiedene Hashcodes, Geldbetrag nicht.
+         */
+        @Test
+        void hashCode_unabhaengigVonDerAnzahlDerNachkommastellen() {
+            assertNotEquals(new BigDecimal("1.0").hashCode(), new BigDecimal("1.00").hashCode());
+            int einEuro = new Geldbetrag(new BigDecimal("1")).hashCode();
+            for (String text : List.of("1.0", "1.00", "1.000"))
+                assertEquals(einEuro, new Geldbetrag(new BigDecimal(text)).hashCode(), text);
+            assertEquals(new Geldbetrag(new BigDecimal("61.5"), Waehrung.DENAR).hashCode(),
+                    new Geldbetrag(new BigDecimal("61.50"), Waehrung.DENAR).hashCode());
+            assertEquals(Geldbetrag.NULL_EURO.hashCode(), new Geldbetrag(new BigDecimal("0.00"), Waehrung.FRANC).hashCode());
+        }
+
+        /**
+         * Beträge, die sich erst jenseits der double-Genauigkeit unterscheiden, sind
+         * verschieden (als double waren beide 1.0E15).
+         */
+        @Test
+        void sehrGrosseBetraege_werdenGenauVerglichen() {
+            Geldbetrag groesser = new Geldbetrag(new BigDecimal("1000000000000000.01"));
+            Geldbetrag kleiner = new Geldbetrag(new BigDecimal("1000000000000000.00"));
+            assertTrue(groesser.compareTo(kleiner) > 0);
+            assertNotEquals(groesser, kleiner);
         }
     }
 
