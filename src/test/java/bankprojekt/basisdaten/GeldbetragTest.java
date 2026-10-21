@@ -9,11 +9,20 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -571,6 +580,321 @@ class GeldbetragTest {
         })
         void toString_rundetKaufmaennischAufZweiNachkommastellen(double betrag, Waehrung waehrung, String erwartet) {
             assertEquals(erwartet, new Geldbetrag(betrag, waehrung).toString());
+        }
+    }
+
+    /**
+     * Der Betrag wird exakt als BigDecimal gespeichert. assertEquals auf BigDecimal prüft
+     * auch die Anzahl der Nachkommastellen (1.0 ist dort nicht gleich 1.00).
+     */
+    @Nested
+    class BigDecimalTests {
+        @Test
+        void konstruktorMitBigDecimal_uebernimmtBetragExaktUndUngerundet() {
+            BigDecimal wert = new BigDecimal("1234.5678");
+            Geldbetrag g = new Geldbetrag(wert, Waehrung.DENAR);
+            assertEquals(wert, g.getBetragExakt());
+            assertEquals(Waehrung.DENAR, g.getWaehrung());
+        }
+
+        @Test
+        void konstruktorMitBigDecimalOhneWaehrung_erzeugtEuroBetrag() {
+            Geldbetrag g = new Geldbetrag(new BigDecimal("12.34"));
+            assertEquals(new BigDecimal("12.34"), g.getBetragExakt());
+            assertEquals(12.34, g.getBetrag());
+            assertEquals(Waehrung.EURO, g.getWaehrung());
+        }
+
+        @Test
+        void konstruktorMitBigDecimal_wirftIllegalArgumentException_beiNull() {
+            assertThrows(IllegalArgumentException.class, () -> new Geldbetrag((BigDecimal) null));
+            assertThrows(IllegalArgumentException.class, () -> new Geldbetrag((BigDecimal) null, Waehrung.EURO));
+            assertThrows(IllegalArgumentException.class, () -> new Geldbetrag(BigDecimal.ONE, null));
+        }
+
+        /**
+         * Der double-Konstruktor speichert den Dezimalwert, mit dem Java den double ausgibt,
+         * nicht dessen Binärdarstellung (0,1 ist binär 0,1000000000000000055…).
+         * @param text der Betrag als Dezimaltext
+         */
+        @ParameterizedTest
+        @ValueSource(strings = {"0.1", "0.3", "12.34", "1234.567", "491.96775", "0.30000000000000004"})
+        void konstruktorMitDouble_speichertDenDezimalwert(String text) {
+            BigDecimal erwartet = new BigDecimal(text);
+            double betrag = Double.parseDouble(text);
+            assertEquals(0, erwartet.compareTo(new Geldbetrag(betrag).getBetragExakt()));
+            assertEquals(0, erwartet.compareTo(new Geldbetrag(betrag, Waehrung.FRANC).getBetragExakt()));
+        }
+
+        @Test
+        void plusMinusMal_rechnenExaktUndLiefernGenauZweiNachkommastellen() {
+            Geldbetrag a = new Geldbetrag(new BigDecimal("0.1"));
+            Geldbetrag b = new Geldbetrag(new BigDecimal("0.2"));
+            assertEquals(new BigDecimal("0.30"), a.plus(b).getBetragExakt());
+            assertEquals(new BigDecimal("-0.10"), a.minus(b).getBetragExakt());
+            assertEquals(new BigDecimal("3.33"), new Geldbetrag(BigDecimal.TEN).mal(1.0 / 3).getBetragExakt());
+            assertEquals(new BigDecimal("12.35"), new Geldbetrag(new BigDecimal("12.345")).mal(1).getBetragExakt());
+        }
+
+        @Test
+        void isNegativ_auchUnterEinemCent() {
+            assertTrue(new Geldbetrag(new BigDecimal("-0.001")).isNegativ());
+            assertFalse(new Geldbetrag(new BigDecimal("0.001")).isNegativ());
+            assertFalse(new Geldbetrag(new BigDecimal("-0.00")).isNegativ());
+        }
+
+        /**
+         * Geldbeträge sind gleich, wenn ihr Wert gleich ist – unabhängig davon, mit wie
+         * vielen Nachkommastellen der BigDecimal angegeben ist.
+         * @param text der Gegenwert von 1 € als Dezimaltext
+         * @param waehrung die Währung des Gegenwerts
+         */
+        @ParameterizedTest
+        @CsvSource({"1, EURO", "1.0, EURO", "1.000, EURO", "61.5, DENAR", "61.50, DENAR", "24.500, DOBRA"})
+        void equalsUndHashCode_unabhaengigVonDerAnzahlDerNachkommastellen(String text, Waehrung waehrung) {
+            Geldbetrag einEuro = new Geldbetrag(new BigDecimal("1.00"));
+            Geldbetrag gegenwert = new Geldbetrag(new BigDecimal(text), waehrung);
+            assertEquals(einEuro, gegenwert);
+            assertEquals(gegenwert, einEuro);
+            assertEquals(0, gegenwert.compareTo(einEuro));
+            assertEquals(einEuro.hashCode(), gegenwert.hashCode());
+        }
+
+        @Test
+        void toString_unabhaengigVonDerAnzahlDerNachkommastellen() {
+            String erwartet = new Geldbetrag(new BigDecimal("1.00")).toString();
+            assertEquals(erwartet, new Geldbetrag(new BigDecimal("1")).toString());
+            assertEquals(erwartet, new Geldbetrag(new BigDecimal("1.000")).toString());
+        }
+    }
+
+    /**
+     * Zwei Randfälle verhalten sich seit der Umstellung auf BigDecimal anders als mit
+     * double. In der Oberfläche können solche Beträge nicht entstehen.
+     */
+    @Nested
+    class RandfaelleTests {
+        /**
+         * BigDecimal kennt keine negative Null: -0.0 wird zu 0, ist also gleich NULL_EURO
+         * (mit gleichem Hashcode) und wird nicht als "-0,00" ausgegeben.
+         */
+        @Test
+        void negativeNull_wirdZuNull() {
+            Geldbetrag g = new Geldbetrag(-0.0);
+            // assertEquals auf double unterscheidet 0.0 und -0.0
+            assertEquals(0.0, g.getBetrag());
+            assertFalse(g.isNegativ());
+            assertEquals(Geldbetrag.NULL_EURO, g);
+            assertEquals(Geldbetrag.NULL_EURO.hashCode(), g.hashCode());
+            assertEquals(Geldbetrag.NULL_EURO.toString(), g.toString());
+        }
+
+        /**
+         * Operanden mit mehr als zwei Nachkommastellen werden über ihren Dezimalwert
+         * gerundet: 1,005 ergibt 1,01, obwohl der double 1.005 binär knapp darunter liegt
+         * (1,00499999…).
+         */
+        @Test
+        void operandMitMehrAlsZweiNachkommastellen_rundetDenDezimalwert() {
+            assertEquals(1.01, new Geldbetrag(1.005).mal(1).getBetrag());
+            assertEquals(1.01, new Geldbetrag(1.005).plus(Geldbetrag.NULL_EURO).getBetrag());
+            assertEquals(1.02, new Geldbetrag(1.015).minus(Geldbetrag.NULL_EURO).getBetrag());
+        }
+    }
+
+    /**
+     * Das Speicherformat: Der Betrag steht als BigDecimal im Feld wert. Ströme im alten
+     * Format (double im Feld betrag) werden beim Lesen umgerechnet, beschädigte abgelehnt.
+     */
+    @Nested
+    class SpeicherformatTests {
+        /** wie das alte Format: Betrag als double im Feld betrag */
+        private record AltesFormat(double betrag, Waehrung waehrung) implements Serializable {
+            @Serial
+            private static final long serialVersionUID = 1L;
+        }
+
+        /** wie das neue Format, aber mit beliebigen Werten in den Feldern */
+        private record NeuesFormat(Object wert, Object waehrung) implements Serializable {
+            @Serial
+            private static final long serialVersionUID = 1L;
+        }
+
+        /** ohne Betrag, weder im alten noch im neuen Format */
+        private record OhneBetrag(Waehrung waehrung) implements Serializable {
+            @Serial
+            private static final long serialVersionUID = 1L;
+        }
+
+        /** altes Feld betrag, aber kein double */
+        private record BetragAlsText(String betrag, Waehrung waehrung) implements Serializable {
+            @Serial
+            private static final long serialVersionUID = 1L;
+        }
+
+        @Test
+        void speicherformat_hatBigDecimalImFeldWertUndDieBisherigeVersionsnummer() {
+            ObjectStreamClass format = ObjectStreamClass.lookup(Geldbetrag.class);
+            // dieselbe Versionsnummer, sonst ließen sich alte Dateien nicht mehr lesen
+            assertEquals(1L, format.getSerialVersionUID());
+            assertEquals(2, format.getFields().length);
+            assertEquals(BigDecimal.class, format.getField("wert").getType());
+            assertEquals(Waehrung.class, format.getField("waehrung").getType());
+            assertNull(format.getField("betrag"));
+        }
+
+        /**
+         * Gespeichert und wieder gelesen ergibt sich genau derselbe BigDecimal, auch mit
+         * derselben Anzahl Nachkommastellen.
+         * @param text der Betrag als Dezimaltext
+         * @param waehrung die Währung
+         */
+        @ParameterizedTest
+        @CsvSource({"12.34, EURO", "-5, EURO", "0, EURO", "0.00, EURO", "1234.567, DENAR",
+                "0.30000000000000004, EURO", "9999999.99, FRANC", "123456789012345678901234567890.123456789, DOBRA"})
+        void rundreise_liefertGenauDenselbenBetrag(String text, Waehrung waehrung) throws Exception {
+            Geldbetrag vorher = new Geldbetrag(new BigDecimal(text), waehrung);
+            Geldbetrag nachher = assertInstanceOf(Geldbetrag.class, lesen(speichern(vorher)));
+            assertEquals(vorher.getBetragExakt(), nachher.getBetragExakt());
+            assertEquals(waehrung, nachher.getWaehrung());
+            assertEquals(vorher, nachher);
+        }
+
+        /**
+         * Der double aus dem alten Format wird wie im Konstruktor in seinen Dezimalwert
+         * umgerechnet, z. B. genau 12,34. Neu gespeichert und gelesen bleibt er gleich.
+         */
+        @Test
+        void altesFormat_ergibtDenDezimalwertUndBleibtBeimNeuenSpeichernGleich() throws Exception {
+            InputStream datei = GeldbetragTest.class.getResourceAsStream("geldbetraege-double.ser");
+            assertNotNull(datei, "Testdatei fehlt");
+            List<?> alt;
+            try (ObjectInputStream ein = new ObjectInputStream(datei)) {
+                alt = assertInstanceOf(List.class, ein.readObject());
+            }
+            List<?> neu = assertInstanceOf(List.class, lesen(speichern(alt)));
+
+            String[] erwartet = {"0", "12.34", "-5", "61.5", "491.97", "24.5", "1234.567", "0.30000000000000004",
+                    "9999999.99"};
+            assertEquals(erwartet.length, alt.size());
+            assertEquals(erwartet.length, neu.size());
+            for (int i = 0; i < erwartet.length; i++) {
+                BigDecimal ausAlt = ((Geldbetrag) alt.get(i)).getBetragExakt();
+                assertEquals(0, new BigDecimal(erwartet[i]).compareTo(ausAlt), "Betrag Nr. " + i);
+                assertEquals(ausAlt, ((Geldbetrag) neu.get(i)).getBetragExakt(), "Betrag Nr. " + i);
+                assertEquals(((Geldbetrag) alt.get(i)).getWaehrung(), ((Geldbetrag) neu.get(i)).getWaehrung());
+            }
+        }
+
+        @Test
+        void altesFormat_wirdUeberDenDezimalwertUmgerechnet() throws Exception {
+            Object gelesen = lesen(alsGeldbetrag(new AltesFormat(0.1, Waehrung.DENAR)));
+            Geldbetrag g = assertInstanceOf(Geldbetrag.class, gelesen);
+            assertEquals(0, new BigDecimal("0.1").compareTo(g.getBetragExakt()));
+            assertEquals(Waehrung.DENAR, g.getWaehrung());
+        }
+
+        @Test
+        void neuesFormat_ausDerHilfsklasse_wirdGelesen() throws Exception {
+            Object gelesen = lesen(alsGeldbetrag(new NeuesFormat(new BigDecimal("2.50"), Waehrung.DOBRA)));
+            Geldbetrag g = assertInstanceOf(Geldbetrag.class, gelesen);
+            assertEquals(new BigDecimal("2.50"), g.getBetragExakt());
+            assertEquals(Waehrung.DOBRA, g.getWaehrung());
+        }
+
+        @ParameterizedTest
+        @ValueSource(doubles = {Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY})
+        void altesFormat_wirftInvalidObjectException_beiNichtFinitemBetrag(double betrag) throws IOException {
+            byte[] strom = alsGeldbetrag(new AltesFormat(betrag, Waehrung.EURO));
+            assertThrows(InvalidObjectException.class, () -> lesen(strom));
+        }
+
+        @Test
+        void wirftInvalidObjectException_wennDerBetragFehlt() throws IOException {
+            byte[] strom = alsGeldbetrag(new OhneBetrag(Waehrung.EURO));
+            assertThrows(InvalidObjectException.class, () -> lesen(strom));
+        }
+
+        @Test
+        void altesFormat_wirftInvalidObjectException_wennDerBetragKeinDoubleIst() throws IOException {
+            byte[] strom = alsGeldbetrag(new BetragAlsText("12.34", Waehrung.EURO));
+            assertThrows(InvalidObjectException.class, () -> lesen(strom));
+        }
+
+        @Test
+        void neuesFormat_wirftInvalidObjectException_beiFehlendemOderFalschemWert() throws IOException {
+            for (NeuesFormat kaputt : List.of(new NeuesFormat(null, Waehrung.EURO),
+                    new NeuesFormat("12.34", Waehrung.EURO), new NeuesFormat(12.34, Waehrung.EURO))) {
+                byte[] strom = alsGeldbetrag(kaputt);
+                assertThrows(InvalidObjectException.class, () -> lesen(strom), kaputt.toString());
+            }
+        }
+
+        @Test
+        void wirftInvalidObjectException_beiFehlenderOderFalscherWaehrung() throws IOException {
+            for (NeuesFormat kaputt : List.of(new NeuesFormat(BigDecimal.ONE, null),
+                    new NeuesFormat(BigDecimal.ONE, "EUR"))) {
+                byte[] strom = alsGeldbetrag(kaputt);
+                assertThrows(InvalidObjectException.class, () -> lesen(strom), kaputt.toString());
+            }
+        }
+
+        /**
+         * Serialisiert ein Objekt.
+         * @param objekt das Objekt
+         * @return die Bytes des Stroms
+         * @throws IOException bei einem Fehler beim Schreiben
+         */
+        private static byte[] speichern(Object objekt) throws IOException {
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            try (ObjectOutputStream aus = new ObjectOutputStream(bytes)) {
+                aus.writeObject(objekt);
+            }
+            return bytes.toByteArray();
+        }
+
+        /**
+         * Liest ein Objekt aus einem Strom.
+         * @param strom die Bytes des Stroms
+         * @return das gelesene Objekt
+         * @throws IOException bei einem Fehler beim Lesen
+         * @throws ClassNotFoundException falls eine Klasse nicht gefunden wird
+         */
+        private static Object lesen(byte[] strom) throws IOException, ClassNotFoundException {
+            try (ObjectInputStream ein = new ObjectInputStream(new ByteArrayInputStream(strom))) {
+                return ein.readObject();
+            }
+        }
+
+        /**
+         * Serialisiert ein Objekt einer Hilfsklasse und ersetzt im Strom ihren Klassennamen
+         * durch Geldbetrag. Die Felder der Hilfsklasse bleiben, so entsteht ein Strom, wie
+         * ihn eine ältere oder beschädigte Datei enthalten kann. Der Name steht im Strom mit
+         * vorangestellter Länge (writeUTF); ISO-8859-1 bildet jedes Byte auf genau ein
+         * Zeichen ab, daher bleibt der übrige Strom beim Ersetzen unverändert.
+         * @param objekt das Objekt der Hilfsklasse
+         * @return der Strom mit dem Klassennamen Geldbetrag
+         * @throws IOException bei einem Fehler beim Schreiben
+         */
+        private static byte[] alsGeldbetrag(Serializable objekt) throws IOException {
+            String strom = new String(speichern(objekt), StandardCharsets.ISO_8859_1);
+            String hilfsklasse = klassenname(objekt.getClass());
+            assertTrue(strom.contains(hilfsklasse), "Klassenname nicht im Strom");
+            return strom.replace(hilfsklasse, klassenname(Geldbetrag.class)).getBytes(StandardCharsets.ISO_8859_1);
+        }
+
+        /**
+         * Liefert den Klassennamen so, wie er im Strom steht: mit vorangestellter Länge.
+         * @param klasse die Klasse
+         * @return der Name in der Form von writeUTF, als ISO-8859-1-Text
+         * @throws IOException bei einem Fehler beim Schreiben
+         */
+        private static String klassenname(Class<?> klasse) throws IOException {
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            try (DataOutputStream aus = new DataOutputStream(bytes)) {
+                aus.writeUTF(klasse.getName());
+            }
+            return new String(bytes.toByteArray(), StandardCharsets.ISO_8859_1);
         }
     }
 }
