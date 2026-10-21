@@ -1,5 +1,6 @@
 package bankprojekt.oberflaeche;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import bankprojekt.basisdaten.Geldbetrag;
@@ -121,16 +122,17 @@ public class PortalKontenController implements Portalansicht {
     }
 
     /**
-     * Summiert die Kontostände der nicht aufgelösten Konten in Euro.
+     * Summiert die Kontostände der nicht aufgelösten Konten in Euro. Die umgerechneten
+     * Kontostände sind schon auf Cent gerundet; die Summe wird exakt gebildet.
      * @param konten die Konten
      * @return die Summe
      */
     private static Geldbetrag gesamtsaldo(List<Kontoakte> konten) {
-        double summe = konten.stream()
+        BigDecimal summe = konten.stream()
                 .filter(k -> k.getStatus() != Kontostatus.AUFGELOEST)
-                .mapToDouble(k -> k.getKontostand().umrechnen(Waehrung.EURO).getBetrag())
-                .sum();
-        return new Geldbetrag(Math.round(summe * 100) / 100.0);
+                .map(k -> k.getKontostand().umrechnen(Waehrung.EURO).getBetragExakt())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return new Geldbetrag(summe);
     }
 
     /**
