@@ -23,6 +23,17 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
+     * Anzahl der Nachkommastellen, auf die Ergebnisse gerundet werden (Cent).
+     */
+    private static final int NACHKOMMASTELLEN = 2;
+
+    /**
+     * Rundungsart für alle Ergebnisse: kaufmännisch (HALF_UP). Ab einem halben Cent wird
+     * vom Betrag her aufgerundet, z. B. 0,005 zu 0,01 und -0,005 zu -0,01.
+     */
+    private static final RoundingMode RUNDUNG = RoundingMode.HALF_UP;
+
+    /**
      * 0 €
      */
     public static final Geldbetrag NULL_EURO = new Geldbetrag(0);
@@ -109,10 +120,14 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
     /**
      * Konvertiert den aktuellen Geldbetrag in eine andere Zielwährung.
      * Wenn die Zielwährung identisch mit der aktuellen Währung ist, wird der ursprüngliche Geldbetrag zurückgegeben.
+     * <p>
+     * Gerechnet wird exakt mit den Kursen als Dezimalzahlen (Betrag × Zielkurs ÷ Ausgangskurs);
+     * gerundet wird nur das Ergebnis, einmal und kaufmännisch. Z. B. sind 0,01 € genau 0,615 MKD,
+     * das ergibt 0,62 MKD. (Mit double war 0,615 binär 0,61499999… und wurde zu 0,61 abgerundet.)
      *
      * @param zielwaehrung Die Währung, in die der Betrag umgerechnet werden soll.
      *                     Die Zielwährung darf nicht null sein.
-     * @return Ein neuer Geldbetrag in der Zielwährung, wobei der Betrag auf zwei Dezimalstellen gerundet ist.
+     * @return Ein neuer Geldbetrag in der Zielwährung, wobei der Betrag kaufmännisch auf zwei Dezimalstellen gerundet ist.
      * @throws IllegalArgumentException Falls die Zielwährung null ist.
      */
     public Geldbetrag umrechnen(Waehrung zielwaehrung) {
@@ -121,12 +136,10 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
         if (zielwaehrung == null)
             throw new IllegalArgumentException("Die Zielwährung darf nicht null sein");
         if (this.waehrung == zielwaehrung) return this;
-        // bewusst noch mit double gerechnet, damit die Ergebnisse genau wie bisher bleiben
-        double inEuro = this.wert.doubleValue() / this.waehrung.getUmrechnungskursZuEuro();
-        // Umrechnung und Rundung auf 2 Stellen; gerundet wird wie bisher der exakte Binärwert des double
-        double zielBetrag = inEuro * zielwaehrung.getUmrechnungskursZuEuro();
-        double zielBetragGerundet = new BigDecimal(zielBetrag).setScale(2, RoundingMode.HALF_UP).doubleValue();
-        return new Geldbetrag(zielBetragGerundet, zielwaehrung);
+        // erst multiplizieren (exakt), dann teilen und dabei einmal auf Cent runden
+        BigDecimal zielBetrag = this.wert.multiply(zielwaehrung.getUmrechnungskursExakt())
+                .divide(this.waehrung.getUmrechnungskursExakt(), NACHKOMMASTELLEN, RUNDUNG);
+        return new Geldbetrag(zielBetrag, zielwaehrung);
     }
 
     /**
@@ -208,7 +221,7 @@ public class Geldbetrag implements Comparable<Geldbetrag>, Serializable {
      * @return der auf 2 Nachkommastellen gerundete Wert
      */
     private static BigDecimal aufCentRunden(BigDecimal wert) {
-        return wert.setScale(2, RoundingMode.HALF_UP);
+        return wert.setScale(NACHKOMMASTELLEN, RUNDUNG);
     }
 
     /**

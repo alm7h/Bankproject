@@ -448,6 +448,84 @@ class GeldbetragTest {
         }
     }
 
+    /**
+     * Umrechnungen werden exakt gerechnet und nur einmal kaufmännisch gerundet – auch wenn
+     * das exakte Ergebnis genau auf einem halben Cent liegt.
+     */
+    @Nested
+    class ExakteUmrechnungTests {
+        /** Grenze des Rasters in Cent (±1.000,00) */
+        private static final int MAX_CENT = 100_000;
+
+        /** so viele Abweichungen werden höchstens gemeldet */
+        private static final int MAX_MELDUNGEN = 5;
+
+        /**
+         * Das exakte Ergebnis liegt genau auf einem halben Cent und wird aufgerundet. Die
+         * frühere double-Rechnung hat diese Fälle abgerundet (z. B. 0,615 war binär
+         * 0,61499999…).
+         * @param betrag der Betrag in der Ausgangswährung
+         * @param von die Ausgangswährung
+         * @param nach die Zielwährung
+         * @param erwartet das kaufmännisch gerundete Ergebnis
+         */
+        @ParameterizedTest
+        @CsvSource({
+                "0.01,  EURO,  DENAR, 0.62",
+                "0.01,  EURO,  DOBRA, 0.25",
+                "20,    EURO,  FRANC, 9839.36",
+                "1230,  DENAR, FRANC, 9839.36",
+                "490,   DOBRA, FRANC, 9839.36",
+                "-0.01, EURO,  DENAR, -0.62"
+        })
+        void umrechnen_rundetHalbeCentKaufmaennisch(String betrag, Waehrung von, Waehrung nach, String erwartet) {
+            Geldbetrag ergebnis = new Geldbetrag(new BigDecimal(betrag), von).umrechnen(nach);
+            assertEquals(new BigDecimal(erwartet), ergebnis.getBetragExakt());
+            assertEquals(nach, ergebnis.getWaehrung());
+        }
+
+        @Test
+        void umrechnen_liefertGenauZweiNachkommastellen() {
+            assertEquals(new BigDecimal("6150.00"), new Geldbetrag(100).umrechnen(Waehrung.DENAR).getBetragExakt());
+            assertEquals(new BigDecimal("2.00"), new Geldbetrag(49, Waehrung.DOBRA).umrechnen(Waehrung.EURO).getBetragExakt());
+        }
+
+        /**
+         * Jeder Betrag von -1.000,00 bis 1.000,00 ergibt in jeder Richtung den exakten,
+         * kaufmännisch gerundeten Wert – auch die halben Cent, z. B. alle ungeraden
+         * Centbeträge von Euro in Denar oder Dobra. Gemeldet werden die ersten Abweichungen.
+         * @param von die Ausgangswährung
+         */
+        @ParameterizedTest
+        @EnumSource(Waehrung.class)
+        void umrechnen_ergibtInJederRichtungDenExaktenWert(Waehrung von) {
+            List<String> abweichungen = new ArrayList<>();
+            for (Waehrung nach : Waehrung.values()) {
+                if (nach == von) continue;
+                for (int cent = -MAX_CENT; cent <= MAX_CENT; cent++) {
+                    BigDecimal betrag = BigDecimal.valueOf(cent, 2);
+                    BigDecimal erwartet = betrag.multiply(nach.getUmrechnungskursExakt())
+                            .divide(von.getUmrechnungskursExakt(), 2, RoundingMode.HALF_UP);
+                    BigDecimal ist = new Geldbetrag(betrag, von).umrechnen(nach).getBetragExakt();
+                    if (ist.compareTo(erwartet) != 0 && abweichungen.size() < MAX_MELDUNGEN)
+                        abweichungen.add(betrag + " " + von + " ergeben " + ist + " " + nach + " statt " + erwartet);
+                }
+            }
+            assertEquals(List.of(), abweichungen);
+        }
+
+        /**
+         * plus und minus rechnen den Operanden in die Währung von this um, also ebenfalls exakt.
+         */
+        @Test
+        void plusUndMinus_rechnenDenOperandenExaktUm() {
+            Geldbetrag zehnDenar = new Geldbetrag(new BigDecimal("10"), Waehrung.DENAR);
+            Geldbetrag einCent = new Geldbetrag(new BigDecimal("0.01"));
+            assertEquals(new BigDecimal("10.62"), zehnDenar.plus(einCent).getBetragExakt());
+            assertEquals(new BigDecimal("9.38"), zehnDenar.minus(einCent).getBetragExakt());
+        }
+    }
+
     @Nested
     class VergleichTests {
         @Test
