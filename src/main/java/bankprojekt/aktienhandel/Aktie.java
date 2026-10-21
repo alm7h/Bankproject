@@ -1,5 +1,7 @@
 package bankprojekt.aktienhandel;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 // Bemerkung: Imports für die Thread-Steuerung über ExecutorServices
@@ -127,7 +129,12 @@ public class Aktie {
 		// halber Cent und würde immer auf den alten Kurs zurückgerundet - der Kurs bliebe
 		// stehen. Der Kurs wird daher ungerundet geführt; gerundet wird erst der
 		// Gesamtpreis eines Kaufs bzw. Verkaufs (kurs.mal(anzahl) im Aktienkonto).
-		this.kurs = new Geldbetrag(alterKurs.getBetrag() * (1.0 + prozent / 100.0),
+		// Bemerkung: Gerechnet wird mit BigDecimal auf 16 signifikante Stellen
+		// (MathContext.DECIMAL64, etwa so genau wie ein double). Exakt multipliziert
+		// kämen bei jeder Änderung fast 20 Nachkommastellen hinzu, der Kurs würde also
+		// immer länger und das Rechnen mit ihm immer langsamer.
+		BigDecimal faktor = BigDecimal.ONE.add(BigDecimal.valueOf(prozent).movePointLeft(2));
+		this.kurs = new Geldbetrag(alterKurs.getBetragExakt().multiply(faktor, MathContext.DECIMAL64),
 				alterKurs.getWaehrung());
 		// Alle angemeldeten Beobachter über die Kursänderung
 		// informieren (Grundlage für die Kauf-/Verkaufaufträge im Aktienkonto).

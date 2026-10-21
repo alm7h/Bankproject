@@ -109,9 +109,17 @@ class DarstellungTest {
     class BetragLesenTests {
         @Test
         void gueltigeBetraege_mitKommaOderPunkt() {
-            assertEquals(500.0, Darstellung.betragLesen("500", "Dispo"));
-            assertEquals(500.5, Darstellung.betragLesen("500,5", "Dispo"));
-            assertEquals(99.95, Darstellung.betragLesen(" 99.95 ", "Dispo"));
+            assertEquals(new java.math.BigDecimal("500"), Darstellung.betragLesen("500", "Dispo"));
+            assertEquals(new java.math.BigDecimal("500.5"), Darstellung.betragLesen("500,5", "Dispo"));
+            assertEquals(new java.math.BigDecimal("99.95"), Darstellung.betragLesen(" 99.95 ", "Dispo"));
+        }
+
+        @Test
+        void groessterBetrag_wirdExaktGelesen() {
+            // 12 Vorkomma- und 2 Nachkommastellen: genau die eingegebenen Ziffern, ohne Umweg über double
+            assertEquals(new java.math.BigDecimal("999999999999.99"),
+                    Darstellung.betragLesen("999999999999,99", "Betrag"));
+            assertEquals(new java.math.BigDecimal("0.01"), Darstellung.betragLesen("0,01", "Betrag"));
         }
 
         @Test

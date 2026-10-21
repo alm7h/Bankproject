@@ -195,6 +195,19 @@ class AktieTest {
         }
 
         @Test
+        void neuerKurs_hatHoechstens16SignifikanteStellen() throws Exception {
+            // Der Kurs wird auf 16 Stellen gerundet (MathContext.DECIMAL64). Exakt multipliziert
+            // käme bei jeder Änderung fast 20 Stellen hinzu und der Kurs würde immer länger.
+            Aktie aktie = new Aktie(neueWkn(), KURS);
+            CompletableFuture<Geldbetrag> neuerKurs = new CompletableFuture<>();
+            aktie.addPropertyChangeListener(e -> neuerKurs.complete((Geldbetrag) e.getNewValue()));
+
+            Geldbetrag neu = neuerKurs.get(WARTEZEIT_SEKUNDEN, TimeUnit.SECONDS);
+
+            assertTrue(neu.getBetragExakt().precision() <= 16, "Zu viele Stellen: " + neu.getBetragExakt());
+        }
+
+        @Test
         void abgemeldeterBeobachter_wirdNichtMehrBenachrichtigt() throws Exception {
             Aktie aktie = new Aktie(neueWkn(), KURS);
             PropertyChangeListener abgemeldet = mock(PropertyChangeListener.class);

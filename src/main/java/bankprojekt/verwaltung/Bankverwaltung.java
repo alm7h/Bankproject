@@ -1063,7 +1063,7 @@ public final class Bankverwaltung implements Serializable {
     void buchen(Kontoakte konto, Buchungsart art, Geldbetrag betrag, String text, String wer) {
         Geldbetrag inKontowaehrung = betrag.umrechnen(konto.getWaehrung());
         Geldbetrag gebucht = art.istAbgang()
-                ? new Geldbetrag(-inKontowaehrung.getBetrag(), inKontowaehrung.getWaehrung())
+                ? new Geldbetrag(inKontowaehrung.getBetragExakt().negate(), inKontowaehrung.getWaehrung())
                 : inKontowaehrung;
         buchungen.computeIfAbsent(konto.getKontonummer(), nr -> new ArrayList<>())
                 .add(new Buchung(jetzt(), konto.getKontonummer(), art, gebucht, konto.getKontostand(), text, wer));

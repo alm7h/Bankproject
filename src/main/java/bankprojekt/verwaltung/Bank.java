@@ -374,7 +374,7 @@ public class Bank implements Serializable {
             Geldbetrag neu;
             if (stand.isNegativ()) {
                 // Negative Staende als Subtraktion des absoluten Betrags behandeln
-                Geldbetrag betragAbsolut = new Geldbetrag(Math.abs(stand.getBetrag()), stand.getWaehrung());
+                Geldbetrag betragAbsolut = new Geldbetrag(stand.getBetragExakt().abs(), stand.getWaehrung());
                 neu = summe.minus(betragAbsolut);
             } else {
                 neu = summe.plus(stand);

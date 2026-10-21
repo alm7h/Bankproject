@@ -1,5 +1,6 @@
 package bankprojekt.oberflaeche;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -92,17 +93,17 @@ final class Darstellung {
      * werden bewusst nicht akzeptiert, weil "1.000" sonst mehrdeutig wäre.
      * @param text der eingegebene Text
      * @param feldname Name des Feldes für die Fehlermeldung
-     * @return der Betrag
+     * @return der Betrag, exakt mit den eingegebenen Ziffern (ohne Umweg über double)
      * @throws IllegalArgumentException wenn nichts oder kein gültiger Betrag eingegeben wurde
      */
-    static double betragLesen(String text, String feldname) {
+    static BigDecimal betragLesen(String text, String feldname) {
         if (text == null || text.isBlank())
             throw new IllegalArgumentException(feldname + " ist ein Pflichtfeld.");
         String betrag = text.strip();
         if (!BETRAG.matcher(betrag).matches())
             throw new IllegalArgumentException(feldname + " \"" + betrag
                     + "\" ist ungültig. Bitte einen Betrag wie 500 oder 500,00 eingeben.");
-        return Double.parseDouble(betrag.replace(',', '.'));
+        return new BigDecimal(betrag.replace(',', '.'));
     }
 
     /**
