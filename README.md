@@ -53,7 +53,7 @@ The `spielereien` package holds runnable `main` demo programs (the presentation 
 - Multiple account types with deposits, withdrawals, and transfers
 - Withdrawal rules per account type via a Template Method (`Konto.abheben` with the hook `pruefeAbhebung`)
 - Account factories to encapsulate creation logic
-- Money in several currencies (EUR, MKD, KMF, STN), compared by euro value and rounded to cents
+- Money in several currencies (EUR, MKD, KMF, STN), stored exactly as `BigDecimal`, compared exactly by euro value and rounded to cents (half a cent up)
 - Bank-level queries with streams: totals by customer, customers with a negative balance, birthdays, seniors count, a gift for new adults
 - Transfers between accounts with rollback if crediting fails
 - Stock trading: shares change their price on a `ScheduledExecutorService`, orders return a `Future` and wait for the price without `sleep()`
@@ -74,7 +74,7 @@ A few rules the code enforces (and the tests check):
 - **Festgeldkonto:** only the amount cancelled beforehand (`kuendigen`) can be withdrawn, at most the balance.
 - **Aktienkonto:** no overdraft; a buy order without enough balance or for an unknown share buys nothing (0 €).
 - **Account numbers** are handed out by the `Bank`; a failed account creation uses up no number. `getKonten()` returns a read-only view.
-- **`Geldbetrag`** is immutable; `plus`, `minus`, `mal` and `umrechnen` round to cents.
+- **`Geldbetrag`** is immutable and exact (`BigDecimal`); `plus`, `minus`, `mal` and `umrechnen` round the result once to cents, half a cent up (`HALF_UP`: 0.01 € = 0.615 MKD becomes 0.62 MKD). Amounts with the same euro value are equal, also in different currencies (0.14 € equals 8.61 MKD).
 - **Verwaltung:** customers and staff users are never deleted, only deactivated; an account can only be closed at a balance of 0 and then stays locked; every action is logged with user and time.
 - **Kundenportal:** a client sees and uses only his own accounts; transfers go from a Girokonto to an active Girokonto of the same bank; moving money between own accounts follows the rules of the sending account and debits nothing if the receiving account can't be credited; an account the client locks can only be unlocked by staff; a deactivated customer can't log in.
 
