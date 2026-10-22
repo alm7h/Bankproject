@@ -61,7 +61,7 @@ The `spielereien` package holds runnable `main` demo programs (the presentation 
 - JavaFX Kundenportal for clients: register as a new client with a guided wizard, apply for accounts (approved or rejected by staff), see balances and statements, transfer to other Girokonten by IBAN, move money between own accounts, lock an account, change contact data and password
 - Passwords stored only as salted PBKDF2 hashes; login locked for 60 s after 5 failed attempts
 - Persistence: save/load a whole bank via Java serialization, several banks in one zip file; the app saves all its data automatically after every change
-- Unit tests with JUnit 5 and Mockito (about 810 tests, including the JavaFX UI); the build fails if a class of the Verwaltung logic or the UI drops below 90 % coverage, and deliberately inserted bugs in the key rules are caught by the tests
+- Unit tests with JUnit 5 and Mockito (about 920 tests, including the JavaFX UI); the build fails if a class of the Verwaltung logic or the UI drops below 90 % coverage, and deliberately inserted bugs in the key rules are caught by the tests
 - Code quality: SpotBugs static analysis, JaCoCo coverage, Javadoc generation
 
 
@@ -252,7 +252,7 @@ The archive `target/Bankproject-1.0-SNAPSHOT-submission.zip` contains the source
 ## Tests
 The test suite lives in `src/test/java/bankprojekt`, in the same packages as the classes under test, and uses only JUnit 5 and Mockito.
 
-- **About 810 tests**, around 98–99 % line and branch coverage of `bankprojekt`, UI included.
+- **About 920 tests**, around 98–99 % line and branch coverage of `bankprojekt`, UI included.
 - Every account type, `Geldbetrag`, `Waehrung`, `Kunde`, the factories, the `Bank` (including transfers, reports and persistence), the exceptions and `Kalender` have their own test classes, as do the Verwaltung classes `Bankverwaltung` (plus `BankverwaltungPortalTest` for applications, portal logins and counter bookings), `Kundenportal`, `Kundendaten`, `Anmeldung` (lockout with an adjustable test clock), `Passwortschutz` and `Datenspeicher`, and every screen of the Verwaltung, the registration wizard and the Kundenportal.
 - Test names and comments are in German, e.g. `geldAbheben_gibtFalse_wennUeberDispo`.
 - The suite does not depend on the computer's language settings: locale-dependent output is tested with `Locale.GERMANY`, set and restored around each test. To double-check:
